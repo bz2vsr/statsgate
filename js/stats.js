@@ -3,11 +3,41 @@ let gameData = null;
 let allGames = [];
 let currentFilter = { type: 'general', value: null };
 
+// Utility function to safely create charts
+function safeCreateChart(canvasId, config) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.error(`Canvas element ${canvasId} not found`);
+        return null;
+    }
+    
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js not loaded');
+        return null;
+    }
+    
+    try {
+        return new Chart(canvas.getContext('2d'), config);
+    } catch (error) {
+        console.error(`Error creating chart ${canvasId}:`, error);
+        return null;
+    }
+}
+
 // Fetch and display game statistics data
 async function loadGameData() {
     try {
         const response = await fetch('https://raw.githubusercontent.com/HerndonE/battlezone-combat-commander-strategy-statistics/refs/heads/main/data/data.json');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         gameData = await response.json();
+        
+        if (!gameData) {
+            throw new Error('No data received from server');
+        }
         
         // Process all games into a flat array for easier analysis
         processAllGames();
@@ -22,7 +52,18 @@ async function loadGameData() {
     } catch (error) {
         console.error('Error loading game data:', error);
         const mainContent = document.querySelector('main');
-        mainContent.innerHTML = `<div class="alert alert-danger">Error loading game data: ${error.message}</div>`;
+        if (mainContent) {
+            mainContent.innerHTML = `
+                <div class="alert alert-danger">
+                    <h4>Error Loading Data</h4>
+                    <p>Unable to load game statistics data: ${error.message}</p>
+                    <p>Please check your internet connection and try refreshing the page.</p>
+                    <button class="btn btn-outline-danger" onclick="location.reload()">Retry</button>
+                </div>
+            `;
+        } else {
+            console.error('Main content element not found');
+        }
     }
 }
 
@@ -203,29 +244,61 @@ function initializeDashboard() {
 
 // Setup event listeners
 function setupEventListeners() {
-    document.getElementById('analysisType').addEventListener('change', handleAnalysisTypeChange);
-    document.getElementById('filterSelect').addEventListener('change', handleFilterChange);
-    document.getElementById('timePeriod').addEventListener('change', handleTimePeriodChange);
-    document.getElementById('resetFilters').addEventListener('click', resetFilters);
+    // Add safety checks to ensure elements exist before adding listeners
+    const analysisType = document.getElementById('analysisType');
+    const filterSelect = document.getElementById('filterSelect');
+    const timePeriod = document.getElementById('timePeriod');
+    const resetButton = document.getElementById('resetFilters');
+    
+    if (analysisType) {
+        analysisType.addEventListener('change', handleAnalysisTypeChange);
+    } else {
+        console.error('analysisType element not found');
+    }
+    
+    if (filterSelect) {
+        filterSelect.addEventListener('change', handleFilterChange);
+    } else {
+        console.error('filterSelect element not found');
+    }
+    
+    if (timePeriod) {
+        timePeriod.addEventListener('change', handleTimePeriodChange);
+    } else {
+        console.error('timePeriod element not found');
+    }
+    
+    if (resetButton) {
+        resetButton.addEventListener('click', resetFilters);
+    } else {
+        console.error('resetFilters element not found');
+    }
 }
 
 // Handle analysis type change
 function handleAnalysisTypeChange() {
-    const analysisType = document.getElementById('analysisType').value;
+    const analysisType = document.getElementById('analysisType');
     const filterSelect = document.getElementById('filterSelect');
     const filterSection = document.getElementById('filterSection');
+    
+    if (!analysisType || !filterSelect || !filterSection) {
+        console.error('Required elements not found for analysis type change');
+        return;
+    }
+    
+    const analysisValue = analysisType.value;
     
     // Clear and populate filter options based on analysis type
     filterSelect.innerHTML = '<option value="">All Data</option>';
     
     // Show/hide filter section based on analysis type
-    if (analysisType === 'general') {
+    if (analysisValue === 'general') {
         filterSection.style.display = 'none';
     } else {
         filterSection.style.display = 'block';
     }
     
-    if (analysisType === 'player') {
+    if (analysisValue === 'player') {
         // Get all players (commanders + teammates)
         const allPlayers = new Set();
         allGames.forEach(game => {
@@ -243,12 +316,12 @@ function handleAnalysisTypeChange() {
         players.forEach(player => {
             filterSelect.innerHTML += `<option value="${player}">${player}</option>`;
         });
-    } else if (analysisType === 'map') {
+    } else if (analysisValue === 'map') {
         const maps = [...new Set(allGames.map(g => g.map))].sort();
         maps.forEach(map => {
             filterSelect.innerHTML += `<option value="${map}">${map}</option>`;
         });
-    } else if (analysisType === 'faction') {
+    } else if (analysisValue === 'faction') {
         const factions = [...new Set(allGames.flatMap(g => [g.faction1, g.faction2]))].sort();
         factions.forEach(faction => {
             filterSelect.innerHTML += `<option value="${faction}">${faction}</option>`;
@@ -272,10 +345,26 @@ function handleTimePeriodChange() {
 
 // Reset filters
 function resetFilters() {
-    document.getElementById('analysisType').value = 'general';
-    document.getElementById('filterSelect').innerHTML = '<option value="">All Data</option>';
-    document.getElementById('filterSelect').value = '';
-    document.getElementById('timePeriod').value = 'all';
+    const analysisTypeElement = document.getElementById('analysisType');
+    const filterSelectElement = document.getElementById('filterSelect');
+    const timePeriodElement = document.getElementById('timePeriod');
+    const filterSectionElement = document.getElementById('filterSection');
+    
+    if (!analysisTypeElement || !filterSelectElement || !timePeriodElement) {
+        console.error('Required elements not found for reset');
+        return;
+    }
+    
+    analysisTypeElement.value = 'general';
+    filterSelectElement.innerHTML = '<option value="">All Data</option>';
+    filterSelectElement.value = '';
+    timePeriodElement.value = 'all';
+    
+    // Hide filter section for general overview
+    if (filterSectionElement) {
+        filterSectionElement.style.display = 'none';
+    }
+    
     loadContent();
 }
 
@@ -303,13 +392,22 @@ function loadContent() {
 function getFilteredGames() {
     let filtered = [...allGames];
     
-    const timePeriod = document.getElementById('timePeriod').value;
+    const timePeriodElement = document.getElementById('timePeriod');
+    const analysisTypeElement = document.getElementById('analysisType');
+    const filterSelectElement = document.getElementById('filterSelect');
+    
+    if (!timePeriodElement || !analysisTypeElement || !filterSelectElement) {
+        console.error('Required filter elements not found');
+        return filtered;
+    }
+    
+    const timePeriod = timePeriodElement.value;
     if (timePeriod !== 'all') {
         filtered = filtered.filter(game => game.year === parseInt(timePeriod));
     }
     
-    const analysisType = document.getElementById('analysisType').value;
-    const filterValue = document.getElementById('filterSelect').value;
+    const analysisType = analysisTypeElement.value;
+    const filterValue = filterSelectElement.value;
     
     if (filterValue) {
         if (analysisType === 'player') {
@@ -336,8 +434,27 @@ function getFilteredGames() {
 
 // Update summary stats
 function updateSummaryStats(games) {
-    const analysisType = document.getElementById('analysisType').value;
-    const selectedPlayer = document.getElementById('filterSelect').value;
+    const analysisTypeElement = document.getElementById('analysisType');
+    const filterSelectElement = document.getElementById('filterSelect');
+    
+    if (!analysisTypeElement || !filterSelectElement) {
+        console.error('Required elements not found for summary stats update');
+        return;
+    }
+    
+    const analysisType = analysisTypeElement.value;
+    const selectedPlayer = filterSelectElement.value;
+    
+    // Get all the stat elements
+    const totalGamesElement = document.getElementById('totalGames');
+    const totalCommandersElement = document.getElementById('totalCommanders');
+    const totalMapsElement = document.getElementById('totalMaps');
+    const avgGameTimeElement = document.getElementById('avgGameTime');
+    
+    if (!totalGamesElement || !totalCommandersElement || !totalMapsElement || !avgGameTimeElement) {
+        console.error('Summary stat elements not found');
+        return;
+    }
     
     if (analysisType === 'player' && selectedPlayer) {
         // Player-specific stats
@@ -392,16 +509,21 @@ function updateSummaryStats(games) {
             }
         }
         
-        document.getElementById('totalGames').textContent = totalGames;
-        document.getElementById('totalCommanders').textContent = maps.length;
-        document.getElementById('totalMaps').textContent = avgTime;
-        document.getElementById('avgGameTime').textContent = `${winRate}%`;
+        totalGamesElement.textContent = totalGames;
+        totalCommandersElement.textContent = maps.length;
+        totalMapsElement.textContent = avgTime;
+        avgGameTimeElement.textContent = `${winRate}%`;
         
         // Update labels for player-specific context
-        document.querySelector('#totalGames').parentElement.querySelector('p').textContent = 'Total Games';
-        document.querySelector('#totalCommanders').parentElement.querySelector('p').textContent = 'Maps Played';
-        document.querySelector('#totalMaps').parentElement.querySelector('p').textContent = 'Avg Game Time';
-        document.querySelector('#avgGameTime').parentElement.querySelector('p').textContent = 'Win Rate';
+        const gameLabel = totalGamesElement.parentElement?.querySelector('p');
+        const commanderLabel = totalCommandersElement.parentElement?.querySelector('p');
+        const mapLabel = totalMapsElement.parentElement?.querySelector('p');
+        const timeLabel = avgGameTimeElement.parentElement?.querySelector('p');
+        
+        if (gameLabel) gameLabel.textContent = 'Total Games';
+        if (commanderLabel) commanderLabel.textContent = 'Maps Played';
+        if (mapLabel) mapLabel.textContent = 'Avg Game Time';
+        if (timeLabel) timeLabel.textContent = 'Win Rate';
     } else {
         // Global stats (original logic)
         const totalGames = games.length;
@@ -437,16 +559,21 @@ function updateSummaryStats(games) {
             }
         }
         
-        document.getElementById('totalGames').textContent = totalGames;
-        document.getElementById('totalCommanders').textContent = commanders.length;
-        document.getElementById('totalMaps').textContent = maps.length;
-        document.getElementById('avgGameTime').textContent = avgTime;
+        totalGamesElement.textContent = totalGames;
+        totalCommandersElement.textContent = commanders.length;
+        totalMapsElement.textContent = maps.length;
+        avgGameTimeElement.textContent = avgTime;
         
         // Reset labels to global context
-        document.querySelector('#totalGames').parentElement.querySelector('p').textContent = 'Total Games';
-        document.querySelector('#totalCommanders').parentElement.querySelector('p').textContent = 'Commanders';
-        document.querySelector('#totalMaps').parentElement.querySelector('p').textContent = 'Maps Played';
-        document.querySelector('#avgGameTime').parentElement.querySelector('p').textContent = 'Avg Game Time';
+        const gameLabel = totalGamesElement.parentElement?.querySelector('p');
+        const commanderLabel = totalCommandersElement.parentElement?.querySelector('p');
+        const mapLabel = totalMapsElement.parentElement?.querySelector('p');
+        const timeLabel = avgGameTimeElement.parentElement?.querySelector('p');
+        
+        if (gameLabel) gameLabel.textContent = 'Total Games';
+        if (commanderLabel) commanderLabel.textContent = 'Commanders';
+        if (mapLabel) mapLabel.textContent = 'Maps Played';
+        if (timeLabel) timeLabel.textContent = 'Avg Game Time';
     }
 }
 
@@ -1203,12 +1330,21 @@ function createModalGameDurationChart(games) {
 // Load player analysis
 function loadPlayerAnalysis() {
     const games = getFilteredGames();
-    const selectedPlayer = document.getElementById('filterSelect').value;
+    
+    const filterSelectElement = document.getElementById('filterSelect');
+    const mainAnalysisElement = document.getElementById('mainAnalysis');
+    
+    if (!filterSelectElement || !mainAnalysisElement) {
+        console.error('Required elements not found for player analysis');
+        return;
+    }
+    
+    const selectedPlayer = filterSelectElement.value;
     
     updateSummaryStats(games);
     
     if (!selectedPlayer) {
-        document.getElementById('mainAnalysis').innerHTML = `
+        mainAnalysisElement.innerHTML = `
             <div class="alert alert-info">
                 <h5>Player Analysis</h5>
                 <p>Select a player from the filter dropdown to view detailed analysis.</p>
@@ -1272,7 +1408,7 @@ function loadPlayerAnalysis() {
     console.log(`Total wins: ${totalWins}`);
     console.log(`Win rate: ${((totalWins / playerGames.length) * 100).toFixed(1)}%`);
     
-    document.getElementById('mainAnalysis').innerHTML = `
+    mainAnalysisElement.innerHTML = `
         <div class="row">
             <div class="col-12 mb-4">
                 <div class="card bg-dark border-secondary">
@@ -1844,10 +1980,44 @@ function loadFactionAnalysis() {
 }
 
 // Load the data when the page loads
-document.addEventListener('DOMContentLoaded', loadGameData);
+document.addEventListener('DOMContentLoaded', function() {
+    // Check for required dependencies
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded');
+        const mainContent = document.querySelector('main');
+        if (mainContent) {
+            mainContent.innerHTML = `
+                <div class="alert alert-danger">
+                    <h4>Missing Dependencies</h4>
+                    <p>Chart.js library is not loaded. Please ensure all required scripts are included.</p>
+                    <p>Make sure Chart.js is loaded before the stats.js script.</p>
+                </div>
+            `;
+        }
+        return;
+    }
+    
+    if (typeof bootstrap === 'undefined') {
+        console.warn('Bootstrap JavaScript is not loaded - some features may not work properly');
+    }
+    
+    // Start loading the game data
+    loadGameData();
+});
 
 // Create commander games chart
 function createCommanderGamesChart(games) {
+    const ctx = document.getElementById('commanderGamesChart');
+    if (!ctx) {
+        console.error('commanderGamesChart canvas not found');
+        return;
+    }
+    
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js not loaded');
+        return;
+    }
+    
     const commanderStats = {};
     
     games.forEach(game => {
@@ -1856,11 +2026,9 @@ function createCommanderGamesChart(games) {
     });
     
     const sortedCommanders = Object.entries(commanderStats)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 10);
+        .sort(([,a], [,b]) => b - a);
     
-    const ctx = document.getElementById('commanderGamesChart').getContext('2d');
-    new Chart(ctx, {
+    new Chart(ctx.getContext('2d'), {
         type: 'bar',
         data: {
             labels: sortedCommanders.map(([name]) => name),
@@ -2111,8 +2279,7 @@ function createMapPopularityChart(games) {
     });
     
     const sortedMaps = Object.entries(mapStats)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 10);
+        .sort(([,a], [,b]) => b - a);
     
     const ctx = document.getElementById('mapPopularityChart').getContext('2d');
     new Chart(ctx, {
