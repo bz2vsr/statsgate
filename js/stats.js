@@ -713,13 +713,13 @@ function loadGeneralOverview() {
                         <h5 class="modal-title" id="chartModalLabel">Chart Details</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
+                    <div class="modal-body" style="overflow-y: auto; max-height: calc(100vh - 120px);">
                         <div class="container-fluid">
                             <div class="row">
                                 <div class="col-12">
                                     <div class="card bg-dark border-secondary">
-                                        <div class="card-body" style="height: calc(100vh - 200px);">
-                                            <canvas id="modalChart" style="max-height: 100%;"></canvas>
+                                        <div class="card-body" id="modalChartContainer">
+                                            <canvas id="modalChart"></canvas>
                                         </div>
                                     </div>
                                 </div>
@@ -796,6 +796,18 @@ function showModalChart(games, chartType, chartTitle, selectedPlayer = null) {
             createModalGameDurationChart(games);
             break;
         // Player chart types
+        case 'playerWinRateEvolution':
+            if (selectedPlayer) createModalPlayerWinRateEvolutionChart(games, selectedPlayer);
+            break;
+        case 'playerOpposition':
+            if (selectedPlayer) createModalPlayerOppositionChart(games, selectedPlayer);
+            break;
+        case 'playerHeatmap':
+            if (selectedPlayer) createModalPlayerHeatmapChart(games, selectedPlayer);
+            break;
+        case 'playerStreaks':
+            if (selectedPlayer) createModalPlayerStreaksChart(games, selectedPlayer);
+            break;
         case 'playerRole':
             if (selectedPlayer) createModalPlayerRoleChart(games, selectedPlayer);
             break;
@@ -1052,7 +1064,7 @@ function createModalMapPopularityChart(games) {
     });
     
     const sortedMaps = Object.entries(mapStats)
-        .sort(([,a], [,b]) => b - a); // Show ALL maps
+        .sort(([,a], [,b]) => b - a); // Show ALL maps in modal view
     
     const ctx = document.getElementById('modalChart').getContext('2d');
     new Chart(ctx, {
@@ -1463,6 +1475,74 @@ function loadPlayerAnalysis() {
                 </div>
             </div>
             
+            <!-- Win Rate Evolution -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Win Rate Evolution</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="playerWinRateEvolution" data-chart-title="${selectedPlayer} - Win Rate Evolution">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="playerWinRateEvolutionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Opposition Analysis -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Performance vs Opposition</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="playerOpposition" data-chart-title="${selectedPlayer} - Performance vs Opposition">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="playerOppositionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Activity Heatmap -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-warning text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Activity Heatmap</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="playerHeatmap" data-chart-title="${selectedPlayer} - Activity Heatmap">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="playerHeatmapChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Form & Streaks -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-purple text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Recent Form & Streaks</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="playerStreaks" data-chart-title="${selectedPlayer} - Recent Form & Streaks">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="playerStreaksChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Role Distribution -->
             <div class="col-lg-6 mb-4">
                 <div class="card bg-dark border-secondary">
@@ -1567,6 +1647,10 @@ function loadPlayerAnalysis() {
         </div>
     `;
     
+    createPlayerWinRateEvolutionChart(playerGames, selectedPlayer);
+    createPlayerOppositionChart(playerGames, selectedPlayer);
+    createPlayerHeatmapChart(playerGames, selectedPlayer);
+    createPlayerStreaksChart(playerGames, selectedPlayer);
     createPlayerRoleChart(playerGames, selectedPlayer);
     createPlayerWinRateByRoleChart(playerGames, selectedPlayer);
     createPlayerPerformanceChart(playerGames, selectedPlayer);
@@ -1574,12 +1658,41 @@ function loadPlayerAnalysis() {
     createPlayerMapChart(playerGames, selectedPlayer);
     createPlayerActivityChart(playerGames, selectedPlayer);
     
+    // Ensure the chart modal exists for maximize functionality
+    if (!document.getElementById('chartModal')) {
+        document.body.insertAdjacentHTML('beforeend', `
+            <div class="modal fade" id="chartModal" tabindex="-1" aria-labelledby="chartModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-fullscreen">
+                    <div class="modal-content bg-dark">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title" id="chartModalLabel">Chart Details</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" style="overflow-y: auto; max-height: calc(100vh - 120px);">
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="card bg-dark border-secondary">
+                                            <div class="card-body" id="modalChartContainer">
+                                                <canvas id="modalChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+    }
+    
     // Add event listeners for player chart maximize buttons
     document.querySelectorAll('.maximize-chart').forEach(button => {
         button.addEventListener('click', (e) => {
             const chartType = e.currentTarget.dataset.chartType;
             const chartTitle = e.currentTarget.dataset.chartTitle;
-            showModalChart(games, chartType, chartTitle, selectedPlayer);
+            showModalChart(playerGames, chartType, chartTitle, selectedPlayer);
         });
     });
 }
@@ -2026,7 +2139,8 @@ function createCommanderGamesChart(games) {
     });
     
     const sortedCommanders = Object.entries(commanderStats)
-        .sort(([,a], [,b]) => b - a);
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 10); // Show only top 10 in initial view
     
     new Chart(ctx.getContext('2d'), {
         type: 'bar',
@@ -2279,7 +2393,8 @@ function createMapPopularityChart(games) {
     });
     
     const sortedMaps = Object.entries(mapStats)
-        .sort(([,a], [,b]) => b - a);
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 10); // Show only top 10 in initial view
     
     const ctx = document.getElementById('mapPopularityChart').getContext('2d');
     new Chart(ctx, {
@@ -3130,6 +3245,749 @@ function createModalPlayerActivityChart(games, selectedPlayer) {
                 x: {
                     stacked: true,
                     beginAtZero: true,
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            }
+        }
+    });
+}
+
+// Create player win rate evolution chart
+function createPlayerWinRateEvolutionChart(games, player) {
+    const ctx = document.getElementById('playerWinRateEvolutionChart');
+    if (!ctx) return;
+    
+    // Sort games chronologically
+    const sortedGames = [...games].sort((a, b) => {
+        const dateA = new Date(`${a.year}-${a.month}-${a.day}`);
+        const dateB = new Date(`${b.year}-${b.month}-${b.day}`);
+        return dateA - dateB;
+    });
+    
+    // Calculate cumulative win rate at each game
+    const evolutionData = [];
+    let cumulativeWins = 0;
+    
+    sortedGames.forEach((game, index) => {
+        if (game.teamWon) cumulativeWins++;
+        const gameNumber = index + 1;
+        const cumulativeWinRate = (cumulativeWins / gameNumber) * 100;
+        
+        // Sample every 5th game for readability, plus first and last
+        if (gameNumber === 1 || gameNumber % 5 === 0 || gameNumber === sortedGames.length) {
+            evolutionData.push({
+                gameNumber,
+                winRate: cumulativeWinRate.toFixed(1),
+                wins: cumulativeWins,
+                total: gameNumber
+            });
+        }
+    });
+    
+    new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: evolutionData.map(d => `Game ${d.gameNumber}`),
+            datasets: [{
+                label: 'Cumulative Win Rate (%)',
+                data: evolutionData.map(d => d.winRate),
+                borderColor: 'rgba(25, 135, 84, 1)',
+                backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: { color: 'white' }
+                },
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const dataIndex = context.dataIndex;
+                            const data = evolutionData[dataIndex];
+                            return `Record: ${data.wins}/${data.total}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { 
+                        color: 'white',
+                        callback: function(value) { return value + '%'; }
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            }
+        }
+    });
+}
+
+// Create player opposition analysis chart
+function createPlayerOppositionChart(games, player) {
+    const ctx = document.getElementById('playerOppositionChart');
+    if (!ctx) return;
+    
+    // Calculate opponent stats
+    const opponentStats = {};
+    
+    games.forEach(game => {
+        let opponent = null;
+        if (game.commander1 === player) {
+            opponent = game.commander2;
+        } else if (game.commander2 === player) {
+            opponent = game.commander1;
+        }
+        
+        if (opponent) {
+            if (!opponentStats[opponent]) {
+                opponentStats[opponent] = { wins: 0, total: 0 };
+            }
+            opponentStats[opponent].total++;
+            if (game.teamWon) {
+                opponentStats[opponent].wins++;
+            }
+        }
+    });
+    
+    // Filter opponents with at least 2 games and sort by win rate (highest to lowest) - show all data
+    const qualifiedOpponents = Object.entries(opponentStats)
+        .filter(([, stats]) => stats.total >= 2)
+        .map(([opponent, stats]) => ({
+            opponent,
+            winRate: (stats.wins / stats.total * 100).toFixed(1),
+            wins: stats.wins,
+            total: stats.total
+        }))
+        .sort((a, b) => parseFloat(b.winRate) - parseFloat(a.winRate));
+    
+    if (qualifiedOpponents.length === 0) {
+        ctx.getContext('2d').fillStyle = 'white';
+        ctx.getContext('2d').font = '16px Arial';
+        ctx.getContext('2d').textAlign = 'center';
+        ctx.getContext('2d').fillText('Not enough data (need 3+ games vs same opponent)', ctx.width / 2, ctx.height / 2);
+        return;
+    }
+    
+    new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: qualifiedOpponents.map(o => o.opponent),
+            datasets: [{
+                label: 'Win Rate (%)',
+                data: qualifiedOpponents.map(o => o.winRate),
+                backgroundColor: 'rgba(13, 202, 240, 0.8)',
+                borderColor: 'rgba(13, 202, 240, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: { color: 'white' }
+                },
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const dataIndex = context.dataIndex;
+                            const opponent = qualifiedOpponents[dataIndex];
+                            return `Record: ${opponent.wins}/${opponent.total} games`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { 
+                        color: 'white',
+                        callback: function(value) { return value + '%'; }
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                x: {
+                    ticks: { 
+                        color: 'white',
+                        maxRotation: 45
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            }
+        }
+    });
+}
+
+// Create player activity heatmap chart
+function createPlayerHeatmapChart(games, player) {
+    const ctx = document.getElementById('playerHeatmapChart');
+    if (!ctx) return;
+    
+    // Create month-day activity map
+    const activityMap = {};
+    const winRateMap = {};
+    
+    games.forEach(game => {
+        const monthKey = `${game.year}-${game.month}`;
+        if (!activityMap[monthKey]) {
+            activityMap[monthKey] = 0;
+            winRateMap[monthKey] = { wins: 0, total: 0 };
+        }
+        activityMap[monthKey]++;
+        winRateMap[monthKey].total++;
+        if (game.teamWon) {
+            winRateMap[monthKey].wins++;
+        }
+    });
+    
+    // Convert to chart data
+    const months = Object.keys(activityMap).sort();
+    const activityData = months.map(month => activityMap[month]);
+    const winRateData = months.map(month => {
+        const stats = winRateMap[month];
+        return stats.total > 0 ? (stats.wins / stats.total * 100).toFixed(1) : 0;
+    });
+    
+    new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Games Played',
+                data: activityData,
+                backgroundColor: 'rgba(255, 193, 7, 0.8)',
+                borderColor: 'rgba(255, 193, 7, 1)',
+                borderWidth: 1,
+                yAxisID: 'y'
+            }, {
+                label: 'Win Rate (%)',
+                data: winRateData,
+                type: 'line',
+                borderColor: 'rgba(220, 53, 69, 1)',
+                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: { color: 'white' }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    beginAtZero: true,
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { 
+                        color: 'white',
+                        callback: function(value) { return value + '%'; }
+                    },
+                    grid: { drawOnChartArea: false }
+                }
+            }
+        }
+    });
+}
+
+// Create player streaks and recent form chart
+function createPlayerStreaksChart(games, player) {
+    const ctx = document.getElementById('playerStreaksChart');
+    if (!ctx) return;
+    
+    // Sort games chronologically
+    const sortedGames = [...games].sort((a, b) => {
+        const dateA = new Date(`${a.year}-${a.month}-${a.day}`);
+        const dateB = new Date(`${b.year}-${b.month}-${b.day}`);
+        return dateA - dateB;
+    });
+    
+    // Calculate streaks
+    let currentStreak = 0;
+    let longestWinStreak = 0;
+    let longestLossStreak = 0;
+    let currentStreakType = null;
+    
+    // Calculate recent form (last 10, 20 games)
+    const last10Games = sortedGames.slice(-10);
+    const last20Games = sortedGames.slice(-20);
+    
+    const last10Wins = last10Games.filter(g => g.teamWon).length;
+    const last20Wins = last20Games.filter(g => g.teamWon).length;
+    
+    const last10WinRate = last10Games.length > 0 ? (last10Wins / last10Games.length * 100).toFixed(1) : 0;
+    const last20WinRate = last20Games.length > 0 ? (last20Wins / last20Games.length * 100).toFixed(1) : 0;
+    
+    // Calculate streaks
+    sortedGames.forEach(game => {
+        if (game.teamWon) {
+            if (currentStreakType === 'win') {
+                currentStreak++;
+            } else {
+                currentStreak = 1;
+                currentStreakType = 'win';
+            }
+            longestWinStreak = Math.max(longestWinStreak, currentStreak);
+        } else {
+            if (currentStreakType === 'loss') {
+                currentStreak++;
+            } else {
+                currentStreak = 1;
+                currentStreakType = 'loss';
+            }
+            longestLossStreak = Math.max(longestLossStreak, currentStreak);
+        }
+    });
+    
+    // Current streak
+    const currentStreakValue = currentStreakType === 'win' ? currentStreak : -currentStreak;
+    
+    new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: ['Last 10 Games', 'Last 20 Games', 'Current Streak', 'Best Win Streak', 'Worst Loss Streak'],
+            datasets: [{
+                label: 'Performance Metrics',
+                data: [last10WinRate, last20WinRate, currentStreakValue, longestWinStreak, -longestLossStreak],
+                backgroundColor: [
+                    'rgba(25, 135, 84, 0.8)',
+                    'rgba(13, 110, 253, 0.8)',
+                    currentStreakValue >= 0 ? 'rgba(25, 135, 84, 0.8)' : 'rgba(220, 53, 69, 0.8)',
+                    'rgba(40, 167, 69, 0.8)',
+                    'rgba(220, 53, 69, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(25, 135, 84, 1)',
+                    'rgba(13, 110, 253, 1)',
+                    currentStreakValue >= 0 ? 'rgba(25, 135, 84, 1)' : 'rgba(220, 53, 69, 1)',
+                    'rgba(40, 167, 69, 1)',
+                    'rgba(220, 53, 69, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: { color: 'white' }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label;
+                            const value = context.parsed.y;
+                            
+                            if (label.includes('Last')) {
+                                return `${label}: ${value}% win rate`;
+                            } else if (label === 'Current Streak') {
+                                return value >= 0 ? `${value} game win streak` : `${Math.abs(value)} game loss streak`;
+                            } else if (label.includes('Win')) {
+                                return `${value} games`;
+                            } else {
+                                return `${Math.abs(value)} games`;
+                            }
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                x: {
+                    ticks: { 
+                        color: 'white',
+                        maxRotation: 45
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            }
+        }
+    });
+}
+
+// Create modal player win rate evolution chart
+function createModalPlayerWinRateEvolutionChart(playerGames, selectedPlayer) {
+    // Sort games chronologically
+    const sortedGames = [...playerGames].sort((a, b) => {
+        const dateA = new Date(`${a.year}-${a.month}-${a.day}`);
+        const dateB = new Date(`${b.year}-${b.month}-${b.day}`);
+        return dateA - dateB;
+    });
+    
+    // Calculate cumulative win rate at each game
+    const evolutionData = [];
+    let cumulativeWins = 0;
+    
+    sortedGames.forEach((game, index) => {
+        if (game.teamWon) cumulativeWins++;
+        const gameNumber = index + 1;
+        const cumulativeWinRate = (cumulativeWins / gameNumber) * 100;
+        
+        evolutionData.push({
+            gameNumber,
+            winRate: cumulativeWinRate.toFixed(1),
+            wins: cumulativeWins,
+            total: gameNumber
+        });
+    });
+    
+    const ctx = document.getElementById('modalChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: evolutionData.map(d => `Game ${d.gameNumber}`),
+            datasets: [{
+                label: 'Cumulative Win Rate (%)',
+                data: evolutionData.map(d => d.winRate),
+                borderColor: 'rgba(25, 135, 84, 1)',
+                backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: 'white' }
+                },
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const dataIndex = context.dataIndex;
+                            const data = evolutionData[dataIndex];
+                            return `Record: ${data.wins}/${data.total}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { 
+                        color: 'white',
+                        callback: function(value) { return value + '%'; }
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            }
+        }
+    });
+}
+
+// Create modal player opposition chart
+function createModalPlayerOppositionChart(playerGames, selectedPlayer) {
+    // Calculate opponent stats
+    const opponentStats = {};
+    
+    playerGames.forEach(game => {
+        let opponent = null;
+        if (game.commander1 === selectedPlayer) {
+            opponent = game.commander2;
+        } else if (game.commander2 === selectedPlayer) {
+            opponent = game.commander1;
+        }
+        
+        if (opponent) {
+            if (!opponentStats[opponent]) {
+                opponentStats[opponent] = { wins: 0, total: 0 };
+            }
+            opponentStats[opponent].total++;
+            if (game.teamWon) {
+                opponentStats[opponent].wins++;
+            }
+        }
+    });
+    
+    // Filter opponents with at least 2 games and sort by total games
+    const qualifiedOpponents = Object.entries(opponentStats)
+        .filter(([, stats]) => stats.total >= 2)
+        .map(([opponent, stats]) => ({
+            opponent,
+            winRate: (stats.wins / stats.total * 100).toFixed(1),
+            wins: stats.wins,
+            total: stats.total
+        }))
+        .sort((a, b) => b.total - a.total);
+    
+    const ctx = document.getElementById('modalChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: qualifiedOpponents.map(o => o.opponent),
+            datasets: [{
+                label: 'Win Rate (%)',
+                data: qualifiedOpponents.map(o => o.winRate),
+                backgroundColor: 'rgba(13, 202, 240, 0.8)',
+                borderColor: 'rgba(13, 202, 240, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: 'white' }
+                },
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const dataIndex = context.dataIndex;
+                            const opponent = qualifiedOpponents[dataIndex];
+                            return `Record: ${opponent.wins}/${opponent.total} games`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                x: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { 
+                        color: 'white',
+                        callback: function(value) { return value + '%'; }
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            }
+        }
+    });
+}
+
+// Create modal player heatmap chart
+function createModalPlayerHeatmapChart(playerGames, selectedPlayer) {
+    // Create month-day activity map
+    const activityMap = {};
+    const winRateMap = {};
+    
+    playerGames.forEach(game => {
+        const monthKey = `${game.year}-${game.month}`;
+        if (!activityMap[monthKey]) {
+            activityMap[monthKey] = 0;
+            winRateMap[monthKey] = { wins: 0, total: 0 };
+        }
+        activityMap[monthKey]++;
+        winRateMap[monthKey].total++;
+        if (game.teamWon) {
+            winRateMap[monthKey].wins++;
+        }
+    });
+    
+    // Convert to chart data
+    const months = Object.keys(activityMap).sort();
+    const activityData = months.map(month => activityMap[month]);
+    const winRateData = months.map(month => {
+        const stats = winRateMap[month];
+        return stats.total > 0 ? (stats.wins / stats.total * 100).toFixed(1) : 0;
+    });
+    
+    const ctx = document.getElementById('modalChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Games Played',
+                data: activityData,
+                backgroundColor: 'rgba(255, 193, 7, 0.8)',
+                borderColor: 'rgba(255, 193, 7, 1)',
+                borderWidth: 1,
+                yAxisID: 'y'
+            }, {
+                label: 'Win Rate (%)',
+                data: winRateData,
+                type: 'line',
+                borderColor: 'rgba(220, 53, 69, 1)',
+                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: 'white' }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    beginAtZero: true,
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { 
+                        color: 'white',
+                        callback: function(value) { return value + '%'; }
+                    },
+                    grid: { drawOnChartArea: false }
+                }
+            }
+        }
+    });
+}
+
+// Create modal player streaks chart
+function createModalPlayerStreaksChart(playerGames, selectedPlayer) {
+    // Sort games chronologically
+    const sortedGames = [...playerGames].sort((a, b) => {
+        const dateA = new Date(`${a.year}-${a.month}-${a.day}`);
+        const dateB = new Date(`${b.year}-${b.month}-${b.day}`);
+        return dateA - dateB;
+    });
+    
+    // Calculate streaks
+    let currentStreak = 0;
+    let longestWinStreak = 0;
+    let longestLossStreak = 0;
+    let currentStreakType = null;
+    
+    // Calculate recent form (last 10, 20 games)
+    const last10Games = sortedGames.slice(-10);
+    const last20Games = sortedGames.slice(-20);
+    
+    const last10Wins = last10Games.filter(g => g.teamWon).length;
+    const last20Wins = last20Games.filter(g => g.teamWon).length;
+    
+    const last10WinRate = last10Games.length > 0 ? (last10Wins / last10Games.length * 100).toFixed(1) : 0;
+    const last20WinRate = last20Games.length > 0 ? (last20Wins / last20Games.length * 100).toFixed(1) : 0;
+    
+    // Calculate streaks
+    sortedGames.forEach(game => {
+        if (game.teamWon) {
+            if (currentStreakType === 'win') {
+                currentStreak++;
+            } else {
+                currentStreak = 1;
+                currentStreakType = 'win';
+            }
+            longestWinStreak = Math.max(longestWinStreak, currentStreak);
+        } else {
+            if (currentStreakType === 'loss') {
+                currentStreak++;
+            } else {
+                currentStreak = 1;
+                currentStreakType = 'loss';
+            }
+            longestLossStreak = Math.max(longestLossStreak, currentStreak);
+        }
+    });
+    
+    // Current streak
+    const currentStreakValue = currentStreakType === 'win' ? currentStreak : -currentStreak;
+    
+    const ctx = document.getElementById('modalChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Last 10 Games', 'Last 20 Games', 'Current Streak', 'Best Win Streak', 'Worst Loss Streak'],
+            datasets: [{
+                label: 'Performance Metrics',
+                data: [last10WinRate, last20WinRate, currentStreakValue, longestWinStreak, -longestLossStreak],
+                backgroundColor: [
+                    'rgba(25, 135, 84, 0.8)',
+                    'rgba(13, 110, 253, 0.8)',
+                    currentStreakValue >= 0 ? 'rgba(25, 135, 84, 0.8)' : 'rgba(220, 53, 69, 0.8)',
+                    'rgba(40, 167, 69, 0.8)',
+                    'rgba(220, 53, 69, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(25, 135, 84, 1)',
+                    'rgba(13, 110, 253, 1)',
+                    currentStreakValue >= 0 ? 'rgba(25, 135, 84, 1)' : 'rgba(220, 53, 69, 1)',
+                    'rgba(40, 167, 69, 1)',
+                    'rgba(220, 53, 69, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: 'white' }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label;
+                            const value = context.parsed.x;
+                            
+                            if (label.includes('Last')) {
+                                return `${label}: ${value}% win rate`;
+                            } else if (label === 'Current Streak') {
+                                return value >= 0 ? `${value} game win streak` : `${Math.abs(value)} game loss streak`;
+                            } else if (label.includes('Win')) {
+                                return `${value} games`;
+                            } else {
+                                return `${Math.abs(value)} games`;
+                            }
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                x: {
                     ticks: { color: 'white' },
                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                 }
