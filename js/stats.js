@@ -41,11 +41,13 @@ async function loadGameData() {
         // Process all games into a flat array for easier analysis
         processAllGames();
         
+        // Initialize the dashboard only after allGames is ready
+        initializeDashboard();
+        // Ensure dropdowns are populated after data is loaded
+        handleAnalysisTypeChange();
+        
         // Update the timestamp in the navbar
         updateTimestamp();
-        
-        // Initialize the dashboard
-        initializeDashboard();
         
         console.log('Data loaded successfully:', gameData);
     } catch (error) {
@@ -161,6 +163,8 @@ function initializeDashboard() {
                                 <select id="analysisType" class="form-select bg-dark text-light border-secondary">
                                     <option value="general">General Overview</option>
                                     <option value="player">Player Analysis</option>
+                                    <option value="map">Map Analysis</option>
+                                    <option value="faction">Faction Analysis</option>
                                 </select>
                             </div>
                             <div class="col-md-3" id="filterSection" style="display: none;">
@@ -304,6 +308,17 @@ function handleAnalysisTypeChange() {
         allMaps.forEach(map => {
             filterSelect.innerHTML += `<option value="${map}">${map}</option>`;
         });
+    } else if (analysisValue === 'faction') {
+        // Get all factions
+        const allFactions = new Set();
+        allGames.forEach(game => {
+            if (game.faction1) allFactions.add(game.faction1);
+            if (game.faction2) allFactions.add(game.faction2);
+        });
+        const factions = [...allFactions].sort();
+        factions.forEach(faction => {
+            filterSelect.innerHTML += `<option value="${faction}">${faction}</option>`;
+        });
     }
     
     filterSelect.value = '';
@@ -357,6 +372,9 @@ function loadContent() {
         case 'map':
             loadMapAnalysis();
             break;
+        case 'faction':
+            loadFactionAnalysis();
+            break;
     }
 }
 
@@ -391,6 +409,8 @@ function getFilteredGames() {
         });
     } else if (filterValue && analysisType === 'map') {
         filtered = filtered.filter(game => game.map === filterValue);
+    } else if (filterValue && analysisType === 'faction') {
+        filtered = filtered.filter(game => game.faction1 === filterValue || game.faction2 === filterValue);
     }
     
     return filtered;
@@ -2779,6 +2799,606 @@ function createPlayerTeamSizeChart(games, player) {
                         text: 'Games Played',
                         color: 'white'
                     }
+                }
+            }
+        }
+    });
+}
+
+// Load map analysis
+function loadMapAnalysis() {
+    const games = getFilteredGames();
+    const filterSelectElement = document.getElementById('filterSelect');
+    const mainAnalysisElement = document.getElementById('mainAnalysis');
+    
+    if (!filterSelectElement || !mainAnalysisElement) {
+        return;
+    }
+    
+    const selectedMap = filterSelectElement.value;
+    updateSummaryStats(games);
+    
+    if (!selectedMap) {
+        mainAnalysisElement.innerHTML = `
+            <div class="alert alert-info">
+                <h5>Map Analysis</h5>
+                <p>Select a map from the filter dropdown to view detailed analysis.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Filter games for selected map
+    const mapGames = games.filter(game => game.map === selectedMap);
+    
+    mainAnalysisElement.innerHTML = `
+        <div class="row">
+            <!-- Map Profile Card -->
+            <div class="col-12 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">${selectedMap} - Map Profile</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 class="text-primary">${mapGames.length}</h3>
+                                    <p>Total Games</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 class="text-success">${((mapGames.filter(g => g.winner === g.commander1).length / mapGames.length) * 100).toFixed(1)}%</h3>
+                                    <p>Team 1 Win Rate</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 class="text-info">${((mapGames.filter(g => g.winner === g.commander2).length / mapGames.length) * 100).toFixed(1)}%</h3>
+                                    <p>Team 2 Win Rate</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 class="text-warning">${(mapGames.reduce((acc, g) => acc + (g.time ? parseInt(g.time) : 0), 0) / mapGames.length).toFixed(1)}</h3>
+                                    <p>Avg Game Time</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Faction Performance -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Faction Performance</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="mapFactionPerformance" data-chart-title="${selectedMap} - Faction Performance">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="mapFactionPerformanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Duration Distribution -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Game Duration Distribution</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="mapGameDuration" data-chart-title="${selectedMap} - Game Duration">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="mapGameDurationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Create map analysis charts
+    createMapFactionPerformanceChart(mapGames, selectedMap);
+    createMapGameDurationChart(mapGames, selectedMap);
+    
+    // Add event listeners for maximize buttons
+    document.querySelectorAll('.maximize-chart').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const chartType = e.currentTarget.dataset.chartType;
+            const chartTitle = e.currentTarget.dataset.chartTitle;
+            showModalChart(mapGames, chartType, chartTitle, selectedMap);
+        });
+    });
+}
+
+// Load faction analysis
+function loadFactionAnalysis() {
+    const games = getFilteredGames();
+    const filterSelectElement = document.getElementById('filterSelect');
+    const mainAnalysisElement = document.getElementById('mainAnalysis');
+    
+    if (!filterSelectElement || !mainAnalysisElement) {
+        return;
+    }
+    
+    const selectedFaction = filterSelectElement.value;
+    updateSummaryStats(games);
+    
+    if (!selectedFaction) {
+        mainAnalysisElement.innerHTML = `
+            <div class="alert alert-info">
+                <h5>Faction Analysis</h5>
+                <p>Select a faction from the filter dropdown to view detailed analysis.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Filter games for selected faction
+    const factionGames = games.filter(game => game.faction1 === selectedFaction || game.faction2 === selectedFaction);
+    
+    mainAnalysisElement.innerHTML = `
+        <div class="row">
+            <!-- Faction Profile Card -->
+            <div class="col-12 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">${selectedFaction} - Faction Profile</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 class="text-primary">${factionGames.length}</h3>
+                                    <p>Total Games</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 class="text-success">${((factionGames.filter(g => (g.faction1 === selectedFaction && g.winner === g.commander1) || (g.faction2 === selectedFaction && g.winner === g.commander2)).length / factionGames.length) * 100).toFixed(1)}%</h3>
+                                    <p>Win Rate</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 class="text-info">${((factionGames.filter(g => g.faction1 === selectedFaction).length / factionGames.length) * 100).toFixed(1)}%</h3>
+                                    <p>Team 1 Rate</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 class="text-warning">${(factionGames.reduce((acc, g) => acc + (g.time ? parseInt(g.time) : 0), 0) / factionGames.length).toFixed(1)}</h3>
+                                    <p>Avg Game Time</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Performance -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Map Performance</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="factionMapPerformance" data-chart-title="${selectedFaction} - Map Performance">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="factionMapPerformanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Duration Distribution -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Game Duration Distribution</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="factionGameDuration" data-chart-title="${selectedFaction} - Game Duration">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="factionGameDurationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Create faction analysis charts
+    createFactionMapPerformanceChart(factionGames, selectedFaction);
+    createFactionGameDurationChart(factionGames, selectedFaction);
+    
+    // Add event listeners for maximize buttons
+    document.querySelectorAll('.maximize-chart').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const chartType = e.currentTarget.dataset.chartType;
+            const chartTitle = e.currentTarget.dataset.chartTitle;
+            showModalChart(factionGames, chartType, chartTitle, selectedFaction);
+        });
+    });
+}
+
+// Create map faction performance chart
+function createMapFactionPerformanceChart(games, map) {
+    const factionStats = {};
+    
+    games.forEach(game => {
+        if (game.faction1) {
+            if (!factionStats[game.faction1]) {
+                factionStats[game.faction1] = { games: 0, wins: 0 };
+            }
+            factionStats[game.faction1].games++;
+            if (game.winner === game.commander1) {
+                factionStats[game.faction1].wins++;
+            }
+        }
+        if (game.faction2) {
+            if (!factionStats[game.faction2]) {
+                factionStats[game.faction2] = { games: 0, wins: 0 };
+            }
+            factionStats[game.faction2].games++;
+            if (game.winner === game.commander2) {
+                factionStats[game.faction2].wins++;
+            }
+        }
+    });
+    
+    const factionPerformance = Object.entries(factionStats)
+        .map(([faction, stats]) => ({
+            faction,
+            games: stats.games,
+            winRate: (stats.wins / stats.games) * 100
+        }))
+        .sort((a, b) => b.winRate - a.winRate);
+    
+    safeCreateChart('mapFactionPerformanceChart', {
+        type: 'bar',
+        data: {
+            labels: factionPerformance.map(f => f.faction),
+            datasets: [
+                {
+                    label: 'Win Rate (%)',
+                    data: factionPerformance.map(f => f.winRate),
+                    backgroundColor: 'rgba(25, 135, 84, 0.8)',
+                    borderColor: 'rgba(25, 135, 84, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Games Played',
+                    data: factionPerformance.map(f => f.games),
+                    backgroundColor: 'rgba(108, 117, 125, 0.8)',
+                    borderColor: 'rgba(108, 117, 125, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Win Rate (%)',
+                        color: 'white'
+                    },
+                    ticks: { color: 'white' },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Games Played',
+                        color: 'white'
+                    },
+                    ticks: { color: 'white' },
+                    grid: {
+                        drawOnChartArea: false
+                    }
+                },
+                x: {
+                    ticks: { color: 'white' },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: { color: 'white' }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.dataset.label || '';
+                            const value = context.parsed.y;
+                            return `${label}: ${value.toFixed(1)}${label.includes('Rate') ? '%' : ''}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Create map game duration chart
+function createMapGameDurationChart(games, map) {
+    const durationStats = {};
+    
+    games.forEach(game => {
+        if (game.time) {
+            const duration = parseInt(game.time);
+            if (!isNaN(duration)) {
+                const key = Math.floor(duration / 5) * 5;
+                if (!durationStats[key]) {
+                    durationStats[key] = 0;
+                }
+                durationStats[key]++;
+            }
+        }
+    });
+    
+    const sortedDurations = Object.entries(durationStats)
+        .map(([duration, count]) => ({
+            duration: parseInt(duration),
+            count
+        }))
+        .sort((a, b) => a.duration - b.duration);
+    
+    safeCreateChart('mapGameDurationChart', {
+        type: 'bar',
+        data: {
+            labels: sortedDurations.map(d => `${d.duration}-${d.duration + 4} min`),
+            datasets: [{
+                label: 'Number of Games',
+                data: sortedDurations.map(d => d.count),
+                backgroundColor: 'rgba(13, 202, 240, 0.8)',
+                borderColor: 'rgba(13, 202, 240, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Games',
+                        color: 'white'
+                    },
+                    ticks: { color: 'white' },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Game Duration',
+                        color: 'white'
+                    },
+                    ticks: { color: 'white' },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: { color: 'white' }
+                }
+            }
+        }
+    });
+}
+
+// Create faction map performance chart
+function createFactionMapPerformanceChart(games, faction) {
+    const mapStats = {};
+    
+    games.forEach(game => {
+        if (!mapStats[game.map]) {
+            mapStats[game.map] = { games: 0, wins: 0 };
+        }
+        mapStats[game.map].games++;
+        if ((game.faction1 === faction && game.winner === game.commander1) ||
+            (game.faction2 === faction && game.winner === game.commander2)) {
+            mapStats[game.map].wins++;
+        }
+    });
+    
+    const mapPerformance = Object.entries(mapStats)
+        .map(([map, stats]) => ({
+            map,
+            games: stats.games,
+            winRate: (stats.wins / stats.games) * 100
+        }))
+        .sort((a, b) => b.winRate - a.winRate);
+    
+    safeCreateChart('factionMapPerformanceChart', {
+        type: 'bar',
+        data: {
+            labels: mapPerformance.map(m => m.map),
+            datasets: [
+                {
+                    label: 'Win Rate (%)',
+                    data: mapPerformance.map(m => m.winRate),
+                    backgroundColor: 'rgba(25, 135, 84, 0.8)',
+                    borderColor: 'rgba(25, 135, 84, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Games Played',
+                    data: mapPerformance.map(m => m.games),
+                    backgroundColor: 'rgba(108, 117, 125, 0.8)',
+                    borderColor: 'rgba(108, 117, 125, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Win Rate (%)',
+                        color: 'white'
+                    },
+                    ticks: { color: 'white' },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Games Played',
+                        color: 'white'
+                    },
+                    ticks: { color: 'white' },
+                    grid: {
+                        drawOnChartArea: false
+                    }
+                },
+                x: {
+                    ticks: { color: 'white' },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: { color: 'white' }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.dataset.label || '';
+                            const value = context.parsed.y;
+                            return `${label}: ${value.toFixed(1)}${label.includes('Rate') ? '%' : ''}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Create faction game duration chart
+function createFactionGameDurationChart(games, faction) {
+    const durationStats = {};
+    
+    games.forEach(game => {
+        if (game.time) {
+            const duration = parseInt(game.time);
+            if (!isNaN(duration)) {
+                const key = Math.floor(duration / 5) * 5;
+                if (!durationStats[key]) {
+                    durationStats[key] = 0;
+                }
+                durationStats[key]++;
+            }
+        }
+    });
+    
+    const sortedDurations = Object.entries(durationStats)
+        .map(([duration, count]) => ({
+            duration: parseInt(duration),
+            count
+        }))
+        .sort((a, b) => a.duration - b.duration);
+    
+    safeCreateChart('factionGameDurationChart', {
+        type: 'bar',
+        data: {
+            labels: sortedDurations.map(d => `${d.duration}-${d.duration + 4} min`),
+            datasets: [{
+                label: 'Number of Games',
+                data: sortedDurations.map(d => d.count),
+                backgroundColor: 'rgba(13, 202, 240, 0.8)',
+                borderColor: 'rgba(13, 202, 240, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Games',
+                        color: 'white'
+                    },
+                    ticks: { color: 'white' },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Game Duration',
+                        color: 'white'
+                    },
+                    ticks: { color: 'white' },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: { color: 'white' }
                 }
             }
         }
