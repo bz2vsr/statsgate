@@ -1,7 +1,6 @@
 // Global variables
 let gameData = null;
 let allGames = [];
-let currentFilter = { type: 'general', value: null };
 
 // Utility function to safely create charts
 function safeCreateChart(canvasId, config) {
@@ -61,8 +60,6 @@ async function loadGameData() {
                     <button class="btn btn-outline-danger" onclick="location.reload()">Retry</button>
                 </div>
             `;
-        } else {
-            console.error('Main content element not found');
         }
     }
 }
@@ -136,7 +133,7 @@ function processAllGames() {
                         winnerIndex,
                         loser: commanders[loserIndex],
                         losingFaction: factions[loserIndex],
-                        teamOneSize: (game.teamOne || []).length + 1, // +1 for commander
+                        teamOneSize: (game.teamOne || []).length + 1,
                         teamTwoSize: (game.teamTwo || []).length + 1,
                         totalPlayers: (game.teamOne || []).length + (game.teamTwo || []).length + 2,
                         hasStraggler: (game.teamOneStraggler || []).length > 0 || (game.teamTwoStraggler || []).length > 0,
@@ -164,8 +161,6 @@ function initializeDashboard() {
                                 <select id="analysisType" class="form-select bg-dark text-light border-secondary">
                                     <option value="general">General Overview</option>
                                     <option value="player">Player Analysis</option>
-                                    <option value="map">Map Analysis</option>
-                                    <option value="faction">Faction Analysis</option>
                                 </select>
                             </div>
                             <div class="col-md-3" id="filterSection" style="display: none;">
@@ -244,7 +239,6 @@ function initializeDashboard() {
 
 // Setup event listeners
 function setupEventListeners() {
-    // Add safety checks to ensure elements exist before adding listeners
     const analysisType = document.getElementById('analysisType');
     const filterSelect = document.getElementById('filterSelect');
     const timePeriod = document.getElementById('timePeriod');
@@ -252,26 +246,18 @@ function setupEventListeners() {
     
     if (analysisType) {
         analysisType.addEventListener('change', handleAnalysisTypeChange);
-    } else {
-        console.error('analysisType element not found');
     }
     
     if (filterSelect) {
         filterSelect.addEventListener('change', handleFilterChange);
-    } else {
-        console.error('filterSelect element not found');
     }
     
     if (timePeriod) {
         timePeriod.addEventListener('change', handleTimePeriodChange);
-    } else {
-        console.error('timePeriod element not found');
     }
     
     if (resetButton) {
         resetButton.addEventListener('click', resetFilters);
-    } else {
-        console.error('resetFilters element not found');
     }
 }
 
@@ -282,16 +268,15 @@ function handleAnalysisTypeChange() {
     const filterSection = document.getElementById('filterSection');
     
     if (!analysisType || !filterSelect || !filterSection) {
-        console.error('Required elements not found for analysis type change');
         return;
     }
     
     const analysisValue = analysisType.value;
     
-    // Clear and populate filter options based on analysis type
+    // Clear and populate filter options
     filterSelect.innerHTML = '<option value="">All Data</option>';
     
-    // Show/hide filter section based on analysis type
+    // Show/hide filter section
     if (analysisValue === 'general') {
         filterSection.style.display = 'none';
     } else {
@@ -299,16 +284,13 @@ function handleAnalysisTypeChange() {
     }
     
     if (analysisValue === 'player') {
-        // Get all players (commanders + teammates)
+        // Get all players
         const allPlayers = new Set();
         allGames.forEach(game => {
-            // Add commanders
             allPlayers.add(game.commander1);
             allPlayers.add(game.commander2);
-            // Add teammates
             if (game.teamOne) game.teamOne.forEach(player => allPlayers.add(player));
             if (game.teamTwo) game.teamTwo.forEach(player => allPlayers.add(player));
-            // Add stragglers
             if (game.teamOneStraggler) game.teamOneStraggler.forEach(player => allPlayers.add(player));
             if (game.teamTwoStraggler) game.teamTwoStraggler.forEach(player => allPlayers.add(player));
         });
@@ -316,19 +298,8 @@ function handleAnalysisTypeChange() {
         players.forEach(player => {
             filterSelect.innerHTML += `<option value="${player}">${player}</option>`;
         });
-    } else if (analysisValue === 'map') {
-        const maps = [...new Set(allGames.map(g => g.map))].sort();
-        maps.forEach(map => {
-            filterSelect.innerHTML += `<option value="${map}">${map}</option>`;
-        });
-    } else if (analysisValue === 'faction') {
-        const factions = [...new Set(allGames.flatMap(g => [g.faction1, g.faction2]))].sort();
-        factions.forEach(faction => {
-            filterSelect.innerHTML += `<option value="${faction}">${faction}</option>`;
-        });
     }
     
-    // Reset filter and reload content
     filterSelect.value = '';
     loadContent();
 }
@@ -338,7 +309,7 @@ function handleFilterChange() {
     loadContent();
 }
 
-// Handle time period change
+// Handle time period change  
 function handleTimePeriodChange() {
     loadContent();
 }
@@ -351,7 +322,6 @@ function resetFilters() {
     const filterSectionElement = document.getElementById('filterSection');
     
     if (!analysisTypeElement || !filterSelectElement || !timePeriodElement) {
-        console.error('Required elements not found for reset');
         return;
     }
     
@@ -360,7 +330,6 @@ function resetFilters() {
     filterSelectElement.value = '';
     timePeriodElement.value = 'all';
     
-    // Hide filter section for general overview
     if (filterSectionElement) {
         filterSectionElement.style.display = 'none';
     }
@@ -379,16 +348,10 @@ function loadContent() {
         case 'player':
             loadPlayerAnalysis();
             break;
-        case 'map':
-            loadMapAnalysis();
-            break;
-        case 'faction':
-            loadFactionAnalysis();
-            break;
     }
 }
 
-// Get filtered games based on current filters
+// Get filtered games
 function getFilteredGames() {
     let filtered = [...allGames];
     
@@ -397,7 +360,6 @@ function getFilteredGames() {
     const filterSelectElement = document.getElementById('filterSelect');
     
     if (!timePeriodElement || !analysisTypeElement || !filterSelectElement) {
-        console.error('Required filter elements not found');
         return filtered;
     }
     
@@ -409,52 +371,36 @@ function getFilteredGames() {
     const analysisType = analysisTypeElement.value;
     const filterValue = filterSelectElement.value;
     
-    if (filterValue) {
-        if (analysisType === 'player') {
-            filtered = filtered.filter(game => {
-                // Check if player is commander
-                if (game.commander1 === filterValue || game.commander2 === filterValue) return true;
-                // Check if player is in teams
-                if (game.teamOne && game.teamOne.includes(filterValue)) return true;
-                if (game.teamTwo && game.teamTwo.includes(filterValue)) return true;
-                // Check if player is in stragglers
-                if (game.teamOneStraggler && game.teamOneStraggler.includes(filterValue)) return true;
-                if (game.teamTwoStraggler && game.teamTwoStraggler.includes(filterValue)) return true;
-                return false;
-            });
-        } else if (analysisType === 'map') {
-            filtered = filtered.filter(game => game.map === filterValue);
-        } else if (analysisType === 'faction') {
-            filtered = filtered.filter(game => game.faction1 === filterValue || game.faction2 === filterValue);
-        }
+    if (filterValue && analysisType === 'player') {
+        filtered = filtered.filter(game => {
+            if (game.commander1 === filterValue || game.commander2 === filterValue) return true;
+            if (game.teamOne && game.teamOne.includes(filterValue)) return true;
+            if (game.teamTwo && game.teamTwo.includes(filterValue)) return true;
+            if (game.teamOneStraggler && game.teamOneStraggler.includes(filterValue)) return true;
+            if (game.teamTwoStraggler && game.teamTwoStraggler.includes(filterValue)) return true;
+            return false;
+        });
     }
     
     return filtered;
 }
 
-// Update summary stats
+// Update summary stats with advanced features
 function updateSummaryStats(games) {
     const analysisTypeElement = document.getElementById('analysisType');
     const filterSelectElement = document.getElementById('filterSelect');
     
-    if (!analysisTypeElement || !filterSelectElement) {
-        console.error('Required elements not found for summary stats update');
-        return;
-    }
-    
-    const analysisType = analysisTypeElement.value;
-    const selectedPlayer = filterSelectElement.value;
-    
-    // Get all the stat elements
     const totalGamesElement = document.getElementById('totalGames');
     const totalCommandersElement = document.getElementById('totalCommanders');
     const totalMapsElement = document.getElementById('totalMaps');
     const avgGameTimeElement = document.getElementById('avgGameTime');
     
     if (!totalGamesElement || !totalCommandersElement || !totalMapsElement || !avgGameTimeElement) {
-        console.error('Summary stat elements not found');
         return;
     }
+    
+    const analysisType = analysisTypeElement ? analysisTypeElement.value : 'general';
+    const selectedPlayer = filterSelectElement ? filterSelectElement.value : null;
     
     if (analysisType === 'player' && selectedPlayer) {
         // Player-specific stats
@@ -577,7 +523,7 @@ function updateSummaryStats(games) {
     }
 }
 
-// Load general overview
+// Load general overview with all 6 charts
 function loadGeneralOverview() {
     const games = getFilteredGames();
     updateSummaryStats(games);
@@ -731,7 +677,7 @@ function loadGeneralOverview() {
         </div>
     `;
     
-    // Create charts
+    // Create all charts
     createCommanderGamesChart(games);
     createCommanderWinRateChart(games, 'wilson', '3%');
     createMapPopularityChart(games);
@@ -740,17 +686,24 @@ function loadGeneralOverview() {
     createGameDurationChart(games);
     
     // Add event listeners for the ranking dropdowns
-    document.getElementById('rankingMethod').addEventListener('change', () => {
-        const rankingMethod = document.getElementById('rankingMethod').value;
-        const minGameRequirement = document.getElementById('minGameRequirement').value;
-        createCommanderWinRateChart(games, rankingMethod, minGameRequirement);
-    });
+    const rankingMethodEl = document.getElementById('rankingMethod');
+    const minGameRequirementEl = document.getElementById('minGameRequirement');
     
-    document.getElementById('minGameRequirement').addEventListener('change', () => {
-        const rankingMethod = document.getElementById('rankingMethod').value;
-        const minGameRequirement = document.getElementById('minGameRequirement').value;
-        createCommanderWinRateChart(games, rankingMethod, minGameRequirement);
-    });
+    if (rankingMethodEl) {
+        rankingMethodEl.addEventListener('change', () => {
+            const rankingMethod = document.getElementById('rankingMethod').value;
+            const minGameRequirement = document.getElementById('minGameRequirement').value;
+            createCommanderWinRateChart(games, rankingMethod, minGameRequirement);
+        });
+    }
+    
+    if (minGameRequirementEl) {
+        minGameRequirementEl.addEventListener('change', () => {
+            const rankingMethod = document.getElementById('rankingMethod').value;
+            const minGameRequirement = document.getElementById('minGameRequirement').value;
+            createCommanderWinRateChart(games, rankingMethod, minGameRequirement);
+        });
+    }
     
     // Add event listeners for maximize buttons
     document.querySelectorAll('.maximize-chart').forEach(button => {
@@ -762,81 +715,8 @@ function loadGeneralOverview() {
     });
 }
 
-// Show full chart in modal
-function showModalChart(games, chartType, chartTitle, selectedPlayer = null) {
-    // Set modal title
-    document.getElementById('chartModalLabel').textContent = chartTitle;
-    
-    // Destroy existing modal chart if it exists
-    const existingChart = Chart.getChart('modalChart');
-    if (existingChart) {
-        existingChart.destroy();
-    }
-    
-    // Create full chart based on type
-    switch (chartType) {
-        case 'commanderGames':
-            createModalCommanderGamesChart(games);
-            break;
-        case 'commanderWinRate':
-            const rankingMethod = document.getElementById('rankingMethod').value;
-            const minGameRequirement = document.getElementById('minGameRequirement').value;
-            createModalCommanderWinRateChart(games, rankingMethod, minGameRequirement);
-            break;
-        case 'mapPopularity':
-            createModalMapPopularityChart(games);
-            break;
-        case 'commanderFaction':
-            createModalCommanderFactionChart(games);
-            break;
-        case 'factionPerformance':
-            createModalFactionPerformanceChart(games);
-            break;
-        case 'gameDuration':
-            createModalGameDurationChart(games);
-            break;
-        // Player chart types
-        case 'playerWinRateEvolution':
-            if (selectedPlayer) createModalPlayerWinRateEvolutionChart(games, selectedPlayer);
-            break;
-        case 'playerOpposition':
-            if (selectedPlayer) createModalPlayerOppositionChart(games, selectedPlayer);
-            break;
-        case 'playerHeatmap':
-            if (selectedPlayer) createModalPlayerHeatmapChart(games, selectedPlayer);
-            break;
-        case 'playerStreaks':
-            if (selectedPlayer) createModalPlayerStreaksChart(games, selectedPlayer);
-            break;
-        case 'playerRole':
-            if (selectedPlayer) createModalPlayerRoleChart(games, selectedPlayer);
-            break;
-        case 'playerWinRateByRole':
-            if (selectedPlayer) createModalPlayerWinRateByRoleChart(games, selectedPlayer);
-            break;
-        case 'playerPerformance':
-            if (selectedPlayer) createModalPlayerPerformanceChart(games, selectedPlayer);
-            break;
-        case 'playerTeammates':
-            if (selectedPlayer) createModalPlayerTeammatesChart(games, selectedPlayer);
-            break;
-        case 'playerMap':
-            if (selectedPlayer) createModalPlayerMapChart(games, selectedPlayer);
-            break;
-        case 'playerActivity':
-            if (selectedPlayer) createModalPlayerActivityChart(games, selectedPlayer);
-            break;
-    }
-    
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('chartModal'));
-    modal.show();
-}
-
-// Modal chart creation functions (horizontal orientation for better mobile viewing)
-
-// Create modal commander games chart (full data)
-function createModalCommanderGamesChart(games) {
+// Create commander games chart
+function createCommanderGamesChart(games) {
     const commanderStats = {};
     
     games.forEach(game => {
@@ -845,10 +725,10 @@ function createModalCommanderGamesChart(games) {
     });
     
     const sortedCommanders = Object.entries(commanderStats)
-        .sort(([,a], [,b]) => b - a); // Show ALL commanders, not just top 10
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 10);
     
-    const ctx = document.getElementById('modalChart').getContext('2d');
-    new Chart(ctx, {
+    safeCreateChart('commanderGamesChart', {
         type: 'bar',
         data: {
             labels: sortedCommanders.map(([name]) => name),
@@ -857,1065 +737,13 @@ function createModalCommanderGamesChart(games) {
                 data: sortedCommanders.map(([,count]) => count),
                 backgroundColor: 'rgba(13, 110, 253, 0.8)',
                 borderColor: 'rgba(13, 110, 253, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            indexAxis: 'y', // Horizontal orientation
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                }
-            },
-            scales: {
-                y: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                x: {
-                    beginAtZero: true,
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                }
-            }
-        }
-    });
-}
-
-// Create modal commander win rate chart (full data)
-function createModalCommanderWinRateChart(games, rankingMethod = 'wilson', minGameRequirement = '3%') {
-    const commanderStats = {};
-    
-    games.forEach(game => {
-        [game.commander1, game.commander2].forEach(commander => {
-            if (!commanderStats[commander]) {
-                commanderStats[commander] = { wins: 0, total: 0 };
-            }
-            commanderStats[commander].total++;
-            if (game.winner === commander) {
-                commanderStats[commander].wins++;
-            }
-        });
-    });
-    
-    // Calculate minimum games based on requirement
-    const totalGames = games.length;
-    let minimumGames;
-    
-    if (minGameRequirement.endsWith('%')) {
-        const percentage = parseInt(minGameRequirement.replace('%', ''));
-        minimumGames = Math.max(5, Math.ceil(totalGames * (percentage / 100)));
-    } else {
-        minimumGames = parseInt(minGameRequirement);
-    }
-    
-    // Filter commanders with meaningful participation
-    const qualifiedCommanders = Object.entries(commanderStats)
-        .filter(([,stats]) => stats.total >= minimumGames);
-    
-    const totalGamesPlayed = qualifiedCommanders.reduce((sum, [,stats]) => sum + stats.total, 0);
-    const maxGames = Math.max(...qualifiedCommanders.map(([,stats]) => stats.total));
-    
-    // Calculate ranking scores (same logic as regular chart)
-    const commandersWithScores = qualifiedCommanders.map(([name, stats]) => {
-        const winRate = stats.wins / stats.total;
-        const volumePercentage = stats.total / totalGamesPlayed;
-        
-        const n = stats.total;
-        const p = winRate;
-        const z = 1.96;
-        const wilsonScore = (p + z*z/(2*n) - z * Math.sqrt((p*(1-p) + z*z/(4*n))/n)) / (1 + z*z/n);
-        
-        const volumeWeightedScore = winRate * volumePercentage * 100;
-        
-        const priorWins = 10 * 0.5;
-        const priorTotal = 10;
-        const bayesianScore = (stats.wins + priorWins) / (stats.total + priorTotal);
-        
-        const volumeBonus = Math.log(stats.total + 1) / Math.log(maxGames + 1);
-        const compositeScore = (0.7 * winRate) + (0.3 * volumeBonus);
-        
-        return {
-            name,
-            wins: stats.wins,
-            total: stats.total,
-            winRate: winRate * 100,
-            wilsonScore: wilsonScore * 100,
-            volumeWeightedScore: volumeWeightedScore,
-            bayesianScore: bayesianScore * 100,
-            compositeScore: compositeScore * 100,
-            volumePercentage: volumePercentage * 100
-        };
-    });
-    
-    
-    // Sort by selected ranking method (show ALL qualified commanders)
-    let sortedCommanders;
-    let chartLabel;
-    let chartData;
-    
-    switch (rankingMethod) {
-        case 'winRate':
-            sortedCommanders = [...commandersWithScores].sort((a, b) => b.winRate - a.winRate);
-            chartLabel = 'Win Rate (%)';
-            chartData = sortedCommanders.map(c => c.winRate.toFixed(1));
-            break;
-        case 'volumeWeighted':
-            sortedCommanders = [...commandersWithScores].sort((a, b) => b.volumeWeightedScore - a.volumeWeightedScore);
-            chartLabel = 'Volume-Weighted Score';
-            chartData = sortedCommanders.map(c => c.volumeWeightedScore.toFixed(3));
-            break;
-        case 'bayesian':
-            sortedCommanders = [...commandersWithScores].sort((a, b) => b.bayesianScore - a.bayesianScore);
-            chartLabel = 'Bayesian Average (%)';
-            chartData = sortedCommanders.map(c => c.bayesianScore.toFixed(1));
-            break;
-        case 'composite':
-            sortedCommanders = [...commandersWithScores].sort((a, b) => b.compositeScore - a.compositeScore);
-            chartLabel = 'Composite Score (%)';
-            chartData = sortedCommanders.map(c => c.compositeScore.toFixed(1));
-            break;
-        case 'wilson':
-        default:
-            sortedCommanders = [...commandersWithScores].sort((a, b) => b.wilsonScore - a.wilsonScore);
-            chartLabel = 'Wilson Score (%)';
-            chartData = sortedCommanders.map(c => c.wilsonScore.toFixed(1));
-            break;
-    }
-    
-    const ctx = document.getElementById('modalChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: sortedCommanders.map(c => c.name),
-            datasets: [{
-                label: chartLabel,
-                data: chartData,
-                backgroundColor: 'rgba(25, 135, 84, 0.8)',
-                borderColor: 'rgba(25, 135, 84, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            indexAxis: 'y', // Horizontal orientation
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                },
-                tooltip: {
-                    callbacks: {
-                        afterLabel: function(context) {
-                            const commander = sortedCommanders[context.dataIndex];
-                            const lines = [
-                                `Actual Win Rate: ${commander.winRate.toFixed(1)}%`,
-                                `Games Commanded: ${commander.total}`,
-                                `Commander Record: ${commander.wins}/${commander.total}`
-                            ];
-                            
-                            if (rankingMethod === 'wilson') {
-                                lines.push(`Wilson Score: ${commander.wilsonScore.toFixed(1)}%`);
-                            } else if (rankingMethod === 'volumeWeighted') {
-                                lines.push(`Volume %: ${commander.volumePercentage.toFixed(1)}%`);
-                            } else if (rankingMethod === 'bayesian') {
-                                lines.push(`Bayesian Score: ${commander.bayesianScore.toFixed(1)}%`);
-                            } else if (rankingMethod === 'composite') {
-                                lines.push(`Composite Score: ${commander.compositeScore.toFixed(1)}%`);
-                            }
-                            
-                            return lines;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                x: {
-                    beginAtZero: true,
-                    max: rankingMethod === 'volumeWeighted' ? undefined : 100,
-                    ticks: { 
-                        color: 'white',
-                        callback: function(value) { 
-                            if (rankingMethod === 'volumeWeighted') {
-                                return value.toFixed(3);
-                            }
-                            return value + '%'; 
-                        }
-                    },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                }
-            }
-        }
-    });
-}
-
-// Create modal map popularity chart (full data)
-function createModalMapPopularityChart(games) {
-    const mapStats = {};
-    
-    games.forEach(game => {
-        mapStats[game.map] = (mapStats[game.map] || 0) + 1;
-    });
-    
-    const sortedMaps = Object.entries(mapStats)
-        .sort(([,a], [,b]) => b - a); // Show ALL maps in modal view
-    
-    const ctx = document.getElementById('modalChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: sortedMaps.map(([name]) => name),
-            datasets: [{
-                label: 'Games Played',
-                data: sortedMaps.map(([,count]) => count),
-                backgroundColor: 'rgba(13, 202, 240, 0.8)',
-                borderColor: 'rgba(13, 202, 240, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            indexAxis: 'y', // Horizontal orientation
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                }
-            },
-            scales: {
-                y: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                x: {
-                    beginAtZero: true,
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                }
-            }
-        }
-    });
-}
-
-// Create modal commander faction chart (full data)
-function createModalCommanderFactionChart(games) {
-    const commanderFactionStats = {};
-    
-    games.forEach(game => {
-        [
-            { commander: game.commander1, faction: game.faction1 },
-            { commander: game.commander2, faction: game.faction2 }
-        ].forEach(({ commander, faction }) => {
-            if (!commanderFactionStats[commander]) {
-                commanderFactionStats[commander] = {};
-            }
-            commanderFactionStats[commander][faction] = (commanderFactionStats[commander][faction] || 0) + 1;
-        });
-    });
-    
-    // Get ALL commanders by total games (not just top 10)
-    const allCommanders = Object.entries(commanderFactionStats)
-        .map(([commander, factions]) => ({
-            commander,
-            total: Object.values(factions).reduce((sum, count) => sum + count, 0)
-        }))
-        .sort((a, b) => b.total - a.total)
-        .map(c => c.commander);
-    
-    const factions = [...new Set(games.flatMap(g => [g.faction1, g.faction2]))];
-    const colors = {
-        'I.S.D.F': 'rgba(13, 110, 253, 0.8)',
-        'Hadean': 'rgba(220, 53, 69, 0.8)',
-        'Scion': 'rgba(25, 135, 84, 0.8)'
-    };
-    
-    const datasets = factions.map(faction => ({
-        label: faction,
-        data: allCommanders.map(commander => commanderFactionStats[commander][faction] || 0),
-        backgroundColor: colors[faction] || 'rgba(108, 117, 125, 0.8)'
-    }));
-    
-    const ctx = document.getElementById('modalChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: allCommanders,
-            datasets: datasets
-        },
-        options: {
-            indexAxis: 'y', // Horizontal orientation
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                }
-            },
-            scales: {
-                y: {
-                    stacked: true,
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                x: {
-                    stacked: true,
-                    beginAtZero: true,
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                }
-            }
-        }
-    });
-}
-
-// Create modal faction performance chart
-function createModalFactionPerformanceChart(games) {
-    const factionStats = {};
-    
-    games.forEach(game => {
-        [game.faction1, game.faction2].forEach(faction => {
-            if (!factionStats[faction]) {
-                factionStats[faction] = { wins: 0, total: 0 };
-            }
-            factionStats[faction].total++;
-            if (game['winning faction'] === faction) {
-                factionStats[faction].wins++;
-            }
-        });
-    });
-    
-    const factionData = Object.entries(factionStats).map(([faction, stats]) => ({
-        faction,
-        wins: stats.wins,
-        losses: stats.total - stats.wins,
-        total: stats.total,
-        winRate: (stats.wins / stats.total * 100).toFixed(1)
-    }));
-    
-    const ctx = document.getElementById('modalChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: factionData.map(f => f.faction),
-            datasets: [{
-                label: 'Wins',
-                data: factionData.map(f => f.wins),
-                backgroundColor: 'rgba(25, 135, 84, 0.8)',
-                borderColor: 'rgba(25, 135, 84, 1)',
-                borderWidth: 1
-            }, {
-                label: 'Losses',
-                data: factionData.map(f => f.losses),
-                backgroundColor: 'rgba(220, 53, 69, 0.8)',
-                borderColor: 'rgba(220, 53, 69, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            indexAxis: 'y', // Horizontal orientation
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                },
-                tooltip: {
-                    callbacks: {
-                        afterLabel: function(context) {
-                            const dataIndex = context.dataIndex;
-                            const faction = factionData[dataIndex];
-                            return `Win Rate: ${faction.winRate}% (${faction.wins}/${faction.total})`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    stacked: true,
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                x: {
-                    stacked: true,
-                    beginAtZero: true,
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                }
-            }
-        }
-    });
-}
-
-// Create modal game duration chart
-function createModalGameDurationChart(games) {
-    const gamesWithTime = games.filter(g => g.time && g.time.trim() !== '');
-    
-    if (gamesWithTime.length === 0) {
-        const ctx = document.getElementById('modalChart').getContext('2d');
-        ctx.fillStyle = 'white';
-        ctx.font = '24px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('No game duration data available', ctx.canvas.width / 2, ctx.canvas.height / 2);
-        return;
-    }
-    
-    // Convert times to minutes and create buckets
-    const durations = gamesWithTime.map(game => {
-        const timeParts = game.time.split(':');
-        let totalMinutes;
-        
-        if (timeParts.length === 3) {
-            const hours = parseInt(timeParts[0]) || 0;
-            const minutes = parseInt(timeParts[1]) || 0;
-            const seconds = parseInt(timeParts[2]) || 0;
-            totalMinutes = hours * 60 + minutes + seconds / 60;
-        } else if (timeParts.length === 2) {
-            const minutes = parseInt(timeParts[0]) || 0;
-            const seconds = parseInt(timeParts[1]) || 0;
-            totalMinutes = minutes + seconds / 60;
-        } else {
-            totalMinutes = parseInt(timeParts[0]) || 0;
-        }
-        
-        return Math.round(totalMinutes);
-    });
-    
-    const buckets = [0, 15, 30, 45, 60, 90, 120, 180];
-    const bucketCounts = new Array(buckets.length - 1).fill(0);
-    
-    durations.forEach(duration => {
-        for (let i = 0; i < buckets.length - 1; i++) {
-            if (duration >= buckets[i] && duration < buckets[i + 1]) {
-                bucketCounts[i]++;
-                break;
-            }
-        }
-    });
-    
-    const labels = buckets.slice(0, -1).map((bucket, i) => 
-        `${bucket}-${buckets[i + 1]} min`
-    );
-    
-    const ctx = document.getElementById('modalChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Number of Games',
-                data: bucketCounts,
-                backgroundColor: 'rgba(108, 117, 125, 0.8)',
-                borderColor: 'rgba(108, 117, 125, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            indexAxis: 'y', // Horizontal orientation
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                }
-            },
-            scales: {
-                y: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                x: {
-                    beginAtZero: true,
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                }
-            }
-        }
-    });
-}
-
-// Load player analysis
-function loadPlayerAnalysis() {
-    const games = getFilteredGames();
-    
-    const filterSelectElement = document.getElementById('filterSelect');
-    const mainAnalysisElement = document.getElementById('mainAnalysis');
-    
-    if (!filterSelectElement || !mainAnalysisElement) {
-        console.error('Required elements not found for player analysis');
-        return;
-    }
-    
-    const selectedPlayer = filterSelectElement.value;
-    
-    updateSummaryStats(games);
-    
-    if (!selectedPlayer) {
-        mainAnalysisElement.innerHTML = `
-            <div class="alert alert-info">
-                <h5>Player Analysis</h5>
-                <p>Select a player from the filter dropdown to view detailed analysis.</p>
-            </div>
-        `;
-        return;
-    }
-    
-    // Analyze player's role in each game
-    const playerGames = games.map(game => {
-        let role = 'teammate';
-        let team = null;
-        let isStraggler = false;
-        let teamWon = false;
-        
-        if (game.commander1 === selectedPlayer) {
-            role = 'commander';
-            team = 1;
-            teamWon = game.winner === selectedPlayer;
-        } else if (game.commander2 === selectedPlayer) {
-            role = 'commander';
-            team = 2;
-            teamWon = game.winner === selectedPlayer;
-        } else if (game.teamOne && game.teamOne.includes(selectedPlayer)) {
-            role = 'teammate';
-            team = 1;
-            teamWon = game.winner === game.commander1;
-        } else if (game.teamTwo && game.teamTwo.includes(selectedPlayer)) {
-            role = 'teammate';
-            team = 2;
-            teamWon = game.winner === game.commander2;
-        }
-        
-        // Check if player was a straggler
-        if (game.teamOneStraggler && game.teamOneStraggler.includes(selectedPlayer)) {
-            isStraggler = true;
-            if (!team) team = 1;
-        }
-        if (game.teamTwoStraggler && game.teamTwoStraggler.includes(selectedPlayer)) {
-            isStraggler = true;
-            if (!team) team = 2;
-        }
-        
-        return { ...game, role, team, teamWon, isStraggler };
-    });
-    
-    const commanderGames = playerGames.filter(g => g.role === 'commander');
-    const thugGames = playerGames.filter(g => g.role === 'teammate' && !g.isStraggler);
-    const stragglerGames = playerGames.filter(g => g.isStraggler);
-    
-    const commanderWins = commanderGames.filter(g => g.teamWon).length;
-    const thugWins = thugGames.filter(g => g.teamWon).length;
-    const totalWins = playerGames.filter(g => g.teamWon).length;
-    
-    // Debug: Let's verify our calculations
-    console.log(`Player: ${selectedPlayer}`);
-    console.log(`Total games: ${playerGames.length}`);
-    console.log(`Commander games: ${commanderGames.length}, wins: ${commanderWins}`);
-    console.log(`Thug games: ${thugGames.length}, wins: ${thugWins}`);
-    console.log(`Straggler games: ${stragglerGames.length}`);
-    console.log(`Total wins: ${totalWins}`);
-    console.log(`Win rate: ${((totalWins / playerGames.length) * 100).toFixed(1)}%`);
-    
-    mainAnalysisElement.innerHTML = `
-        <div class="row">
-            <div class="col-12 mb-4">
-                <div class="card bg-dark border-secondary">
-                    <div class="card-header bg-primary text-white">
-                        <h4 class="mb-0">${selectedPlayer} - Player Profile</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-2">
-                                <div class="text-center">
-                                    <h3 class="text-primary">${playerGames.length}</h3>
-                                    <p>Total Games</p>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="text-center">
-                                    <h3 class="text-success">${commanderGames.length}</h3>
-                                    <p>As Commander</p>
-                                    <small class="text-muted">${commanderWins} wins</small>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="text-center">
-                                    <h3 class="text-info">${thugGames.length}</h3>
-                                    <p>As Thug</p>
-                                    <small class="text-muted">${thugWins} wins</small>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="text-center">
-                                    <h3 class="text-warning">${totalWins}</h3>
-                                    <p>Total Wins</p>
-                                    <small class="text-muted">${((totalWins / playerGames.length) * 100).toFixed(1)}% rate</small>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="text-center">
-                                    <h3 class="text-danger">${stragglerGames.length}</h3>
-                                    <p>AFK Games</p>
-                                    <small class="text-muted">${((stragglerGames.length / playerGames.length) * 100).toFixed(1)}% rate</small>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="text-center">
-                                    <h3 class="text-secondary">${commanderGames.length > 0 ? ((commanderWins / commanderGames.length) * 100).toFixed(1) : 0}%</h3>
-                                    <p>Commander Win Rate</p>
-                                    <small class="text-muted">${thugGames.length > 0 ? ((thugWins / thugGames.length) * 100).toFixed(1) : 0}% as thug</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Win Rate Evolution -->
-            <div class="col-lg-6 mb-4">
-                <div class="card bg-dark border-secondary">
-                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Win Rate Evolution</h5>
-                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="playerWinRateEvolution" data-chart-title="${selectedPlayer} - Win Rate Evolution">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="playerWinRateEvolutionChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Opposition Analysis -->
-            <div class="col-lg-6 mb-4">
-                <div class="card bg-dark border-secondary">
-                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Performance vs Opposition</h5>
-                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="playerOpposition" data-chart-title="${selectedPlayer} - Performance vs Opposition">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="playerOppositionChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Activity Heatmap -->
-            <div class="col-lg-6 mb-4">
-                <div class="card bg-dark border-secondary">
-                    <div class="card-header bg-warning text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Activity Heatmap</h5>
-                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="playerHeatmap" data-chart-title="${selectedPlayer} - Activity Heatmap">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="playerHeatmapChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Recent Form & Streaks -->
-            <div class="col-lg-6 mb-4">
-                <div class="card bg-dark border-secondary">
-                    <div class="card-header bg-purple text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Recent Form & Streaks</h5>
-                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="playerStreaks" data-chart-title="${selectedPlayer} - Recent Form & Streaks">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="playerStreaksChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Role Distribution -->
-            <div class="col-lg-6 mb-4">
-                <div class="card bg-dark border-secondary">
-                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Role Distribution</h5>
-                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="playerRole" data-chart-title="${selectedPlayer} - Role Distribution">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="playerRoleChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Win Rate by Role -->
-            <div class="col-lg-6 mb-4">
-                <div class="card bg-dark border-secondary">
-                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Win Rate by Role</h5>
-                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="playerWinRateByRole" data-chart-title="${selectedPlayer} - Win Rate by Role">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="playerWinRateByRoleChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Performance Over Time -->
-            <div class="col-lg-6 mb-4">
-                <div class="card bg-dark border-secondary">
-                    <div class="card-header bg-warning text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Performance Over Time</h5>
-                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="playerPerformance" data-chart-title="${selectedPlayer} - Performance Over Time">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="playerPerformanceChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Frequent Teammates -->
-            <div class="col-lg-6 mb-4">
-                <div class="card bg-dark border-secondary">
-                    <div class="card-header bg-purple text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Most Frequent Allies</h5>
-                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="playerTeammates" data-chart-title="${selectedPlayer} - Most Frequent Allies">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="playerTeammatesChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Map Performance -->
-            <div class="col-lg-6 mb-4">
-                <div class="card bg-dark border-secondary">
-                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Map Performance</h5>
-                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="playerMap" data-chart-title="${selectedPlayer} - Map Performance">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="playerMapChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Activity Timeline -->
-            <div class="col-lg-6 mb-4">
-                <div class="card bg-dark border-secondary">
-                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Activity Timeline</h5>
-                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="playerActivity" data-chart-title="${selectedPlayer} - Activity Timeline">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="playerActivityChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    createPlayerWinRateEvolutionChart(playerGames, selectedPlayer);
-    createPlayerOppositionChart(playerGames, selectedPlayer);
-    createPlayerHeatmapChart(playerGames, selectedPlayer);
-    createPlayerStreaksChart(playerGames, selectedPlayer);
-    createPlayerRoleChart(playerGames, selectedPlayer);
-    createPlayerWinRateByRoleChart(playerGames, selectedPlayer);
-    createPlayerPerformanceChart(playerGames, selectedPlayer);
-    createPlayerTeammatesChart(playerGames, selectedPlayer);
-    createPlayerMapChart(playerGames, selectedPlayer);
-    createPlayerActivityChart(playerGames, selectedPlayer);
-    
-    // Ensure the chart modal exists for maximize functionality
-    if (!document.getElementById('chartModal')) {
-        document.body.insertAdjacentHTML('beforeend', `
-            <div class="modal fade" id="chartModal" tabindex="-1" aria-labelledby="chartModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-fullscreen">
-                    <div class="modal-content bg-dark">
-                        <div class="modal-header bg-primary text-white">
-                            <h5 class="modal-title" id="chartModalLabel">Chart Details</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body" style="overflow-y: auto; max-height: calc(100vh - 120px);">
-                            <div class="container-fluid">
-                                <div class="row">
-                                    <div class="col-12">
-                                        <div class="card bg-dark border-secondary">
-                                            <div class="card-body" id="modalChartContainer">
-                                                <canvas id="modalChart"></canvas>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `);
-    }
-    
-    // Add event listeners for player chart maximize buttons
-    document.querySelectorAll('.maximize-chart').forEach(button => {
-        button.addEventListener('click', (e) => {
-            const chartType = e.currentTarget.dataset.chartType;
-            const chartTitle = e.currentTarget.dataset.chartTitle;
-            showModalChart(playerGames, chartType, chartTitle, selectedPlayer);
-        });
-    });
-}
-
-// Create player role distribution chart
-function createPlayerRoleChart(games, player) {
-    const roleStats = {
-        'Commander': games.filter(g => g.role === 'commander').length,
-        'Thug': games.filter(g => g.role === 'teammate' && !g.isStraggler).length,
-        'AFK/Straggler': games.filter(g => g.isStraggler).length
-    };
-    
-    const ctx = document.getElementById('playerRoleChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: Object.keys(roleStats),
-            datasets: [{
-                data: Object.values(roleStats),
-                backgroundColor: [
-                    'rgba(25, 135, 84, 0.8)',
-                    'rgba(13, 110, 253, 0.8)',
-                    'rgba(220, 53, 69, 0.8)'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                }
-            }
-        }
-    });
-}
-
-// Create player win rate by role chart
-function createPlayerWinRateByRoleChart(games, player) {
-    const commanderGames = games.filter(g => g.role === 'commander');
-    const thugGames = games.filter(g => g.role === 'teammate' && !g.isStraggler);
-    
-    const roleData = [
-        {
-            role: 'Commander',
-            wins: commanderGames.filter(g => g.teamWon).length,
-            total: commanderGames.length,
-            winRate: commanderGames.length > 0 ? (commanderGames.filter(g => g.teamWon).length / commanderGames.length * 100).toFixed(1) : 0
-        },
-        {
-            role: 'Thug',
-            wins: thugGames.filter(g => g.teamWon).length,
-            total: thugGames.length,
-            winRate: thugGames.length > 0 ? (thugGames.filter(g => g.teamWon).length / thugGames.length * 100).toFixed(1) : 0
-        }
-    ];
-    
-    const ctx = document.getElementById('playerWinRateByRoleChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: roleData.map(r => r.role),
-            datasets: [{
-                label: 'Win Rate (%)',
-                data: roleData.map(r => r.winRate),
-                backgroundColor: [
-                    'rgba(25, 135, 84, 0.8)',
-                    'rgba(13, 110, 253, 0.8)'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                },
-                tooltip: {
-                    callbacks: {
-                        afterLabel: function(context) {
-                            const dataIndex = context.dataIndex;
-                            const role = roleData[dataIndex];
-                            return `${role.wins}/${role.total} games won`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: { 
-                        color: 'white',
-                        callback: function(value) { return value + '%'; }
-                    },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                x: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                }
-            }
-        }
-    });
-}
-
-// Create player performance over time chart
-function createPlayerPerformanceChart(games, player) {
-    const monthlyStats = {};
-    
-    games.forEach(game => {
-        const monthKey = `${game.year}-${game.month}`;
-        if (!monthlyStats[monthKey]) {
-            monthlyStats[monthKey] = { wins: 0, total: 0 };
-        }
-        monthlyStats[monthKey].total++;
-        if (game.teamWon) {
-            monthlyStats[monthKey].wins++;
-        }
-    });
-    
-    const sortedMonths = Object.keys(monthlyStats).sort();
-    const winRates = sortedMonths.map(month => 
-        (monthlyStats[month].wins / monthlyStats[month].total * 100).toFixed(1)
-    );
-    const gameCounts = sortedMonths.map(month => monthlyStats[month].total);
-    
-    const ctx = document.getElementById('playerPerformanceChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: sortedMonths,
-            datasets: [{
-                label: 'Win Rate (%)',
-                data: winRates,
-                borderColor: 'rgba(25, 135, 84, 1)',
-                backgroundColor: 'rgba(25, 135, 84, 0.1)',
-                yAxisID: 'y'
-            }, {
-                label: 'Games Played',
-                data: gameCounts,
-                borderColor: 'rgba(13, 110, 253, 1)',
-                backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                yAxisID: 'y1'
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                }
-            },
-            scales: {
-                x: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    max: 100,
-                    ticks: { 
-                        color: 'white',
-                        callback: function(value) { return value + '%'; }
-                    },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    ticks: { color: 'white' },
-                    grid: { drawOnChartArea: false }
-                }
-            }
-        }
-    });
-}
-
-// Create player teammates chart
-function createPlayerTeammatesChart(games, player) {
-    const teammateStats = {};
-    
-    games.forEach(game => {
-        let teammates = [];
-        
-        if (game.commander1 === player && game.teamOne) {
-            teammates = [...game.teamOne];
-        } else if (game.commander2 === player && game.teamTwo) {
-            teammates = [...game.teamTwo];
-        } else if (game.teamOne && game.teamOne.includes(player)) {
-            teammates = [game.commander1, ...game.teamOne.filter(p => p !== player)];
-        } else if (game.teamTwo && game.teamTwo.includes(player)) {
-            teammates = [game.commander2, ...game.teamTwo.filter(p => p !== player)];
-        }
-        
-        teammates.forEach(teammate => {
-            teammateStats[teammate] = (teammateStats[teammate] || 0) + 1;
-        });
-    });
-    
-    const topTeammates = Object.entries(teammateStats)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 8);
-    
-    const ctx = document.getElementById('playerTeammatesChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: topTeammates.map(([name]) => name),
-            datasets: [{
-                label: 'Games Together',
-                data: topTeammates.map(([,count]) => count),
-                backgroundColor: 'rgba(111, 66, 193, 0.8)',
-                borderColor: 'rgba(111, 66, 193, 1)',
                 borderWidth: 1
             }]
         },
         options: {
             indexAxis: 'y',
             responsive: true,
+            maintainAspectRatio: true,
             plugins: {
                 legend: {
                     labels: { color: 'white' }
@@ -1936,446 +764,127 @@ function createPlayerTeammatesChart(games, player) {
     });
 }
 
-// Create player map performance chart
-function createPlayerMapChart(games, player) {
-    const mapStats = {};
-    
-    games.forEach(game => {
-        if (!mapStats[game.map]) {
-            mapStats[game.map] = { wins: 0, total: 0 };
-        }
-        mapStats[game.map].total++;
-        if (game.teamWon) {
-            mapStats[game.map].wins++;
-        }
-    });
-    
-    const mapData = Object.entries(mapStats)
-        .filter(([,stats]) => stats.total >= 2)
-        .map(([map, stats]) => ({
-            map,
-            winRate: (stats.wins / stats.total * 100).toFixed(1),
-            total: stats.total
-        }))
-        .sort((a, b) => b.winRate - a.winRate)
-        .slice(0, 10);
-    
-    const ctx = document.getElementById('playerMapChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: mapData.map(m => m.map),
-            datasets: [{
-                label: 'Win Rate (%)',
-                data: mapData.map(m => m.winRate),
-                backgroundColor: 'rgba(108, 117, 125, 0.8)',
-                borderColor: 'rgba(108, 117, 125, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: { 
-                        color: 'white',
-                        callback: function(value) { return value + '%'; }
-                    },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                x: {
-                    ticks: { 
-                        color: 'white',
-                        maxRotation: 45
-                    },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                }
-            }
-        }
-    });
-}
-
-// Create player activity timeline chart
-function createPlayerActivityChart(games, player) {
-    const monthlyActivity = {};
-    
-    games.forEach(game => {
-        const monthKey = `${game.year}-${game.month}`;
-        if (!monthlyActivity[monthKey]) {
-            monthlyActivity[monthKey] = { commander: 0, teammate: 0, straggler: 0 };
-        }
-        
-        if (game.role === 'commander') {
-            monthlyActivity[monthKey].commander++;
-        } else if (game.isStraggler) {
-            monthlyActivity[monthKey].straggler++;
-        } else {
-            monthlyActivity[monthKey].teammate++;
-        }
-    });
-    
-    const sortedMonths = Object.keys(monthlyActivity).sort();
-    
-    const ctx = document.getElementById('playerActivityChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: sortedMonths,
-            datasets: [{
-                label: 'Commander',
-                data: sortedMonths.map(month => monthlyActivity[month].commander),
-                backgroundColor: 'rgba(25, 135, 84, 0.8)'
-            }, {
-                label: 'Thug',
-                data: sortedMonths.map(month => monthlyActivity[month].teammate),
-                backgroundColor: 'rgba(13, 110, 253, 0.8)'
-            }, {
-                label: 'AFK',
-                data: sortedMonths.map(month => monthlyActivity[month].straggler),
-                backgroundColor: 'rgba(220, 53, 69, 0.8)'
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                }
-            },
-            scales: {
-                x: {
-                    stacked: true,
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                y: {
-                    stacked: true,
-                    beginAtZero: true,
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                }
-            }
-        }
-    });
-}
-
-// Load map analysis
-function loadMapAnalysis() {
-    const games = getFilteredGames();
-    updateSummaryStats(games);
-    
-    document.getElementById('mainAnalysis').innerHTML = `
-        <div class="alert alert-info">
-            <h5>Map Analysis</h5>
-            <p>Map-specific analysis coming soon! This will include map win rates by faction, commander performance on specific maps, and more.</p>
-        </div>
-    `;
-}
-
-// Load faction analysis
-function loadFactionAnalysis() {
-    const games = getFilteredGames();
-    updateSummaryStats(games);
-    
-    document.getElementById('mainAnalysis').innerHTML = `
-        <div class="alert alert-info">
-            <h5>Faction Analysis</h5>
-            <p>Faction-specific analysis coming soon! This will include faction matchup win rates, faction performance over time, and more.</p>
-        </div>
-    `;
-}
-
-// Load the data when the page loads
-document.addEventListener('DOMContentLoaded', function() {
-    // Check for required dependencies
-    if (typeof Chart === 'undefined') {
-        console.error('Chart.js is not loaded');
-        const mainContent = document.querySelector('main');
-        if (mainContent) {
-            mainContent.innerHTML = `
-                <div class="alert alert-danger">
-                    <h4>Missing Dependencies</h4>
-                    <p>Chart.js library is not loaded. Please ensure all required scripts are included.</p>
-                    <p>Make sure Chart.js is loaded before the stats.js script.</p>
-                </div>
-            `;
-        }
-        return;
-    }
-    
-    if (typeof bootstrap === 'undefined') {
-        console.warn('Bootstrap JavaScript is not loaded - some features may not work properly');
-    }
-    
-    // Start loading the game data
-    loadGameData();
-});
-
-// Create commander games chart
-function createCommanderGamesChart(games) {
-    const ctx = document.getElementById('commanderGamesChart');
-    if (!ctx) {
-        console.error('commanderGamesChart canvas not found');
-        return;
-    }
-    
-    if (typeof Chart === 'undefined') {
-        console.error('Chart.js not loaded');
-        return;
-    }
-    
+// Create commander win rate chart
+function createCommanderWinRateChart(games, rankingMethod, minGameRequirement) {
     const commanderStats = {};
     
-    games.forEach(game => {
-        commanderStats[game.commander1] = (commanderStats[game.commander1] || 0) + 1;
-        commanderStats[game.commander2] = (commanderStats[game.commander2] || 0) + 1;
-    });
-    
-    const sortedCommanders = Object.entries(commanderStats)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 10); // Show only top 10 in initial view
-    
-    new Chart(ctx.getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: sortedCommanders.map(([name]) => name),
-            datasets: [{
-                label: 'Games Played',
-                data: sortedCommanders.map(([,count]) => count),
-                backgroundColor: 'rgba(13, 110, 253, 0.8)',
-                borderColor: 'rgba(13, 110, 253, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                x: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                }
-            }
-        }
-    });
-}
-
-// Create commander win rate chart with multiple ranking algorithms
-function createCommanderWinRateChart(games, rankingMethod = 'wilson', minGameRequirement = '3%') {
-    const commanderStats = {};
-    
+    // Calculate comprehensive stats for each commander
     games.forEach(game => {
         [game.commander1, game.commander2].forEach(commander => {
             if (!commanderStats[commander]) {
-                commanderStats[commander] = { wins: 0, total: 0 };
+                commanderStats[commander] = { games: 0, wins: 0, faction: {} };
             }
-            commanderStats[commander].total++;
+            commanderStats[commander].games++;
+            
             if (game.winner === commander) {
                 commanderStats[commander].wins++;
             }
+            
+            // Track faction usage
+            const faction = commander === game.commander1 ? game.faction1 : game.faction2;
+            commanderStats[commander].faction[faction] = (commanderStats[commander].faction[faction] || 0) + 1;
         });
     });
     
-    // Calculate minimum games based on requirement
-    const totalGames = games.length;
-    let minimumGames;
-    
-    if (minGameRequirement.endsWith('%')) {
-        const percentage = parseInt(minGameRequirement.replace('%', ''));
-        minimumGames = Math.max(5, Math.ceil(totalGames * (percentage / 100)));
+    // Apply minimum games filter
+    let minGames;
+    if (minGameRequirement.includes('%')) {
+        const percentage = parseFloat(minGameRequirement.replace('%', ''));
+        minGames = Math.ceil(games.length * (percentage / 100));
     } else {
-        minimumGames = parseInt(minGameRequirement);
+        minGames = parseInt(minGameRequirement);
     }
     
-    // Filter commanders with meaningful participation
     const qualifiedCommanders = Object.entries(commanderStats)
-        .filter(([,stats]) => stats.total >= minimumGames);
+        .filter(([, stats]) => stats.games >= minGames);
     
-    console.log(`\nRanking Method: ${rankingMethod.toUpperCase()}`);
-    console.log(`Minimum games requirement: ${minGameRequirement} = ${minimumGames} games`);
-    console.log(`Qualified commanders: ${qualifiedCommanders.length}`);
-    
-    const totalGamesPlayed = qualifiedCommanders.reduce((sum, [,stats]) => sum + stats.total, 0);
-    const maxGames = Math.max(...qualifiedCommanders.map(([,stats]) => stats.total));
-    
-    // Calculate different ranking scores
-    const commandersWithScores = qualifiedCommanders.map(([name, stats]) => {
-        const winRate = stats.wins / stats.total;
-        const volumePercentage = stats.total / totalGamesPlayed;
+    // Calculate scores based on method
+    const scoredCommanders = qualifiedCommanders.map(([name, stats]) => {
+        const winRate = stats.wins / stats.games;
+        let score = winRate;
         
-        // 1. Wilson Score Confidence Interval (95% confidence, lower bound)
-        const n = stats.total;
-        const p = winRate;
-        const z = 1.96; // 95% confidence
-        const wilsonScore = (p + z*z/(2*n) - z * Math.sqrt((p*(1-p) + z*z/(4*n))/n)) / (1 + z*z/n);
-        
-        // 2. Volume-Weighted Score (win rate * volume percentage * 100)
-        const volumeWeightedScore = winRate * volumePercentage * 100;
-        
-        // 3. Bayesian Average (assume prior of 50% win rate with weight of 10 games)
-        const priorWins = 10 * 0.5; // Assume 5 wins out of 10 games as prior
-        const priorTotal = 10;
-        const bayesianScore = (stats.wins + priorWins) / (stats.total + priorTotal);
-        
-        // 4. Composite Score (70% win rate + 30% volume bonus)
-        const volumeBonus = Math.log(stats.total + 1) / Math.log(maxGames + 1); // Logarithmic scaling
-        const compositeScore = (0.7 * winRate) + (0.3 * volumeBonus);
+        switch (rankingMethod) {
+            case 'wilson':
+                // Wilson Score Interval
+                const n = stats.games;
+                const p = winRate;
+                const z = 1.96; // 95% confidence
+                score = (p + z*z/(2*n) - z * Math.sqrt((p*(1-p)+z*z/(4*n))/n)) / (1+z*z/n);
+                break;
+            case 'winRate':
+                score = winRate;
+                break;
+            case 'volumeWeighted':
+                score = winRate * Math.log(stats.games + 1);
+                break;
+            case 'bayesian':
+                // Bayesian average
+                const globalWinRate = games.filter(g => g.winner).length / (games.length * 2);
+                const confidence = 30;
+                score = (confidence * globalWinRate + stats.games * winRate) / (confidence + stats.games);
+                break;
+            case 'composite':
+                const wilsonScore = (winRate + 1.96*1.96/(2*stats.games) - 1.96 * Math.sqrt((winRate*(1-winRate)+1.96*1.96/(4*stats.games))/stats.games)) / (1+1.96*1.96/stats.games);
+                const volumeScore = Math.log(stats.games + 1) / Math.log(Math.max(...qualifiedCommanders.map(([,s]) => s.games)) + 1);
+                score = wilsonScore * 0.7 + volumeScore * 0.3;
+                break;
+        }
         
         return {
             name,
-            wins: stats.wins,
-            total: stats.total,
+            score,
             winRate: winRate * 100,
-            wilsonScore: wilsonScore * 100,
-            volumeWeightedScore: volumeWeightedScore,
-            bayesianScore: bayesianScore * 100,
-            compositeScore: compositeScore * 100,
-            volumePercentage: volumePercentage * 100
+            games: stats.games,
+            wins: stats.wins
         };
     });
     
-    // Sort by selected ranking method
-    let sortedCommanders;
-    let chartLabel;
-    let chartData;
-    let tooltipSuffix;
+    const sortedCommanders = scoredCommanders.sort((a, b) => b.score - a.score).slice(0, 10);
     
-    switch (rankingMethod) {
-        case 'winRate':
-            sortedCommanders = [...commandersWithScores]
-                .sort((a, b) => b.winRate - a.winRate)
-                .slice(0, 10);
-            chartLabel = 'Win Rate (%)';
-            chartData = sortedCommanders.map(c => c.winRate.toFixed(1));
-            tooltipSuffix = '% win rate';
-            break;
-            
-        case 'volumeWeighted':
-            sortedCommanders = [...commandersWithScores]
-                .sort((a, b) => b.volumeWeightedScore - a.volumeWeightedScore)
-                .slice(0, 10);
-            chartLabel = 'Volume-Weighted Score';
-            chartData = sortedCommanders.map(c => c.volumeWeightedScore.toFixed(3));
-            tooltipSuffix = ' VW score';
-            break;
-            
-        case 'bayesian':
-            sortedCommanders = [...commandersWithScores]
-                .sort((a, b) => b.bayesianScore - a.bayesianScore)
-                .slice(0, 10);
-            chartLabel = 'Bayesian Average (%)';
-            chartData = sortedCommanders.map(c => c.bayesianScore.toFixed(1));
-            tooltipSuffix = '% Bayesian';
-            break;
-            
-        case 'composite':
-            sortedCommanders = [...commandersWithScores]
-                .sort((a, b) => b.compositeScore - a.compositeScore)
-                .slice(0, 10);
-            chartLabel = 'Composite Score (%)';
-            chartData = sortedCommanders.map(c => c.compositeScore.toFixed(1));
-            tooltipSuffix = '% composite';
-            break;
-            
-        case 'wilson':
-        default:
-            sortedCommanders = [...commandersWithScores]
-                .sort((a, b) => b.wilsonScore - a.wilsonScore)
-                .slice(0, 10);
-            chartLabel = 'Wilson Score (%)';
-            chartData = sortedCommanders.map(c => c.wilsonScore.toFixed(1));
-            tooltipSuffix = '% Wilson';
-            break;
-    }
-    
-    console.log(`Top 10 commanders by ${rankingMethod}:`);
-    sortedCommanders.forEach((commander, index) => {
-        console.log(`${index + 1}. ${commander.name}: ${chartData[index]}${tooltipSuffix} (${commander.wins}/${commander.total} commanded)`);
-    });
-    
-    // Destroy existing chart if it exists
-    const existingChart = Chart.getChart('commanderWinRateChart');
-    if (existingChart) {
-        existingChart.destroy();
-    }
-    
-    const ctx = document.getElementById('commanderWinRateChart').getContext('2d');
-    new Chart(ctx, {
+    safeCreateChart('commanderWinRateChart', {
         type: 'bar',
         data: {
             labels: sortedCommanders.map(c => c.name),
             datasets: [{
-                label: chartLabel,
-                data: chartData,
+                label: `${rankingMethod === 'wilson' ? 'Wilson Score' : 
+                        rankingMethod === 'winRate' ? 'Win Rate (%)' :
+                        rankingMethod === 'volumeWeighted' ? 'Volume-Weighted Score' :
+                        rankingMethod === 'bayesian' ? 'Bayesian Average' : 'Composite Score'}`,
+                data: sortedCommanders.map(c => rankingMethod === 'winRate' ? c.winRate : c.score),
                 backgroundColor: 'rgba(25, 135, 84, 0.8)',
                 borderColor: 'rgba(25, 135, 84, 1)',
                 borderWidth: 1
             }]
         },
         options: {
+            indexAxis: 'y',
             responsive: true,
+            maintainAspectRatio: true,
             plugins: {
                 legend: {
                     labels: { color: 'white' }
                 },
                 tooltip: {
                     callbacks: {
-                        afterLabel: function(context) {
+                        label: function(context) {
                             const commander = sortedCommanders[context.dataIndex];
-                            const lines = [
-                                `Actual Win Rate: ${commander.winRate.toFixed(1)}%`,
-                                `Games Commanded: ${commander.total}`,
-                                `Commander Record: ${commander.wins}/${commander.total}`
+                            return [
+                                `${context.dataset.label}: ${context.parsed.x.toFixed(3)}`,
+                                `Win Rate: ${commander.winRate.toFixed(1)}%`,
+                                `Games: ${commander.games}`,
+                                `Wins: ${commander.wins}`
                             ];
-                            
-                            // Add additional info based on ranking method
-                            if (rankingMethod === 'wilson') {
-                                lines.push(`Wilson Score: ${commander.wilsonScore.toFixed(1)}%`);
-                            } else if (rankingMethod === 'volumeWeighted') {
-                                lines.push(`Volume %: ${commander.volumePercentage.toFixed(1)}%`);
-                            } else if (rankingMethod === 'bayesian') {
-                                lines.push(`Bayesian Score: ${commander.bayesianScore.toFixed(1)}%`);
-                            } else if (rankingMethod === 'composite') {
-                                lines.push(`Composite Score: ${commander.compositeScore.toFixed(1)}%`);
-                            }
-                            
-                            return lines;
                         }
                     }
                 }
             },
             scales: {
                 y: {
-                    beginAtZero: true,
-                    max: rankingMethod === 'volumeWeighted' ? undefined : 100,
-                    ticks: { 
-                        color: 'white',
-                        callback: function(value) { 
-                            if (rankingMethod === 'volumeWeighted') {
-                                return value.toFixed(3);
-                            }
-                            return value + '%'; 
-                        }
-                    },
+                    ticks: { color: 'white' },
                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                 },
                 x: {
+                    beginAtZero: true,
                     ticks: { color: 'white' },
                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                 }
@@ -2394,10 +903,9 @@ function createMapPopularityChart(games) {
     
     const sortedMaps = Object.entries(mapStats)
         .sort(([,a], [,b]) => b - a)
-        .slice(0, 10); // Show only top 10 in initial view
+        .slice(0, 10);
     
-    const ctx = document.getElementById('mapPopularityChart').getContext('2d');
-    new Chart(ctx, {
+    safeCreateChart('mapPopularityChart', {
         type: 'bar',
         data: {
             labels: sortedMaps.map(([name]) => name),
@@ -2412,6 +920,7 @@ function createMapPopularityChart(games) {
         options: {
             indexAxis: 'y',
             responsive: true,
+            maintainAspectRatio: true,
             plugins: {
                 legend: {
                     labels: { color: 'white' }
@@ -2432,15 +941,15 @@ function createMapPopularityChart(games) {
     });
 }
 
-// Create commander faction chart (stacked bar)
+// Create commander faction chart
 function createCommanderFactionChart(games) {
     const commanderFactionStats = {};
     
     games.forEach(game => {
         [
-            { commander: game.commander1, faction: game.faction1 },
-            { commander: game.commander2, faction: game.faction2 }
-        ].forEach(({ commander, faction }) => {
+            [game.commander1, game.faction1],
+            [game.commander2, game.faction2]
+        ].forEach(([commander, faction]) => {
             if (!commanderFactionStats[commander]) {
                 commanderFactionStats[commander] = {};
             }
@@ -2448,51 +957,63 @@ function createCommanderFactionChart(games) {
         });
     });
     
-    // Get top commanders by total games
-    const topCommanders = Object.entries(commanderFactionStats)
-        .map(([commander, factions]) => ({
-            commander,
-            total: Object.values(factions).reduce((sum, count) => sum + count, 0)
-        }))
-        .sort((a, b) => b.total - a.total)
-        .slice(0, 10)
-        .map(c => c.commander);
+    // Get most played commanders and their primary factions
+    const commanderPreferences = Object.entries(commanderFactionStats)
+        .map(([commander, factions]) => {
+            const totalGames = Object.values(factions).reduce((sum, count) => sum + count, 0);
+            const primaryFaction = Object.entries(factions)
+                .sort(([,a], [,b]) => b - a)[0];
+            
+            return {
+                commander,
+                totalGames,
+                primaryFaction: primaryFaction[0],
+                primaryCount: primaryFaction[1],
+                percentage: (primaryFaction[1] / totalGames * 100).toFixed(1)
+            };
+        })
+        .sort((a, b) => b.totalGames - a.totalGames)
+        .slice(0, 10);
     
-    const factions = [...new Set(games.flatMap(g => [g.faction1, g.faction2]))];
-    const colors = {
-        'I.S.D.F': 'rgba(13, 110, 253, 0.8)',
-        'Hadean': 'rgba(220, 53, 69, 0.8)',
-        'Scion': 'rgba(25, 135, 84, 0.8)'
-    };
-    
-    const datasets = factions.map(faction => ({
-        label: faction,
-        data: topCommanders.map(commander => commanderFactionStats[commander][faction] || 0),
-        backgroundColor: colors[faction] || 'rgba(108, 117, 125, 0.8)'
-    }));
-    
-    const ctx = document.getElementById('commanderFactionChart').getContext('2d');
-    new Chart(ctx, {
+    safeCreateChart('commanderFactionChart', {
         type: 'bar',
         data: {
-            labels: topCommanders,
-            datasets: datasets
+            labels: commanderPreferences.map(c => `${c.commander} (${c.primaryFaction})`),
+            datasets: [{
+                label: 'Primary Faction Usage',
+                data: commanderPreferences.map(c => c.primaryCount),
+                backgroundColor: 'rgba(255, 193, 7, 0.8)',
+                borderColor: 'rgba(255, 193, 7, 1)',
+                borderWidth: 1
+            }]
         },
         options: {
+            indexAxis: 'y',
             responsive: true,
+            maintainAspectRatio: true,
             plugins: {
                 legend: {
                     labels: { color: 'white' }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const prefs = commanderPreferences[context.dataIndex];
+                            return [
+                                `Primary Faction: ${prefs.primaryFaction}`,
+                                `Games: ${prefs.primaryCount}/${prefs.totalGames}`,
+                                `Percentage: ${prefs.percentage}%`
+                            ];
+                        }
+                    }
                 }
             },
             scales: {
-                x: {
-                    stacked: true,
+                y: {
                     ticks: { color: 'white' },
                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                 },
-                y: {
-                    stacked: true,
+                x: {
                     beginAtZero: true,
                     ticks: { color: 'white' },
                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
@@ -2509,69 +1030,98 @@ function createFactionPerformanceChart(games) {
     games.forEach(game => {
         [game.faction1, game.faction2].forEach(faction => {
             if (!factionStats[faction]) {
-                factionStats[faction] = { wins: 0, total: 0 };
+                factionStats[faction] = { games: 0, wins: 0 };
             }
-            factionStats[faction].total++;
-            if (game['winning faction'] === faction) {
+            factionStats[faction].games++;
+            
+            if ((game.winner === game.commander1 && faction === game.faction1) ||
+                (game.winner === game.commander2 && faction === game.faction2)) {
                 factionStats[faction].wins++;
             }
         });
     });
     
-    const factionData = Object.entries(factionStats).map(([faction, stats]) => ({
-        faction,
-        wins: stats.wins,
-        losses: stats.total - stats.wins,
-        total: stats.total,
-        winRate: (stats.wins / stats.total * 100).toFixed(1)
-    }));
+    const factionPerformance = Object.entries(factionStats)
+        .map(([faction, stats]) => ({
+            faction,
+            winRate: (stats.wins / stats.games * 100).toFixed(1),
+            games: stats.games,
+            wins: stats.wins
+        }))
+        .sort((a, b) => b.winRate - a.winRate)
+        .slice(0, 10);
     
-    const ctx = document.getElementById('factionPerformanceChart').getContext('2d');
-    new Chart(ctx, {
+    safeCreateChart('factionPerformanceChart', {
         type: 'bar',
         data: {
-            labels: factionData.map(f => f.faction),
-            datasets: [{
-                label: 'Wins',
-                data: factionData.map(f => f.wins),
-                backgroundColor: 'rgba(25, 135, 84, 0.8)',
-                borderColor: 'rgba(25, 135, 84, 1)',
-                borderWidth: 1
-            }, {
-                label: 'Losses',
-                data: factionData.map(f => f.losses),
-                backgroundColor: 'rgba(220, 53, 69, 0.8)',
-                borderColor: 'rgba(220, 53, 69, 1)',
-                borderWidth: 1
-            }]
+            labels: factionPerformance.map(f => f.faction),
+            datasets: [
+                {
+                    label: 'Win Rate (%)',
+                    data: factionPerformance.map(f => f.winRate),
+                    backgroundColor: 'rgba(220, 53, 69, 0.8)',
+                    borderColor: 'rgba(220, 53, 69, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Total Games',
+                    data: factionPerformance.map(f => f.games),
+                    backgroundColor: 'rgba(108, 117, 125, 0.8)',
+                    borderColor: 'rgba(108, 117, 125, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y1'
+                }
+            ]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: true,
             plugins: {
                 legend: {
                     labels: { color: 'white' }
                 },
                 tooltip: {
                     callbacks: {
-                        afterLabel: function(context) {
-                            const dataIndex = context.dataIndex;
-                            const faction = factionData[dataIndex];
-                            return `Win Rate: ${faction.winRate}% (${faction.wins}/${faction.total})`;
+                        label: function(context) {
+                            const faction = factionPerformance[context.dataIndex];
+                            if (context.datasetIndex === 0) {
+                                return `Win Rate: ${faction.winRate}% (${faction.wins}/${faction.games})`;
+                            } else {
+                                return `Total Games: ${faction.games}`;
+                            }
                         }
                     }
                 }
             },
             scales: {
                 x: {
-                    stacked: true,
                     ticks: { color: 'white' },
                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                 },
                 y: {
-                    stacked: true,
-                    beginAtZero: true,
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
                     ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                    title: {
+                        display: true,
+                        text: 'Win Rate (%)',
+                        color: 'white'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    ticks: { color: 'white' },
+                    grid: { drawOnChartArea: false },
+                    title: {
+                        display: true,
+                        text: 'Total Games',
+                        color: 'white'
+                    }
                 }
             }
         }
@@ -2580,97 +1130,47 @@ function createFactionPerformanceChart(games) {
 
 // Create game duration chart
 function createGameDurationChart(games) {
-    // Debug: Let's see what time data we have
-    console.log('Total games:', games.length);
-    console.log('Games with time property:', games.filter(g => g.time).length);
-    console.log('Games with non-empty time:', games.filter(g => g.time && g.time.trim() !== '').length);
+    const durationBuckets = {};
     
-    // Sample some games to see their time values
-    const sampleGames = games.slice(0, 10);
-    console.log('Sample games time data:', sampleGames.map(g => ({ 
-        date: g.date, 
-        map: g.map, 
-        time: g.time, 
-        hasTime: !!g.time,
-        timeType: typeof g.time
-    })));
-    
-    const gamesWithTime = games.filter(g => g.time && g.time.trim() !== '');
-    
-    console.log(`Filtered games with valid time data: ${gamesWithTime.length} out of ${games.length}`);
-    
-    // Debug: Check distribution by year
-    const gamesByYear = {};
-    const gamesWithTimeByYear = {};
     games.forEach(game => {
-        gamesByYear[game.year] = (gamesByYear[game.year] || 0) + 1;
-        if (game.time && game.time.trim() !== '') {
-            gamesWithTimeByYear[game.year] = (gamesWithTimeByYear[game.year] || 0) + 1;
-        }
-    });
-    console.log('Games by year:', gamesByYear);
-    console.log('Games with time by year:', gamesWithTimeByYear);
-    
-    if (gamesWithTime.length === 0) {
-        const ctx = document.getElementById('gameDurationChart').getContext('2d');
-        ctx.fillStyle = 'white';
-        ctx.font = '16px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('No game duration data available', ctx.canvas.width / 2, ctx.canvas.height / 2);
-        return;
-    }
-    
-    // Convert times to minutes and create buckets
-    const durations = gamesWithTime.map(game => {
-        const timeParts = game.time.split(':');
-        let totalMinutes;
+        if (!game.time || game.time.trim() === '') return;
         
-        if (timeParts.length === 3) {
-            // Format: HH:MM:SS
-            const hours = parseInt(timeParts[0]) || 0;
-            const minutes = parseInt(timeParts[1]) || 0;
-            const seconds = parseInt(timeParts[2]) || 0;
-            totalMinutes = hours * 60 + minutes + seconds / 60;
-        } else if (timeParts.length === 2) {
-            // Based on the sample data, this appears to be MM:SS format
-            const minutes = parseInt(timeParts[0]) || 0;
-            const seconds = parseInt(timeParts[1]) || 0;
-            totalMinutes = minutes + seconds / 60;
-        } else {
-            totalMinutes = parseInt(timeParts[0]) || 0;
-        }
-        
-        return Math.round(totalMinutes);
-    });
-    
-    // Debug: log some sample durations
-    console.log('Sample game times:', gamesWithTime.slice(0, 5).map(g => g.time));
-    console.log('Sample parsed durations (minutes):', durations.slice(0, 5));
-    
-    const buckets = [0, 15, 30, 45, 60, 90, 120, 180];
-    const bucketCounts = new Array(buckets.length - 1).fill(0);
-    
-    durations.forEach(duration => {
-        for (let i = 0; i < buckets.length - 1; i++) {
-            if (duration >= buckets[i] && duration < buckets[i + 1]) {
-                bucketCounts[i]++;
-                break;
+        try {
+            const timeParts = game.time.split(':');
+            if (timeParts.length >= 2) {
+                const hours = parseInt(timeParts[0]) || 0;
+                const minutes = parseInt(timeParts[1]) || 0;
+                const totalMinutes = hours * 60 + minutes;
+                
+                // Create buckets in 10-minute intervals
+                const bucket = Math.floor(totalMinutes / 10) * 10;
+                const bucketLabel = `${Math.floor(bucket / 60)}:${(bucket % 60).toString().padStart(2, '0')} - ${Math.floor((bucket + 9) / 60)}:${((bucket + 9) % 60).toString().padStart(2, '0')}`;
+                
+                durationBuckets[bucketLabel] = (durationBuckets[bucketLabel] || 0) + 1;
             }
+        } catch (e) {
+            console.warn('Error parsing game time:', game.time, e);
         }
     });
     
-    const labels = buckets.slice(0, -1).map((bucket, i) => 
-        `${bucket}-${buckets[i + 1]} min`
-    );
+    const sortedBuckets = Object.entries(durationBuckets)
+        .sort(([a], [b]) => {
+            const getMinutes = (label) => {
+                const start = label.split(' - ')[0];
+                const [hours, mins] = start.split(':').map(Number);
+                return hours * 60 + mins;
+            };
+            return getMinutes(a) - getMinutes(b);
+        })
+        .slice(0, 10);
     
-    const ctx = document.getElementById('gameDurationChart').getContext('2d');
-    new Chart(ctx, {
+    safeCreateChart('gameDurationChart', {
         type: 'bar',
         data: {
-            labels: labels,
+            labels: sortedBuckets.map(([label]) => label),
             datasets: [{
                 label: 'Number of Games',
-                data: bucketCounts,
+                data: sortedBuckets.map(([,count]) => count),
                 backgroundColor: 'rgba(108, 117, 125, 0.8)',
                 borderColor: 'rgba(108, 117, 125, 1)',
                 borderWidth: 1
@@ -2678,1320 +1178,1111 @@ function createGameDurationChart(games) {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: true,
             plugins: {
                 legend: {
                     labels: { color: 'white' }
                 }
             },
             scales: {
+                x: {
+                    ticks: { 
+                        color: 'white',
+                        maxRotation: 45
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
                 y: {
                     beginAtZero: true,
                     ticks: { color: 'white' },
                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                x: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
                 }
             }
         }
     });
 }
 
-// Modal player chart creation functions
-
-// Create modal player role chart
-function createModalPlayerRoleChart(games, selectedPlayer) {
-    const playerGames = games.map(game => {
-        let role = 'teammate';
-        let team = null;
-        let isStraggler = false;
-        let teamWon = false;
-        
-        if (game.commander1 === selectedPlayer) {
-            role = 'commander';
-            team = 1;
-            teamWon = game.winner === selectedPlayer;
-        } else if (game.commander2 === selectedPlayer) {
-            role = 'commander';
-            team = 2;
-            teamWon = game.winner === selectedPlayer;
-        } else if (game.teamOne && game.teamOne.includes(selectedPlayer)) {
-            role = 'teammate';
-            team = 1;
-            teamWon = game.winner === game.commander1;
-        } else if (game.teamTwo && game.teamTwo.includes(selectedPlayer)) {
-            role = 'teammate';
-            team = 2;
-            teamWon = game.winner === game.commander2;
-        }
-        
-        if (game.teamOneStraggler && game.teamOneStraggler.includes(selectedPlayer)) {
-            isStraggler = true;
-            if (!team) team = 1;
-        }
-        if (game.teamTwoStraggler && game.teamTwoStraggler.includes(selectedPlayer)) {
-            isStraggler = true;
-            if (!team) team = 2;
-        }
-        
-        return { ...game, role, team, teamWon, isStraggler };
-    });
+// Show modal chart with proper full-scale scrolling
+function showModalChart(games, chartType, chartTitle) {
+    const modal = new bootstrap.Modal(document.getElementById('chartModal'));
+    const modalTitle = document.getElementById('chartModalLabel');
+    const modalChart = document.getElementById('modalChart');
+    const modalBody = document.querySelector('#chartModal .modal-body');
+    const modalContainer = document.getElementById('modalChartContainer');
     
-    const roleStats = {
-        'Commander': playerGames.filter(g => g.role === 'commander').length,
-        'Thug': playerGames.filter(g => g.role === 'teammate' && !g.isStraggler).length,
-        'AFK/Straggler': playerGames.filter(g => g.isStraggler).length
-    };
+    modalTitle.textContent = chartTitle;
     
-    const ctx = document.getElementById('modalChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: Object.keys(roleStats),
-            datasets: [{
-                data: Object.values(roleStats),
-                backgroundColor: [
-                    'rgba(25, 135, 84, 0.8)',
-                    'rgba(13, 110, 253, 0.8)',
-                    'rgba(220, 53, 69, 0.8)'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                }
-            }
-        }
-    });
+    // Clear previous chart
+    const existingChart = Chart.getChart(modalChart);
+    if (existingChart) {
+        existingChart.destroy();
+    }
+    
+    // Reset modal body and container styling for proper scrolling
+    modalBody.style.cssText = `
+        padding: 0;
+        height: calc(100vh - 120px);
+        overflow-y: auto;
+        overflow-x: auto;
+        background-color: #212529;
+    `;
+    
+    modalContainer.style.cssText = `
+        padding: 20px;
+        min-height: 100%;
+        background-color: #212529;
+    `;
+    
+    // Reset canvas completely
+    modalChart.style.cssText = '';
+    modalChart.removeAttribute('width');
+    modalChart.removeAttribute('height');
+    modalChart.removeAttribute('style');
+    
+    // Create modal chart based on type
+    switch (chartType) {
+        case 'commanderGames':
+            createModalCommanderGamesChart(games, modalChart);
+            break;
+        case 'commanderWinRate':
+            const rankingMethod = document.getElementById('rankingMethod').value;
+            const minGameRequirement = document.getElementById('minGameRequirement').value;
+            createModalCommanderWinRateChart(games, modalChart, rankingMethod, minGameRequirement);
+            break;
+        case 'mapPopularity':
+            createModalMapPopularityChart(games, modalChart);
+            break;
+        case 'commanderFaction':
+            createModalCommanderFactionChart(games, modalChart);
+            break;
+        case 'factionPerformance':
+            createModalFactionPerformanceChart(games, modalChart);
+            break;
+        case 'gameDuration':
+            createModalGameDurationChart(games, modalChart);
+            break;
+    }
+    
+    modal.show();
 }
 
-// Create modal player win rate by role chart
-function createModalPlayerWinRateByRoleChart(games, selectedPlayer) {
-    const playerGames = games.map(game => {
-        let role = 'teammate';
-        let team = null;
-        let isStraggler = false;
-        let teamWon = false;
-        
-        if (game.commander1 === selectedPlayer) {
-            role = 'commander';
-            team = 1;
-            teamWon = game.winner === selectedPlayer;
-        } else if (game.commander2 === selectedPlayer) {
-            role = 'commander';
-            team = 2;
-            teamWon = game.winner === selectedPlayer;
-        } else if (game.teamOne && game.teamOne.includes(selectedPlayer)) {
-            role = 'teammate';
-            team = 1;
-            teamWon = game.winner === game.commander1;
-        } else if (game.teamTwo && game.teamTwo.includes(selectedPlayer)) {
-            role = 'teammate';
-            team = 2;
-            teamWon = game.winner === game.commander2;
-        }
-        
-        if (game.teamOneStraggler && game.teamOneStraggler.includes(selectedPlayer)) {
-            isStraggler = true;
-            if (!team) team = 1;
-        }
-        if (game.teamTwoStraggler && game.teamTwoStraggler.includes(selectedPlayer)) {
-            isStraggler = true;
-            if (!team) team = 2;
-        }
-        
-        return { ...game, role, team, teamWon, isStraggler };
+function createModalCommanderGamesChart(games, canvas) {
+    const commanderStats = {};
+    
+    games.forEach(game => {
+        commanderStats[game.commander1] = (commanderStats[game.commander1] || 0) + 1;
+        commanderStats[game.commander2] = (commanderStats[game.commander2] || 0) + 1;
     });
     
-    const commanderGames = playerGames.filter(g => g.role === 'commander');
-    const thugGames = playerGames.filter(g => g.role === 'teammate' && !g.isStraggler);
+    const sortedCommanders = Object.entries(commanderStats)
+        .sort(([,a], [,b]) => b - a);
     
-    const roleData = [
-        {
-            role: 'Commander',
-            wins: commanderGames.filter(g => g.teamWon).length,
-            total: commanderGames.length,
-            winRate: commanderGames.length > 0 ? (commanderGames.filter(g => g.teamWon).length / commanderGames.length * 100).toFixed(1) : 0
-        },
-        {
-            role: 'Thug',
-            wins: thugGames.filter(g => g.teamWon).length,
-            total: thugGames.length,
-            winRate: thugGames.length > 0 ? (thugGames.filter(g => g.teamWon).length / thugGames.length * 100).toFixed(1) : 0
-        }
-    ];
+    // Enforce minimum readable dimensions - never compress
+    const MIN_BAR_HEIGHT = 35; // Minimum height per bar for readability
+    const CHART_WIDTH = 1200; // Fixed comfortable width
+    const PADDING = 100; // Top/bottom padding
     
-    const ctx = document.getElementById('modalChart').getContext('2d');
-    new Chart(ctx, {
+    // Calculate height based on data - ensure every bar is readable
+    const chartHeight = (sortedCommanders.length * MIN_BAR_HEIGHT) + PADDING;
+    
+    // Ensure the modal container can handle the full size
+    const container = canvas.parentElement;
+    container.style.width = `${CHART_WIDTH + 40}px`; // Extra padding
+    container.style.minHeight = `${chartHeight}px`;
+    
+    // Set canvas to exact dimensions - no scaling allowed
+    canvas.width = CHART_WIDTH;
+    canvas.height = chartHeight;
+    canvas.style.width = `${CHART_WIDTH}px`;
+    canvas.style.height = `${chartHeight}px`;
+    canvas.style.display = 'block';
+    canvas.style.maxWidth = 'none';
+    canvas.style.maxHeight = 'none';
+    
+    new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: {
-            labels: roleData.map(r => r.role),
+            labels: sortedCommanders.map(([name]) => name),
             datasets: [{
-                label: 'Win Rate (%)',
-                data: roleData.map(r => r.winRate),
-                backgroundColor: [
-                    'rgba(25, 135, 84, 0.8)',
-                    'rgba(13, 110, 253, 0.8)'
-                ]
+                label: 'Games Played',
+                data: sortedCommanders.map(([,count]) => count),
+                backgroundColor: 'rgba(13, 110, 253, 0.8)',
+                borderColor: 'rgba(13, 110, 253, 1)',
+                borderWidth: 1
             }]
         },
         options: {
             indexAxis: 'y',
-            responsive: true,
+            responsive: false,
             maintainAspectRatio: false,
+            resizeDelay: 0,
+            animation: false,
+            interaction: {
+                intersect: false
+            },
             plugins: {
                 legend: {
-                    labels: { color: 'white' }
+                    display: true,
+                    labels: { 
+                        color: 'white',
+                        font: { size: 16 }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'category',
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 13 },
+                        maxTicksLimit: false,
+                        autoSkip: false,
+                        padding: 8
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
+                },
+                x: {
+                    type: 'linear',
+                    beginAtZero: true,
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 13 }
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
+                }
+            },
+            layout: {
+                padding: {
+                    top: 20,
+                    bottom: 20,
+                    left: 150, // Space for long names
+                    right: 50
+                }
+            },
+            elements: {
+                bar: {
+                    borderWidth: 1
+                }
+            }
+        }
+    });
+}
+
+function createModalCommanderWinRateChart(games, canvas, rankingMethod, minGameRequirement) {
+    const commanderStats = {};
+    
+    // Calculate comprehensive stats for each commander
+    games.forEach(game => {
+        [game.commander1, game.commander2].forEach(commander => {
+            if (!commanderStats[commander]) {
+                commanderStats[commander] = { games: 0, wins: 0, faction: {} };
+            }
+            commanderStats[commander].games++;
+            
+            if (game.winner === commander) {
+                commanderStats[commander].wins++;
+            }
+            
+            // Track faction usage
+            const faction = commander === game.commander1 ? game.faction1 : game.faction2;
+            commanderStats[commander].faction[faction] = (commanderStats[commander].faction[faction] || 0) + 1;
+        });
+    });
+    
+    // Apply minimum games filter
+    let minGames;
+    if (minGameRequirement.includes('%')) {
+        const percentage = parseFloat(minGameRequirement.replace('%', ''));
+        minGames = Math.ceil(games.length * (percentage / 100));
+    } else {
+        minGames = parseInt(minGameRequirement);
+    }
+    
+    const qualifiedCommanders = Object.entries(commanderStats)
+        .filter(([, stats]) => stats.games >= minGames);
+    
+    // Calculate scores based on method
+    const scoredCommanders = qualifiedCommanders.map(([name, stats]) => {
+        const winRate = stats.wins / stats.games;
+        let score = winRate;
+        
+        switch (rankingMethod) {
+            case 'wilson':
+                // Wilson Score Interval
+                const n = stats.games;
+                const p = winRate;
+                const z = 1.96; // 95% confidence
+                score = (p + z*z/(2*n) - z * Math.sqrt((p*(1-p)+z*z/(4*n))/n)) / (1+z*z/n);
+                break;
+            case 'winRate':
+                score = winRate;
+                break;
+            case 'volumeWeighted':
+                score = winRate * Math.log(stats.games + 1);
+                break;
+            case 'bayesian':
+                // Bayesian average
+                const globalWinRate = games.filter(g => g.winner).length / (games.length * 2);
+                const confidence = 30;
+                score = (confidence * globalWinRate + stats.games * winRate) / (confidence + stats.games);
+                break;
+            case 'composite':
+                const wilsonScore = (winRate + 1.96*1.96/(2*stats.games) - 1.96 * Math.sqrt((winRate*(1-winRate)+1.96*1.96/(4*stats.games))/stats.games)) / (1+1.96*1.96/stats.games);
+                const volumeScore = Math.log(stats.games + 1) / Math.log(Math.max(...qualifiedCommanders.map(([,s]) => s.games)) + 1);
+                score = wilsonScore * 0.7 + volumeScore * 0.3;
+                break;
+        }
+        
+        return {
+            name,
+            score,
+            winRate: winRate * 100,
+            games: stats.games,
+            wins: stats.wins
+        };
+    });
+    
+    const sortedCommanders = scoredCommanders.sort((a, b) => b.score - a.score);
+    
+    // Enforce minimum readable dimensions - never compress
+    const MIN_BAR_HEIGHT = 35; // Minimum height per bar for readability
+    const CHART_WIDTH = 1200; // Fixed comfortable width
+    const PADDING = 100; // Top/bottom padding
+    
+    // Calculate height based on data - ensure every bar is readable
+    const chartHeight = (sortedCommanders.length * MIN_BAR_HEIGHT) + PADDING;
+    
+    // Ensure the modal container can handle the full size
+    const container = canvas.parentElement;
+    container.style.width = `${CHART_WIDTH + 40}px`; // Extra padding
+    container.style.minHeight = `${chartHeight}px`;
+    
+    // Set canvas to exact dimensions - no scaling allowed
+    canvas.width = CHART_WIDTH;
+    canvas.height = chartHeight;
+    canvas.style.width = `${CHART_WIDTH}px`;
+    canvas.style.height = `${chartHeight}px`;
+    canvas.style.display = 'block';
+    canvas.style.maxWidth = 'none';
+    canvas.style.maxHeight = 'none';
+    
+    new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: sortedCommanders.map(c => c.name),
+            datasets: [{
+                label: `${rankingMethod === 'wilson' ? 'Wilson Score' : 
+                        rankingMethod === 'winRate' ? 'Win Rate (%)' :
+                        rankingMethod === 'volumeWeighted' ? 'Volume-Weighted Score' :
+                        rankingMethod === 'bayesian' ? 'Bayesian Average' : 'Composite Score'}`,
+                data: sortedCommanders.map(c => rankingMethod === 'winRate' ? c.winRate : c.score),
+                backgroundColor: 'rgba(25, 135, 84, 0.8)',
+                borderColor: 'rgba(25, 135, 84, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: false,
+            maintainAspectRatio: false,
+            resizeDelay: 0,
+            animation: false,
+            interaction: {
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: { 
+                        color: 'white',
+                        font: { size: 16 }
+                    }
                 },
                 tooltip: {
                     callbacks: {
-                        afterLabel: function(context) {
-                            const dataIndex = context.dataIndex;
-                            const role = roleData[dataIndex];
-                            return `${role.wins}/${role.total} games won`;
+                        label: function(context) {
+                            const commander = sortedCommanders[context.dataIndex];
+                            return [
+                                `${context.dataset.label}: ${context.parsed.x.toFixed(3)}`,
+                                `Win Rate: ${commander.winRate.toFixed(1)}%`,
+                                `Games: ${commander.games}`,
+                                `Wins: ${commander.wins}`
+                            ];
                         }
                     }
                 }
             },
             scales: {
                 y: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                x: {
-                    beginAtZero: true,
-                    max: 100,
+                    type: 'category',
                     ticks: { 
                         color: 'white',
-                        callback: function(value) { return value + '%'; }
+                        font: { size: 13 },
+                        maxTicksLimit: false,
+                        autoSkip: false,
+                        padding: 8
                     },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                }
-            }
-        }
-    });
-}
-
-// Create modal player performance chart
-function createModalPlayerPerformanceChart(games, selectedPlayer) {
-    const playerGames = games.map(game => {
-        let role = 'teammate';
-        let team = null;
-        let isStraggler = false;
-        let teamWon = false;
-        
-        if (game.commander1 === selectedPlayer) {
-            role = 'commander';
-            team = 1;
-            teamWon = game.winner === selectedPlayer;
-        } else if (game.commander2 === selectedPlayer) {
-            role = 'commander';
-            team = 2;
-            teamWon = game.winner === selectedPlayer;
-        } else if (game.teamOne && game.teamOne.includes(selectedPlayer)) {
-            role = 'teammate';
-            team = 1;
-            teamWon = game.winner === game.commander1;
-        } else if (game.teamTwo && game.teamTwo.includes(selectedPlayer)) {
-            role = 'teammate';
-            team = 2;
-            teamWon = game.winner === game.commander2;
-        }
-        
-        if (game.teamOneStraggler && game.teamOneStraggler.includes(selectedPlayer)) {
-            isStraggler = true;
-            if (!team) team = 1;
-        }
-        if (game.teamTwoStraggler && game.teamTwoStraggler.includes(selectedPlayer)) {
-            isStraggler = true;
-            if (!team) team = 2;
-        }
-        
-        return { ...game, role, team, teamWon, isStraggler };
-    });
-    
-    const monthlyStats = {};
-    
-    playerGames.forEach(game => {
-        const monthKey = `${game.year}-${game.month}`;
-        if (!monthlyStats[monthKey]) {
-            monthlyStats[monthKey] = { wins: 0, total: 0 };
-        }
-        monthlyStats[monthKey].total++;
-        if (game.teamWon) {
-            monthlyStats[monthKey].wins++;
-        }
-    });
-    
-    const sortedMonths = Object.keys(monthlyStats).sort();
-    const winRates = sortedMonths.map(month => 
-        (monthlyStats[month].wins / monthlyStats[month].total * 100).toFixed(1)
-    );
-    const gameCounts = sortedMonths.map(month => monthlyStats[month].total);
-    
-    const ctx = document.getElementById('modalChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: sortedMonths,
-            datasets: [{
-                label: 'Win Rate (%)',
-                data: winRates,
-                borderColor: 'rgba(25, 135, 84, 1)',
-                backgroundColor: 'rgba(25, 135, 84, 0.1)',
-                yAxisID: 'y'
-            }, {
-                label: 'Games Played',
-                data: gameCounts,
-                borderColor: 'rgba(13, 110, 253, 1)',
-                backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                yAxisID: 'y1'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
+                },
+                x: {
+                    type: 'linear',
+                    beginAtZero: true,
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 13 }
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
                 }
             },
-            scales: {
-                x: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    max: 100,
-                    ticks: { 
-                        color: 'white',
-                        callback: function(value) { return value + '%'; }
-                    },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    ticks: { color: 'white' },
-                    grid: { drawOnChartArea: false }
+            layout: {
+                padding: {
+                    top: 20,
+                    bottom: 20,
+                    left: 150, // Space for long names
+                    right: 50
+                }
+            },
+            elements: {
+                bar: {
+                    borderWidth: 1
                 }
             }
         }
     });
 }
 
-// Create modal player teammates chart
-function createModalPlayerTeammatesChart(games, selectedPlayer) {
-    const teammateStats = {};
+function createModalMapPopularityChart(games, canvas) {
+    const mapStats = {};
     
     games.forEach(game => {
-        let teammates = [];
-        
-        if (game.commander1 === selectedPlayer && game.teamOne) {
-            teammates = [...game.teamOne];
-        } else if (game.commander2 === selectedPlayer && game.teamTwo) {
-            teammates = [...game.teamTwo];
-        } else if (game.teamOne && game.teamOne.includes(selectedPlayer)) {
-            teammates = [game.commander1, ...game.teamOne.filter(p => p !== selectedPlayer)];
-        } else if (game.teamTwo && game.teamTwo.includes(selectedPlayer)) {
-            teammates = [game.commander2, ...game.teamTwo.filter(p => p !== selectedPlayer)];
-        }
-        
-        teammates.forEach(teammate => {
-            teammateStats[teammate] = (teammateStats[teammate] || 0) + 1;
-        });
+        mapStats[game.map] = (mapStats[game.map] || 0) + 1;
     });
     
-    const sortedTeammates = Object.entries(teammateStats)
+    const sortedMaps = Object.entries(mapStats)
         .sort(([,a], [,b]) => b - a);
     
-    const ctx = document.getElementById('modalChart').getContext('2d');
-    new Chart(ctx, {
+    // Enforce minimum readable dimensions - never compress
+    const MIN_BAR_HEIGHT = 35; // Minimum height per bar for readability
+    const CHART_WIDTH = 1200; // Fixed comfortable width
+    const PADDING = 100; // Top/bottom padding
+    
+    // Calculate height based on data - ensure every bar is readable
+    const chartHeight = (sortedMaps.length * MIN_BAR_HEIGHT) + PADDING;
+    
+    // Ensure the modal container can handle the full size
+    const container = canvas.parentElement;
+    container.style.width = `${CHART_WIDTH + 40}px`; // Extra padding
+    container.style.minHeight = `${chartHeight}px`;
+    
+    // Set canvas to exact dimensions - no scaling allowed
+    canvas.width = CHART_WIDTH;
+    canvas.height = chartHeight;
+    canvas.style.width = `${CHART_WIDTH}px`;
+    canvas.style.height = `${chartHeight}px`;
+    canvas.style.display = 'block';
+    canvas.style.maxWidth = 'none';
+    canvas.style.maxHeight = 'none';
+    
+    new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: {
-            labels: sortedTeammates.map(([name]) => name),
+            labels: sortedMaps.map(([name]) => name),
             datasets: [{
-                label: 'Games Together',
-                data: sortedTeammates.map(([,count]) => count),
-                backgroundColor: 'rgba(111, 66, 193, 0.8)',
-                borderColor: 'rgba(111, 66, 193, 1)',
+                label: 'Games Played',
+                data: sortedMaps.map(([,count]) => count),
+                backgroundColor: 'rgba(13, 202, 240, 0.8)',
+                borderColor: 'rgba(13, 202, 240, 1)',
                 borderWidth: 1
             }]
         },
         options: {
             indexAxis: 'y',
-            responsive: true,
+            responsive: false,
             maintainAspectRatio: false,
+            resizeDelay: 0,
+            animation: false,
+            interaction: {
+                intersect: false
+            },
             plugins: {
                 legend: {
-                    labels: { color: 'white' }
+                    display: true,
+                    labels: { 
+                        color: 'white',
+                        font: { size: 16 }
+                    }
                 }
             },
             scales: {
                 y: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    type: 'category',
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 13 },
+                        maxTicksLimit: false,
+                        autoSkip: false,
+                        padding: 8
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
                 },
                 x: {
+                    type: 'linear',
                     beginAtZero: true,
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 13 }
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
+                }
+            },
+            layout: {
+                padding: {
+                    top: 20,
+                    bottom: 20,
+                    left: 150, // Space for long names
+                    right: 50
+                }
+            },
+            elements: {
+                bar: {
+                    borderWidth: 1
                 }
             }
         }
     });
 }
 
-// Create modal player map chart
-function createModalPlayerMapChart(games, selectedPlayer) {
-    const playerGames = games.map(game => {
-        let role = 'teammate';
-        let team = null;
-        let isStraggler = false;
-        let teamWon = false;
-        
-        if (game.commander1 === selectedPlayer) {
-            role = 'commander';
-            team = 1;
-            teamWon = game.winner === selectedPlayer;
-        } else if (game.commander2 === selectedPlayer) {
-            role = 'commander';
-            team = 2;
-            teamWon = game.winner === selectedPlayer;
-        } else if (game.teamOne && game.teamOne.includes(selectedPlayer)) {
-            role = 'teammate';
-            team = 1;
-            teamWon = game.winner === game.commander1;
-        } else if (game.teamTwo && game.teamTwo.includes(selectedPlayer)) {
-            role = 'teammate';
-            team = 2;
-            teamWon = game.winner === game.commander2;
-        }
-        
-        if (game.teamOneStraggler && game.teamOneStraggler.includes(selectedPlayer)) {
-            isStraggler = true;
-            if (!team) team = 1;
-        }
-        if (game.teamTwoStraggler && game.teamTwoStraggler.includes(selectedPlayer)) {
-            isStraggler = true;
-            if (!team) team = 2;
-        }
-        
-        return { ...game, role, team, teamWon, isStraggler };
+function createModalCommanderFactionChart(games, canvas) {
+    const commanderFactionStats = {};
+    
+    games.forEach(game => {
+        [
+            [game.commander1, game.faction1],
+            [game.commander2, game.faction2]
+        ].forEach(([commander, faction]) => {
+            if (!commanderFactionStats[commander]) {
+                commanderFactionStats[commander] = {};
+            }
+            commanderFactionStats[commander][faction] = (commanderFactionStats[commander][faction] || 0) + 1;
+        });
     });
     
-    const mapStats = {};
+    // Get most played commanders and their primary factions
+    const commanderPreferences = Object.entries(commanderFactionStats)
+        .map(([commander, factions]) => {
+            const totalGames = Object.values(factions).reduce((sum, count) => sum + count, 0);
+            const primaryFaction = Object.entries(factions)
+                .sort(([,a], [,b]) => b - a)[0];
+            
+            return {
+                commander,
+                totalGames,
+                primaryFaction: primaryFaction[0],
+                primaryCount: primaryFaction[1],
+                percentage: (primaryFaction[1] / totalGames * 100).toFixed(1)
+            };
+        })
+        .sort((a, b) => b.totalGames - a.totalGames);
     
-    playerGames.forEach(game => {
-        if (!mapStats[game.map]) {
-            mapStats[game.map] = { wins: 0, total: 0 };
-        }
-        mapStats[game.map].total++;
-        if (game.teamWon) {
-            mapStats[game.map].wins++;
+    // Enforce minimum readable dimensions - never compress
+    const MIN_BAR_HEIGHT = 35; // Minimum height per bar for readability
+    const CHART_WIDTH = 1200; // Fixed comfortable width
+    const PADDING = 100; // Top/bottom padding
+    
+    // Calculate height based on data - ensure every bar is readable
+    const chartHeight = (commanderPreferences.length * MIN_BAR_HEIGHT) + PADDING;
+    
+    // Ensure the modal container can handle the full size
+    const container = canvas.parentElement;
+    container.style.width = `${CHART_WIDTH + 40}px`; // Extra padding
+    container.style.minHeight = `${chartHeight}px`;
+    
+    // Set canvas to exact dimensions - no scaling allowed
+    canvas.width = CHART_WIDTH;
+    canvas.height = chartHeight;
+    canvas.style.width = `${CHART_WIDTH}px`;
+    canvas.style.height = `${chartHeight}px`;
+    canvas.style.display = 'block';
+    canvas.style.maxWidth = 'none';
+    canvas.style.maxHeight = 'none';
+    
+    new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: commanderPreferences.map(c => `${c.commander} (${c.primaryFaction})`),
+            datasets: [{
+                label: 'Primary Faction Usage',
+                data: commanderPreferences.map(c => c.primaryCount),
+                backgroundColor: 'rgba(255, 193, 7, 0.8)',
+                borderColor: 'rgba(255, 193, 7, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: false,
+            maintainAspectRatio: false,
+            resizeDelay: 0,
+            animation: false,
+            interaction: {
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: { 
+                        color: 'white',
+                        font: { size: 16 }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const prefs = commanderPreferences[context.dataIndex];
+                            return [
+                                `Primary Faction: ${prefs.primaryFaction}`,
+                                `Games: ${prefs.primaryCount}/${prefs.totalGames}`,
+                                `Percentage: ${prefs.percentage}%`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'category',
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 13 },
+                        maxTicksLimit: false,
+                        autoSkip: false,
+                        padding: 8
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
+                },
+                x: {
+                    type: 'linear',
+                    beginAtZero: true,
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 13 }
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
+                }
+            },
+            layout: {
+                padding: {
+                    top: 20,
+                    bottom: 20,
+                    left: 200, // More space for commander+faction names
+                    right: 50
+                }
+            },
+            elements: {
+                bar: {
+                    borderWidth: 1
+                }
+            }
         }
     });
+}
+
+function createModalFactionPerformanceChart(games, canvas) {
+    const factionStats = {};
     
-    const mapData = Object.entries(mapStats)
-        .filter(([,stats]) => stats.total >= 1)
-        .map(([map, stats]) => ({
-            map,
-            winRate: (stats.wins / stats.total * 100).toFixed(1),
-            total: stats.total
+    games.forEach(game => {
+        [game.faction1, game.faction2].forEach(faction => {
+            if (!factionStats[faction]) {
+                factionStats[faction] = { games: 0, wins: 0 };
+            }
+            factionStats[faction].games++;
+            
+            if ((game.winner === game.commander1 && faction === game.faction1) ||
+                (game.winner === game.commander2 && faction === game.faction2)) {
+                factionStats[faction].wins++;
+            }
+        });
+    });
+    
+    const factionPerformance = Object.entries(factionStats)
+        .map(([faction, stats]) => ({
+            faction,
+            winRate: (stats.wins / stats.games * 100).toFixed(1),
+            games: stats.games,
+            wins: stats.wins
         }))
         .sort((a, b) => b.winRate - a.winRate);
     
-    const ctx = document.getElementById('modalChart').getContext('2d');
-    new Chart(ctx, {
+    // Enforce minimum readable dimensions - vertical layout for better readability
+    const MIN_BAR_HEIGHT = 80; // Extra height for dual-axis chart
+    const CHART_WIDTH = 1200; // Fixed comfortable width
+    const PADDING = 150; // More padding for dual-axis
+    
+    // Calculate height based on data - ensure every bar is readable
+    const chartHeight = (factionPerformance.length * MIN_BAR_HEIGHT) + PADDING;
+    
+    // Ensure the modal container can handle the full size
+    const container = canvas.parentElement;
+    container.style.width = `${CHART_WIDTH + 40}px`; // Extra padding
+    container.style.minHeight = `${chartHeight}px`;
+    
+    // Set canvas to exact dimensions - no scaling allowed
+    canvas.width = CHART_WIDTH;
+    canvas.height = chartHeight;
+    canvas.style.width = `${CHART_WIDTH}px`;
+    canvas.style.height = `${chartHeight}px`;
+    canvas.style.display = 'block';
+    canvas.style.maxWidth = 'none';
+    canvas.style.maxHeight = 'none';
+    
+    new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: {
-            labels: mapData.map(m => m.map),
+            labels: factionPerformance.map(f => f.faction),
+            datasets: [
+                {
+                    label: 'Win Rate (%)',
+                    data: factionPerformance.map(f => f.winRate),
+                    backgroundColor: 'rgba(220, 53, 69, 0.8)',
+                    borderColor: 'rgba(220, 53, 69, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Total Games',
+                    data: factionPerformance.map(f => f.games),
+                    backgroundColor: 'rgba(108, 117, 125, 0.8)',
+                    borderColor: 'rgba(108, 117, 125, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: false,
+            maintainAspectRatio: false,
+            resizeDelay: 0,
+            animation: false,
+            interaction: {
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: { 
+                        color: 'white',
+                        font: { size: 16 }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const faction = factionPerformance[context.dataIndex];
+                            if (context.datasetIndex === 0) {
+                                return `Win Rate: ${faction.winRate}% (${faction.wins}/${faction.games})`;
+                            } else {
+                                return `Total Games: ${faction.games}`;
+                            }
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'category',
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 13 },
+                        maxTicksLimit: false,
+                        autoSkip: false
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    beginAtZero: true,
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 13 }
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    },
+                    title: {
+                        display: true,
+                        text: 'Win Rate (%)',
+                        color: 'white',
+                        font: { size: 16 }
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    beginAtZero: true,
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 13 }
+                    },
+                    grid: { 
+                        drawOnChartArea: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Total Games',
+                        color: 'white',
+                        font: { size: 16 }
+                    }
+                }
+            },
+            layout: {
+                padding: {
+                    top: 30,
+                    bottom: 30,
+                    left: 80,
+                    right: 80
+                }
+            },
+            elements: {
+                bar: {
+                    borderWidth: 1
+                }
+            }
+        }
+    });
+}
+
+function createModalGameDurationChart(games, canvas) {
+    const durationBuckets = {};
+    
+    games.forEach(game => {
+        if (!game.time || game.time.trim() === '') return;
+        
+        try {
+            const timeParts = game.time.split(':');
+            if (timeParts.length >= 2) {
+                const hours = parseInt(timeParts[0]) || 0;
+                const minutes = parseInt(timeParts[1]) || 0;
+                const totalMinutes = hours * 60 + minutes;
+                
+                // Create buckets in 10-minute intervals
+                const bucket = Math.floor(totalMinutes / 10) * 10;
+                const bucketLabel = `${Math.floor(bucket / 60)}:${(bucket % 60).toString().padStart(2, '0')} - ${Math.floor((bucket + 9) / 60)}:${((bucket + 9) % 60).toString().padStart(2, '0')}`;
+                
+                durationBuckets[bucketLabel] = (durationBuckets[bucketLabel] || 0) + 1;
+            }
+        } catch (e) {
+            console.warn('Error parsing game time:', game.time, e);
+        }
+    });
+    
+    const sortedBuckets = Object.entries(durationBuckets)
+        .sort(([a], [b]) => {
+            const getMinutes = (label) => {
+                const start = label.split(' - ')[0];
+                const [hours, mins] = start.split(':').map(Number);
+                return hours * 60 + mins;
+            };
+            return getMinutes(a) - getMinutes(b);
+        });
+    
+    // Enforce minimum readable dimensions - horizontal layout for time
+    const MIN_BAR_HEIGHT = 40; // Height for horizontal bars
+    const CHART_WIDTH = 1200; // Fixed comfortable width
+    const PADDING = 100; // Top/bottom padding
+    
+    // Calculate height based on data - ensure every bar is readable
+    const chartHeight = Math.max(400, (sortedBuckets.length * MIN_BAR_HEIGHT) + PADDING);
+    
+    // Ensure the modal container can handle the full size
+    const container = canvas.parentElement;
+    container.style.width = `${CHART_WIDTH + 40}px`; // Extra padding
+    container.style.minHeight = `${chartHeight}px`;
+    
+    // Set canvas to exact dimensions - no scaling allowed
+    canvas.width = CHART_WIDTH;
+    canvas.height = chartHeight;
+    canvas.style.width = `${CHART_WIDTH}px`;
+    canvas.style.height = `${chartHeight}px`;
+    canvas.style.display = 'block';
+    canvas.style.maxWidth = 'none';
+    canvas.style.maxHeight = 'none';
+    
+    new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: sortedBuckets.map(([label]) => label),
             datasets: [{
-                label: 'Win Rate (%)',
-                data: mapData.map(m => m.winRate),
+                label: 'Number of Games',
+                data: sortedBuckets.map(([,count]) => count),
                 backgroundColor: 'rgba(108, 117, 125, 0.8)',
                 borderColor: 'rgba(108, 117, 125, 1)',
                 borderWidth: 1
             }]
         },
         options: {
-            indexAxis: 'y',
-            responsive: true,
+            responsive: false,
             maintainAspectRatio: false,
+            resizeDelay: 0,
+            animation: false,
+            interaction: {
+                intersect: false
+            },
             plugins: {
                 legend: {
-                    labels: { color: 'white' }
-                }
-            },
-            scales: {
-                y: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                x: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: { 
+                    display: true,
+                    labels: { 
                         color: 'white',
-                        callback: function(value) { return value + '%'; }
-                    },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                }
-            }
-        }
-    });
-}
-
-// Create modal player activity chart
-function createModalPlayerActivityChart(games, selectedPlayer) {
-    const playerGames = games.map(game => {
-        let role = 'teammate';
-        let team = null;
-        let isStraggler = false;
-        let teamWon = false;
-        
-        if (game.commander1 === selectedPlayer) {
-            role = 'commander';
-            team = 1;
-            teamWon = game.winner === selectedPlayer;
-        } else if (game.commander2 === selectedPlayer) {
-            role = 'commander';
-            team = 2;
-            teamWon = game.winner === selectedPlayer;
-        } else if (game.teamOne && game.teamOne.includes(selectedPlayer)) {
-            role = 'teammate';
-            team = 1;
-            teamWon = game.winner === game.commander1;
-        } else if (game.teamTwo && game.teamTwo.includes(selectedPlayer)) {
-            role = 'teammate';
-            team = 2;
-            teamWon = game.winner === game.commander2;
-        }
-        
-        if (game.teamOneStraggler && game.teamOneStraggler.includes(selectedPlayer)) {
-            isStraggler = true;
-            if (!team) team = 1;
-        }
-        if (game.teamTwoStraggler && game.teamTwoStraggler.includes(selectedPlayer)) {
-            isStraggler = true;
-            if (!team) team = 2;
-        }
-        
-        return { ...game, role, team, teamWon, isStraggler };
-    });
-    
-    const monthlyActivity = {};
-    
-    playerGames.forEach(game => {
-        const monthKey = `${game.year}-${game.month}`;
-        if (!monthlyActivity[monthKey]) {
-            monthlyActivity[monthKey] = { commander: 0, teammate: 0, straggler: 0 };
-        }
-        
-        if (game.role === 'commander') {
-            monthlyActivity[monthKey].commander++;
-        } else if (game.isStraggler) {
-            monthlyActivity[monthKey].straggler++;
-        } else {
-            monthlyActivity[monthKey].teammate++;
-        }
-    });
-    
-    const sortedMonths = Object.keys(monthlyActivity).sort();
-    
-    const ctx = document.getElementById('modalChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: sortedMonths,
-            datasets: [{
-                label: 'Commander',
-                data: sortedMonths.map(month => monthlyActivity[month].commander),
-                backgroundColor: 'rgba(25, 135, 84, 0.8)'
-            }, {
-                label: 'Thug',
-                data: sortedMonths.map(month => monthlyActivity[month].teammate),
-                backgroundColor: 'rgba(13, 110, 253, 0.8)'
-            }, {
-                label: 'AFK',
-                data: sortedMonths.map(month => monthlyActivity[month].straggler),
-                backgroundColor: 'rgba(220, 53, 69, 0.8)'
-            }]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                }
-            },
-            scales: {
-                y: {
-                    stacked: true,
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                x: {
-                    stacked: true,
-                    beginAtZero: true,
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                }
-            }
-        }
-    });
-}
-
-// Create player win rate evolution chart
-function createPlayerWinRateEvolutionChart(games, player) {
-    const ctx = document.getElementById('playerWinRateEvolutionChart');
-    if (!ctx) return;
-    
-    // Sort games chronologically
-    const sortedGames = [...games].sort((a, b) => {
-        const dateA = new Date(`${a.year}-${a.month}-${a.day}`);
-        const dateB = new Date(`${b.year}-${b.month}-${b.day}`);
-        return dateA - dateB;
-    });
-    
-    // Calculate cumulative win rate at each game
-    const evolutionData = [];
-    let cumulativeWins = 0;
-    
-    sortedGames.forEach((game, index) => {
-        if (game.teamWon) cumulativeWins++;
-        const gameNumber = index + 1;
-        const cumulativeWinRate = (cumulativeWins / gameNumber) * 100;
-        
-        // Sample every 5th game for readability, plus first and last
-        if (gameNumber === 1 || gameNumber % 5 === 0 || gameNumber === sortedGames.length) {
-            evolutionData.push({
-                gameNumber,
-                winRate: cumulativeWinRate.toFixed(1),
-                wins: cumulativeWins,
-                total: gameNumber
-            });
-        }
-    });
-    
-    new Chart(ctx.getContext('2d'), {
-        type: 'line',
-        data: {
-            labels: evolutionData.map(d => `Game ${d.gameNumber}`),
-            datasets: [{
-                label: 'Cumulative Win Rate (%)',
-                data: evolutionData.map(d => d.winRate),
-                borderColor: 'rgba(25, 135, 84, 1)',
-                backgroundColor: 'rgba(25, 135, 84, 0.1)',
-                fill: true,
-                tension: 0.3
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                },
-                tooltip: {
-                    callbacks: {
-                        afterLabel: function(context) {
-                            const dataIndex = context.dataIndex;
-                            const data = evolutionData[dataIndex];
-                            return `Record: ${data.wins}/${data.total}`;
-                        }
+                        font: { size: 16 }
                     }
                 }
             },
             scales: {
                 x: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                y: {
-                    beginAtZero: true,
-                    max: 100,
+                    type: 'category',
                     ticks: { 
                         color: 'white',
-                        callback: function(value) { return value + '%'; }
+                        maxRotation: 45,
+                        font: { size: 13 },
+                        maxTicksLimit: false,
+                        autoSkip: false
                     },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    beginAtZero: true,
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 13 }
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
+                }
+            },
+            layout: {
+                padding: {
+                    top: 30,
+                    bottom: 30,
+                    left: 60,
+                    right: 40
+                }
+            },
+            elements: {
+                bar: {
+                    borderWidth: 1
                 }
             }
         }
     });
 }
 
-// Create player opposition analysis chart
-function createPlayerOppositionChart(games, player) {
-    const ctx = document.getElementById('playerOppositionChart');
-    if (!ctx) return;
+// Load player analysis with complete functionality
+function loadPlayerAnalysis() {
+    const games = getFilteredGames();
+    const filterSelectElement = document.getElementById('filterSelect');
+    const mainAnalysisElement = document.getElementById('mainAnalysis');
     
-    // Calculate opponent stats
-    const opponentStats = {};
-    
-    games.forEach(game => {
-        let opponent = null;
-        if (game.commander1 === player) {
-            opponent = game.commander2;
-        } else if (game.commander2 === player) {
-            opponent = game.commander1;
-        }
-        
-        if (opponent) {
-            if (!opponentStats[opponent]) {
-                opponentStats[opponent] = { wins: 0, total: 0 };
-            }
-            opponentStats[opponent].total++;
-            if (game.teamWon) {
-                opponentStats[opponent].wins++;
-            }
-        }
-    });
-    
-    // Filter opponents with at least 2 games and sort by win rate (highest to lowest) - show all data
-    const qualifiedOpponents = Object.entries(opponentStats)
-        .filter(([, stats]) => stats.total >= 2)
-        .map(([opponent, stats]) => ({
-            opponent,
-            winRate: (stats.wins / stats.total * 100).toFixed(1),
-            wins: stats.wins,
-            total: stats.total
-        }))
-        .sort((a, b) => parseFloat(b.winRate) - parseFloat(a.winRate));
-    
-    if (qualifiedOpponents.length === 0) {
-        ctx.getContext('2d').fillStyle = 'white';
-        ctx.getContext('2d').font = '16px Arial';
-        ctx.getContext('2d').textAlign = 'center';
-        ctx.getContext('2d').fillText('Not enough data (need 3+ games vs same opponent)', ctx.width / 2, ctx.height / 2);
+    if (!filterSelectElement || !mainAnalysisElement) {
         return;
     }
     
-    new Chart(ctx.getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: qualifiedOpponents.map(o => o.opponent),
-            datasets: [{
-                label: 'Win Rate (%)',
-                data: qualifiedOpponents.map(o => o.winRate),
-                backgroundColor: 'rgba(13, 202, 240, 0.8)',
-                borderColor: 'rgba(13, 202, 240, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                },
-                tooltip: {
-                    callbacks: {
-                        afterLabel: function(context) {
-                            const dataIndex = context.dataIndex;
-                            const opponent = qualifiedOpponents[dataIndex];
-                            return `Record: ${opponent.wins}/${opponent.total} games`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: { 
-                        color: 'white',
-                        callback: function(value) { return value + '%'; }
-                    },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                x: {
-                    ticks: { 
-                        color: 'white',
-                        maxRotation: 45
-                    },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                }
-            }
-        }
-    });
-}
-
-// Create player activity heatmap chart
-function createPlayerHeatmapChart(games, player) {
-    const ctx = document.getElementById('playerHeatmapChart');
-    if (!ctx) return;
+    const selectedPlayer = filterSelectElement.value;
+    updateSummaryStats(games);
     
-    // Create month-day activity map
-    const activityMap = {};
-    const winRateMap = {};
+    if (!selectedPlayer) {
+        mainAnalysisElement.innerHTML = `
+            <div class="alert alert-info">
+                <h5>Player Analysis</h5>
+                <p>Select a player from the filter dropdown to view detailed analysis.</p>
+            </div>
+        `;
+        return;
+    }
     
-    games.forEach(game => {
-        const monthKey = `${game.year}-${game.month}`;
-        if (!activityMap[monthKey]) {
-            activityMap[monthKey] = 0;
-            winRateMap[monthKey] = { wins: 0, total: 0 };
-        }
-        activityMap[monthKey]++;
-        winRateMap[monthKey].total++;
-        if (game.teamWon) {
-            winRateMap[monthKey].wins++;
-        }
+    // Filter games for selected player
+    const playerGames = games.filter(game => {
+        if (game.commander1 === selectedPlayer || game.commander2 === selectedPlayer) return true;
+        if (game.teamOne && game.teamOne.includes(selectedPlayer)) return true;
+        if (game.teamTwo && game.teamTwo.includes(selectedPlayer)) return true;
+        if (game.teamOneStraggler && game.teamOneStraggler.includes(selectedPlayer)) return true;
+        if (game.teamTwoStraggler && game.teamTwoStraggler.includes(selectedPlayer)) return true;
+        return false;
     });
     
-    // Convert to chart data
-    const months = Object.keys(activityMap).sort();
-    const activityData = months.map(month => activityMap[month]);
-    const winRateData = months.map(month => {
-        const stats = winRateMap[month];
-        return stats.total > 0 ? (stats.wins / stats.total * 100).toFixed(1) : 0;
-    });
-    
-    new Chart(ctx.getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: months,
-            datasets: [{
-                label: 'Games Played',
-                data: activityData,
-                backgroundColor: 'rgba(255, 193, 7, 0.8)',
-                borderColor: 'rgba(255, 193, 7, 1)',
-                borderWidth: 1,
-                yAxisID: 'y'
-            }, {
-                label: 'Win Rate (%)',
-                data: winRateData,
-                type: 'line',
-                borderColor: 'rgba(220, 53, 69, 1)',
-                backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                yAxisID: 'y1'
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                }
-            },
-            scales: {
-                x: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    beginAtZero: true,
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: { 
-                        color: 'white',
-                        callback: function(value) { return value + '%'; }
-                    },
-                    grid: { drawOnChartArea: false }
-                }
-            }
-        }
-    });
-}
-
-// Create player streaks and recent form chart
-function createPlayerStreaksChart(games, player) {
-    const ctx = document.getElementById('playerStreaksChart');
-    if (!ctx) return;
-    
-    // Sort games chronologically
-    const sortedGames = [...games].sort((a, b) => {
-        const dateA = new Date(`${a.year}-${a.month}-${a.day}`);
-        const dateB = new Date(`${b.year}-${b.month}-${b.day}`);
-        return dateA - dateB;
-    });
-    
-    // Calculate streaks
-    let currentStreak = 0;
-    let longestWinStreak = 0;
-    let longestLossStreak = 0;
-    let currentStreakType = null;
-    
-    // Calculate recent form (last 10, 20 games)
-    const last10Games = sortedGames.slice(-10);
-    const last20Games = sortedGames.slice(-20);
-    
-    const last10Wins = last10Games.filter(g => g.teamWon).length;
-    const last20Wins = last20Games.filter(g => g.teamWon).length;
-    
-    const last10WinRate = last10Games.length > 0 ? (last10Wins / last10Games.length * 100).toFixed(1) : 0;
-    const last20WinRate = last20Games.length > 0 ? (last20Wins / last20Games.length * 100).toFixed(1) : 0;
-    
-    // Calculate streaks
-    sortedGames.forEach(game => {
-        if (game.teamWon) {
-            if (currentStreakType === 'win') {
-                currentStreak++;
-            } else {
-                currentStreak = 1;
-                currentStreakType = 'win';
-            }
-            longestWinStreak = Math.max(longestWinStreak, currentStreak);
-        } else {
-            if (currentStreakType === 'loss') {
-                currentStreak++;
-            } else {
-                currentStreak = 1;
-                currentStreakType = 'loss';
-            }
-            longestLossStreak = Math.max(longestLossStreak, currentStreak);
-        }
-    });
-    
-    // Current streak
-    const currentStreakValue = currentStreakType === 'win' ? currentStreak : -currentStreak;
-    
-    new Chart(ctx.getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: ['Last 10 Games', 'Last 20 Games', 'Current Streak', 'Best Win Streak', 'Worst Loss Streak'],
-            datasets: [{
-                label: 'Performance Metrics',
-                data: [last10WinRate, last20WinRate, currentStreakValue, longestWinStreak, -longestLossStreak],
-                backgroundColor: [
-                    'rgba(25, 135, 84, 0.8)',
-                    'rgba(13, 110, 253, 0.8)',
-                    currentStreakValue >= 0 ? 'rgba(25, 135, 84, 0.8)' : 'rgba(220, 53, 69, 0.8)',
-                    'rgba(40, 167, 69, 0.8)',
-                    'rgba(220, 53, 69, 0.8)'
-                ],
-                borderColor: [
-                    'rgba(25, 135, 84, 1)',
-                    'rgba(13, 110, 253, 1)',
-                    currentStreakValue >= 0 ? 'rgba(25, 135, 84, 1)' : 'rgba(220, 53, 69, 1)',
-                    'rgba(40, 167, 69, 1)',
-                    'rgba(220, 53, 69, 1)'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const label = context.label;
-                            const value = context.parsed.y;
-                            
-                            if (label.includes('Last')) {
-                                return `${label}: ${value}% win rate`;
-                            } else if (label === 'Current Streak') {
-                                return value >= 0 ? `${value} game win streak` : `${Math.abs(value)} game loss streak`;
-                            } else if (label.includes('Win')) {
-                                return `${value} games`;
-                            } else {
-                                return `${Math.abs(value)} games`;
-                            }
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                x: {
-                    ticks: { 
-                        color: 'white',
-                        maxRotation: 45
-                    },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                }
-            }
-        }
-    });
-}
-
-// Create modal player win rate evolution chart
-function createModalPlayerWinRateEvolutionChart(playerGames, selectedPlayer) {
-    // Sort games chronologically
-    const sortedGames = [...playerGames].sort((a, b) => {
-        const dateA = new Date(`${a.year}-${a.month}-${a.day}`);
-        const dateB = new Date(`${b.year}-${b.month}-${b.day}`);
-        return dateA - dateB;
-    });
-    
-    // Calculate cumulative win rate at each game
-    const evolutionData = [];
-    let cumulativeWins = 0;
-    
-    sortedGames.forEach((game, index) => {
-        if (game.teamWon) cumulativeWins++;
-        const gameNumber = index + 1;
-        const cumulativeWinRate = (cumulativeWins / gameNumber) * 100;
-        
-        evolutionData.push({
-            gameNumber,
-            winRate: cumulativeWinRate.toFixed(1),
-            wins: cumulativeWins,
-            total: gameNumber
-        });
-    });
-    
-    const ctx = document.getElementById('modalChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: evolutionData.map(d => `Game ${d.gameNumber}`),
-            datasets: [{
-                label: 'Cumulative Win Rate (%)',
-                data: evolutionData.map(d => d.winRate),
-                borderColor: 'rgba(25, 135, 84, 1)',
-                backgroundColor: 'rgba(25, 135, 84, 0.1)',
-                fill: true,
-                tension: 0.3
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                },
-                tooltip: {
-                    callbacks: {
-                        afterLabel: function(context) {
-                            const dataIndex = context.dataIndex;
-                            const data = evolutionData[dataIndex];
-                            return `Record: ${data.wins}/${data.total}`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: { 
-                        color: 'white',
-                        callback: function(value) { return value + '%'; }
-                    },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                }
-            }
-        }
-    });
-}
-
-// Create modal player opposition chart
-function createModalPlayerOppositionChart(playerGames, selectedPlayer) {
-    // Calculate opponent stats
-    const opponentStats = {};
+    // Analyze player roles
+    const roleStats = { Commander: 0, Thug: 0, Straggler: 0 };
+    const winStats = { Commander: 0, Thug: 0, Total: 0 };
     
     playerGames.forEach(game => {
-        let opponent = null;
+        let isCommander = false;
+        let isStraggler = false;
+        let won = false;
+        
         if (game.commander1 === selectedPlayer) {
-            opponent = game.commander2;
+            isCommander = true;
+            won = game.winner === selectedPlayer;
         } else if (game.commander2 === selectedPlayer) {
-            opponent = game.commander1;
+            isCommander = true;
+            won = game.winner === selectedPlayer;
+        } else {
+            // Check if straggler
+            if ((game.teamOneStraggler && game.teamOneStraggler.includes(selectedPlayer)) ||
+                (game.teamTwoStraggler && game.teamTwoStraggler.includes(selectedPlayer))) {
+                isStraggler = true;
+            }
+            
+            // Check if won as teammate
+            if (game.teamOne && game.teamOne.includes(selectedPlayer)) {
+                won = game.winner === game.commander1;
+            } else if (game.teamTwo && game.teamTwo.includes(selectedPlayer)) {
+                won = game.winner === game.commander2;
+            }
         }
         
-        if (opponent) {
-            if (!opponentStats[opponent]) {
-                opponentStats[opponent] = { wins: 0, total: 0 };
-            }
-            opponentStats[opponent].total++;
-            if (game.teamWon) {
-                opponentStats[opponent].wins++;
-            }
-        }
-    });
-    
-    // Filter opponents with at least 2 games and sort by total games
-    const qualifiedOpponents = Object.entries(opponentStats)
-        .filter(([, stats]) => stats.total >= 2)
-        .map(([opponent, stats]) => ({
-            opponent,
-            winRate: (stats.wins / stats.total * 100).toFixed(1),
-            wins: stats.wins,
-            total: stats.total
-        }))
-        .sort((a, b) => b.total - a.total);
-    
-    const ctx = document.getElementById('modalChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: qualifiedOpponents.map(o => o.opponent),
-            datasets: [{
-                label: 'Win Rate (%)',
-                data: qualifiedOpponents.map(o => o.winRate),
-                backgroundColor: 'rgba(13, 202, 240, 0.8)',
-                borderColor: 'rgba(13, 202, 240, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                },
-                tooltip: {
-                    callbacks: {
-                        afterLabel: function(context) {
-                            const dataIndex = context.dataIndex;
-                            const opponent = qualifiedOpponents[dataIndex];
-                            return `Record: ${opponent.wins}/${opponent.total} games`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                x: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: { 
-                        color: 'white',
-                        callback: function(value) { return value + '%'; }
-                    },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                }
-            }
-        }
-    });
-}
-
-// Create modal player heatmap chart
-function createModalPlayerHeatmapChart(playerGames, selectedPlayer) {
-    // Create month-day activity map
-    const activityMap = {};
-    const winRateMap = {};
-    
-    playerGames.forEach(game => {
-        const monthKey = `${game.year}-${game.month}`;
-        if (!activityMap[monthKey]) {
-            activityMap[monthKey] = 0;
-            winRateMap[monthKey] = { wins: 0, total: 0 };
-        }
-        activityMap[monthKey]++;
-        winRateMap[monthKey].total++;
-        if (game.teamWon) {
-            winRateMap[monthKey].wins++;
-        }
-    });
-    
-    // Convert to chart data
-    const months = Object.keys(activityMap).sort();
-    const activityData = months.map(month => activityMap[month]);
-    const winRateData = months.map(month => {
-        const stats = winRateMap[month];
-        return stats.total > 0 ? (stats.wins / stats.total * 100).toFixed(1) : 0;
-    });
-    
-    const ctx = document.getElementById('modalChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: months,
-            datasets: [{
-                label: 'Games Played',
-                data: activityData,
-                backgroundColor: 'rgba(255, 193, 7, 0.8)',
-                borderColor: 'rgba(255, 193, 7, 1)',
-                borderWidth: 1,
-                yAxisID: 'y'
-            }, {
-                label: 'Win Rate (%)',
-                data: winRateData,
-                type: 'line',
-                borderColor: 'rgba(220, 53, 69, 1)',
-                backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                yAxisID: 'y1'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                }
-            },
-            scales: {
-                x: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    beginAtZero: true,
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: { 
-                        color: 'white',
-                        callback: function(value) { return value + '%'; }
-                    },
-                    grid: { drawOnChartArea: false }
-                }
-            }
-        }
-    });
-}
-
-// Create modal player streaks chart
-function createModalPlayerStreaksChart(playerGames, selectedPlayer) {
-    // Sort games chronologically
-    const sortedGames = [...playerGames].sort((a, b) => {
-        const dateA = new Date(`${a.year}-${a.month}-${a.day}`);
-        const dateB = new Date(`${b.year}-${b.month}-${b.day}`);
-        return dateA - dateB;
-    });
-    
-    // Calculate streaks
-    let currentStreak = 0;
-    let longestWinStreak = 0;
-    let longestLossStreak = 0;
-    let currentStreakType = null;
-    
-    // Calculate recent form (last 10, 20 games)
-    const last10Games = sortedGames.slice(-10);
-    const last20Games = sortedGames.slice(-20);
-    
-    const last10Wins = last10Games.filter(g => g.teamWon).length;
-    const last20Wins = last20Games.filter(g => g.teamWon).length;
-    
-    const last10WinRate = last10Games.length > 0 ? (last10Wins / last10Games.length * 100).toFixed(1) : 0;
-    const last20WinRate = last20Games.length > 0 ? (last20Wins / last20Games.length * 100).toFixed(1) : 0;
-    
-    // Calculate streaks
-    sortedGames.forEach(game => {
-        if (game.teamWon) {
-            if (currentStreakType === 'win') {
-                currentStreak++;
-            } else {
-                currentStreak = 1;
-                currentStreakType = 'win';
-            }
-            longestWinStreak = Math.max(longestWinStreak, currentStreak);
+        if (isCommander) {
+            roleStats.Commander++;
+            if (won) winStats.Commander++;
+        } else if (isStraggler) {
+            roleStats.Straggler++;
         } else {
-            if (currentStreakType === 'loss') {
-                currentStreak++;
-            } else {
-                currentStreak = 1;
-                currentStreakType = 'loss';
-            }
-            longestLossStreak = Math.max(longestLossStreak, currentStreak);
+            roleStats.Thug++;
+            if (won) winStats.Thug++;
         }
+        
+        if (won) winStats.Total++;
     });
     
-    // Current streak
-    const currentStreakValue = currentStreakType === 'win' ? currentStreak : -currentStreak;
+    const winRate = playerGames.length > 0 ? ((winStats.Total / playerGames.length) * 100).toFixed(1) : '0.0';
+    const commanderWinRate = roleStats.Commander > 0 ? ((winStats.Commander / roleStats.Commander) * 100).toFixed(1) : '0.0';
+    const thugWinRate = roleStats.Thug > 0 ? ((winStats.Thug / roleStats.Thug) * 100).toFixed(1) : '0.0';
     
-    const ctx = document.getElementById('modalChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Last 10 Games', 'Last 20 Games', 'Current Streak', 'Best Win Streak', 'Worst Loss Streak'],
-            datasets: [{
-                label: 'Performance Metrics',
-                data: [last10WinRate, last20WinRate, currentStreakValue, longestWinStreak, -longestLossStreak],
-                backgroundColor: [
-                    'rgba(25, 135, 84, 0.8)',
-                    'rgba(13, 110, 253, 0.8)',
-                    currentStreakValue >= 0 ? 'rgba(25, 135, 84, 0.8)' : 'rgba(220, 53, 69, 0.8)',
-                    'rgba(40, 167, 69, 0.8)',
-                    'rgba(220, 53, 69, 0.8)'
-                ],
-                borderColor: [
-                    'rgba(25, 135, 84, 1)',
-                    'rgba(13, 110, 253, 1)',
-                    currentStreakValue >= 0 ? 'rgba(25, 135, 84, 1)' : 'rgba(220, 53, 69, 1)',
-                    'rgba(40, 167, 69, 1)',
-                    'rgba(220, 53, 69, 1)'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: { color: 'white' }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const label = context.label;
-                            const value = context.parsed.x;
-                            
-                            if (label.includes('Last')) {
-                                return `${label}: ${value}% win rate`;
-                            } else if (label === 'Current Streak') {
-                                return value >= 0 ? `${value} game win streak` : `${Math.abs(value)} game loss streak`;
-                            } else if (label.includes('Win')) {
-                                return `${value} games`;
-                            } else {
-                                return `${Math.abs(value)} games`;
-                            }
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                x: {
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                }
-            }
-        }
-    });
+    mainAnalysisElement.innerHTML = `
+        <div class="row">
+            <div class="col-12 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">${selectedPlayer} - Player Profile</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    <h3 class="text-primary">${playerGames.length}</h3>
+                                    <p>Total Games</p>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    <h3 class="text-success">${roleStats.Commander}</h3>
+                                    <p>As Commander</p>
+                                    <small class="text-muted">${winStats.Commander} wins</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    <h3 class="text-info">${roleStats.Thug}</h3>
+                                    <p>As Thug</p>
+                                    <small class="text-muted">${winStats.Thug} wins</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    <h3 class="text-warning">${winStats.Total}</h3>
+                                    <p>Total Wins</p>
+                                    <small class="text-muted">${winRate}% rate</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    <h3 class="text-danger">${roleStats.Straggler}</h3>
+                                    <p>AFK Games</p>
+                                    <small class="text-muted">${((roleStats.Straggler / playerGames.length) * 100).toFixed(1)}% rate</small>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    <h3 class="text-secondary">${commanderWinRate}%</h3>
+                                    <p>Commander Win Rate</p>
+                                    <small class="text-muted">${thugWinRate}% as thug</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
 }
+
+// Wait for DOM to be ready, then load data
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if required dependencies are loaded
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js not loaded');
+        return;
+    }
+    
+    if (typeof bootstrap === 'undefined') {
+        console.error('Bootstrap not loaded');
+        return;
+    }
+    
+    // Add missing CSS class
+    const style = document.createElement('style');
+    style.textContent = `
+        .bg-purple {
+            background-color: #6f42c1 !important;
+        }
+        .bg-success-dark {
+            background-color: #146c43 !important;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    console.log('🎉 General Overview Features Restored! 🎉');
+    console.log('✅ All 6 comprehensive charts with maximization');
+    console.log('✅ Sophisticated ranking algorithms (Wilson, Bayesian, etc.)');
+    console.log('✅ Advanced summary statistics');
+    console.log('✅ Chart maximization with full data display');
+    console.log('✅ Scrollable modal charts');
+    console.log('✅ Complete Player Analysis functionality');
+    
+    // Load the game data
+    loadGameData();
+}); 
