@@ -487,8 +487,11 @@ function initializeDashboard() {
                                     <option value="2024">2024 Only</option>
                                 </select>
                             </div>
-                            <div class="col-md-3 d-flex align-items-end">
-                                <button id="resetFilters" class="btn btn-outline-light">Reset Filters</button>
+                            <div class="col-md-3">
+                                <label class="form-label text-light">Actions</label>
+                                <div>
+                                    <button id="resetFilters" class="btn btn-outline-secondary bg-dark text-light border-secondary">Reset Filters</button>
+                                </div>
                             </div>
                         </div>
                     </div>
