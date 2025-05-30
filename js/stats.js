@@ -1477,13 +1477,12 @@ function createFactionDistributionChart(games) {
                 },
                 tooltip: {
                     callbacks: {
-                        title: function() {
-                            return `Faction Choice Distribution (${totalSelections} total)`;
+                        title: function(context) {
+                            return context[0].dataset.label;
                         },
                         label: function(context) {
                             const count = context.parsed.x;
-                            const percentage = ((count / totalSelections) * 100).toFixed(1);
-                            return `${context.dataset.label}: ${count} selections (${percentage}%)`;
+                            return `Selections: ${count}`;
                         }
                     }
                 },
@@ -4110,13 +4109,12 @@ function createModalFactionPerformanceChart(games, canvas) {
                 },
                 tooltip: {
                     callbacks: {
+                        title: function(context) {
+                            return context[0].dataset.label;
+                        },
                         label: function(context) {
-                            const faction = factionPerformance[context.dataIndex];
-                            if (context.datasetIndex === 0) {
-                                return `Win Rate: ${faction.winRate}% (${faction.wins}/${faction.games})`;
-                            } else {
-                                return `Total Games: ${faction.games}`;
-                            }
+                            const count = context.parsed.x;
+                            return `Selections: ${count}`;
                         }
                     }
                 }
