@@ -2,7 +2,101 @@
 let gameData = null;
 let allGames = [];
 
-// Utility function to safely create charts
+// Enhanced Chart.js defaults for gaming theme
+Chart.defaults.font.family = "'Orbitron', 'SUSE', sans-serif";
+Chart.defaults.font.size = 12;
+Chart.defaults.color = '#e8e8ff';
+
+// Modern Gaming Color Palette
+const gamingColors = {
+    primary: '#00d4ff',
+    secondary: '#ff6b35', 
+    accent: '#7b68ee',
+    success: '#00ff88',
+    warning: '#ffaa00',
+    danger: '#ff3366',
+    gradients: [
+        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+        'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+        'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+        'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+        'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+        'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+        'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)'
+    ],
+    solidColors: [
+        'rgba(0, 212, 255, 0.8)',
+        'rgba(255, 107, 53, 0.8)',
+        'rgba(123, 104, 238, 0.8)',
+        'rgba(0, 255, 136, 0.8)',
+        'rgba(255, 170, 0, 0.8)',
+        'rgba(255, 51, 102, 0.8)',
+        'rgba(102, 126, 234, 0.8)',
+        'rgba(240, 147, 251, 0.8)'
+    ]
+};
+
+// Enhanced animation configurations
+const chartAnimations = {
+    standard: {
+        duration: 2000,
+        easing: 'easeOutQuart',
+        delay: (context) => context.dataIndex * 100,
+        onProgress: (animation) => {
+            const chart = animation.chart;
+            const canvas = chart.canvas;
+            const ctx = chart.ctx;
+            
+            // Add glow effect during animation
+            if (animation.currentStep < animation.numSteps) {
+                ctx.save();
+                ctx.globalCompositeOperation = 'screen';
+                ctx.filter = `blur(${3 - (animation.currentStep / animation.numSteps) * 3}px) brightness(1.2)`;
+                ctx.restore();
+            }
+        },
+        onComplete: (animation) => {
+            const chart = animation.chart;
+            addChartGlowEffect(chart);
+        }
+    },
+    staggered: {
+        duration: 2500,
+        easing: 'easeOutElastic',
+        delay: (context) => context.dataIndex * 150,
+    },
+    smooth: {
+        duration: 1500,
+        easing: 'easeInOutCubic'
+    }
+};
+
+// Add glow effect to charts
+function addChartGlowEffect(chart) {
+    const canvas = chart.canvas;
+    const container = canvas.parentElement;
+    
+    if (!container.classList.contains('chart-glow-added')) {
+        container.style.position = 'relative';
+        container.style.borderRadius = '12px';
+        container.style.boxShadow = '0 0 30px rgba(0, 212, 255, 0.1)';
+        container.classList.add('chart-glow-added');
+        
+        // Add subtle pulsing effect
+        const glowInterval = setInterval(() => {
+            if (!document.contains(canvas)) {
+                clearInterval(glowInterval);
+                return;
+            }
+            
+            const intensity = 0.1 + Math.sin(Date.now() / 2000) * 0.05;
+            container.style.boxShadow = `0 0 30px rgba(0, 212, 255, ${intensity})`;
+        }, 100);
+    }
+}
+
+// Enhanced utility function to safely create charts with animations
 function safeCreateChart(canvasId, config) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) {
@@ -16,11 +110,223 @@ function safeCreateChart(canvasId, config) {
     }
     
     try {
-        return new Chart(canvas.getContext('2d'), config);
+        // Add container animation class
+        const container = canvas.parentElement;
+        if (container) {
+            container.classList.add('chart-container');
+        }
+        
+        // Enhanced config with modern styling
+        const enhancedConfig = {
+            ...config,
+            options: {
+                ...config.options,
+                animation: config.options?.animation !== false ? chartAnimations.standard : false,
+                plugins: {
+                    ...config.options?.plugins,
+                    legend: {
+                        ...config.options?.plugins?.legend,
+                        labels: {
+                            color: '#e8e8ff',
+                            font: {
+                                family: "'Orbitron', 'SUSE', sans-serif",
+                                size: 13,
+                                weight: '500'
+                            },
+                            ...config.options?.plugins?.legend?.labels
+                        }
+                    },
+                    tooltip: {
+                        ...config.options?.plugins?.tooltip,
+                        backgroundColor: 'rgba(10, 10, 15, 0.95)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e8e8ff',
+                        borderColor: 'rgba(0, 212, 255, 0.3)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        padding: 20,
+                        titleFont: {
+                            family: "'Orbitron', 'SUSE', sans-serif",
+                            size: 20,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            family: "'SUSE', sans-serif",
+                            size: 18
+                        },
+                        displayColors: true,
+                        boxPadding: 8
+                    }
+                },
+                scales: enhanceScales(config.options?.scales || {}),
+                responsive: config.options?.responsive !== false,
+                maintainAspectRatio: config.options?.maintainAspectRatio !== false,
+                interaction: {
+                    intersect: config.type === 'bar' ? true : false,
+                    mode: config.type === 'bar' ? 'point' : 'index',
+                    ...config.options?.interaction
+                },
+                // Enhanced hover effects for bars
+                onHover: (event, activeElements, chart) => {
+                    if (config.type === 'bar' && activeElements.length > 0) {
+                        // Add glow effect to hovered bar
+                        chart.canvas.style.filter = 'drop-shadow(0 0 10px rgba(0, 212, 255, 0.8))';
+                        chart.canvas.style.transition = 'filter 0.2s ease';
+                    } else {
+                        chart.canvas.style.filter = 'none';
+                    }
+                    
+                    // Call original hover handler if it exists
+                    if (config.options?.onHover) {
+                        config.options.onHover(event, activeElements, chart);
+                    }
+                }
+            }
+        };
+        
+        // Create gradient backgrounds for bar charts
+        const ctx = canvas.getContext('2d');
+        const createGradient = (color1, color2) => {
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, color1);
+            gradient.addColorStop(0.6, color2);
+            gradient.addColorStop(1, color1);
+            return gradient;
+        };
+        
+        // Enhanced gradient colors for bars
+        const gradientColors = [
+            () => createGradient('rgba(0, 212, 255, 0.9)', 'rgba(0, 212, 255, 0.6)'),
+            () => createGradient('rgba(255, 107, 53, 0.9)', 'rgba(255, 107, 53, 0.6)'),
+            () => createGradient('rgba(123, 104, 238, 0.9)', 'rgba(123, 104, 238, 0.6)'),
+            () => createGradient('rgba(0, 255, 136, 0.9)', 'rgba(0, 255, 136, 0.6)'),
+            () => createGradient('rgba(255, 170, 0, 0.9)', 'rgba(255, 170, 0, 0.6)'),
+            () => createGradient('rgba(255, 51, 102, 0.9)', 'rgba(255, 51, 102, 0.6)'),
+            () => createGradient('rgba(102, 126, 234, 0.9)', 'rgba(102, 126, 234, 0.6)'),
+            () => createGradient('rgba(240, 147, 251, 0.9)', 'rgba(240, 147, 251, 0.6)')
+        ];
+        
+        // Enhance dataset colors and styling
+        if (enhancedConfig.data?.datasets) {
+            enhancedConfig.data.datasets = enhancedConfig.data.datasets.map((dataset, index) => {
+                const isBarChart = config.type === 'bar';
+                
+                return {
+                    ...dataset,
+                    backgroundColor: isBarChart ? 
+                        gradientColors[index % gradientColors.length]() : 
+                        dataset.backgroundColor || gamingColors.solidColors[index % gamingColors.solidColors.length],
+                    borderColor: dataset.borderColor || gamingColors.solidColors[index % gamingColors.solidColors.length].replace('0.8', '1'),
+                    borderWidth: isBarChart ? 0 : (dataset.borderWidth || 2),
+                    tension: dataset.tension || 0.4,
+                    fill: dataset.fill !== undefined ? dataset.fill : false,
+                    pointBackgroundColor: dataset.pointBackgroundColor || gamingColors.primary,
+                    pointBorderColor: dataset.pointBorderColor || '#ffffff',
+                    pointBorderWidth: dataset.pointBorderWidth || 2,
+                    pointRadius: dataset.pointRadius || 4,
+                    pointHoverRadius: dataset.pointHoverRadius || 6,
+                    pointHoverBackgroundColor: dataset.pointHoverBackgroundColor || gamingColors.primary,
+                    pointHoverBorderColor: dataset.pointHoverBorderColor || '#ffffff',
+                    pointHoverBorderWidth: dataset.pointHoverBorderWidth || 3,
+                    // Enhanced bar styling with selective rounding
+                    borderSkipped: false,
+                    borderRadius: isBarChart ? 
+                        (config.options?.indexAxis === 'y' ? 
+                            // Horizontal bars - round right end only
+                            { topLeft: 0, topRight: 4, bottomLeft: 0, bottomRight: 4 } :
+                            // Vertical bars - round top end only  
+                            { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 }
+                        ) : 0,
+                    hoverBackgroundColor: isBarChart ? 
+                        gradientColors[index % gradientColors.length]() : 
+                        dataset.hoverBackgroundColor,
+                    hoverBorderColor: dataset.hoverBorderColor,
+                    hoverBorderWidth: isBarChart ? 0 : (dataset.hoverBorderWidth || 3)
+                };
+            });
+        }
+        
+        const chart = new Chart(canvas.getContext('2d'), enhancedConfig);
+        
+        // Add bar-specific enhancements
+        if (config.type === 'bar') {
+            // Add shimmer effect to bars
+            const addBarShimmer = () => {
+                const meta = chart.getDatasetMeta(0);
+                if (meta && meta.data) {
+                    meta.data.forEach((bar, index) => {
+                        const element = bar.element || bar;
+                        if (element) {
+                            // Add subtle glow animation
+                            setTimeout(() => {
+                                if (chart.canvas && document.contains(chart.canvas)) {
+                                    chart.canvas.style.filter = `drop-shadow(0 0 5px rgba(0, 212, 255, ${0.3 + Math.sin(Date.now() / 1000 + index) * 0.1}))`;
+                                }
+                            }, index * 200);
+                        }
+                    });
+                }
+            };
+            
+            // Apply shimmer after chart is fully rendered
+            setTimeout(addBarShimmer, 2500);
+        }
+        
+        // Add entry animation delay
+        setTimeout(() => {
+            if (chart && chart.canvas && document.contains(chart.canvas)) {
+                addChartGlowEffect(chart);
+            }
+        }, 2200);
+        
+        return chart;
     } catch (error) {
         console.error(`Error creating chart ${canvasId}:`, error);
         return null;
     }
+}
+
+// Enhanced scales with gaming theme
+function enhanceScales(scales) {
+    const enhancedScales = {};
+    
+    Object.keys(scales).forEach(scaleKey => {
+        const scale = scales[scaleKey];
+        enhancedScales[scaleKey] = {
+            ...scale,
+            ticks: {
+                ...scale.ticks,
+                color: '#e8e8ff',
+                font: {
+                    family: "'SUSE', sans-serif",
+                    size: 11,
+                    weight: '400'
+                },
+                ...scale.ticks
+            },
+            grid: {
+                color: 'rgba(232, 232, 255, 0.1)',
+                lineWidth: 1,
+                ...scale.grid
+            },
+            border: {
+                color: 'rgba(232, 232, 255, 0.2)',
+                width: 1,
+                ...scale.border
+            },
+            title: scale.title ? {
+                ...scale.title,
+                color: '#00d4ff',
+                font: {
+                    family: "'Orbitron', 'SUSE', sans-serif",
+                    size: 13,
+                    weight: '600'
+                }
+            } : undefined
+        };
+    });
+    
+    return enhancedScales;
 }
 
 // Fetch and display game statistics data
@@ -585,14 +891,14 @@ function loadGeneralOverview() {
                     <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Commander Rankings</h5>
                         <div class="d-flex gap-2 align-items-center">
-                            <select id="rankingMethod" class="form-select form-select-sm bg-success-dark text-light border-success" style="width: auto;">
+                            <select id="rankingMethod" class="form-select form-select-sm" style="width: auto;">
                                 <option value="wilson">Wilson Score</option>
-                                <option value="winRate">Pure Win Rate</option>
+                                <option value="winRate">Win Rate</option>
                                 <option value="volumeWeighted">Volume-Weighted</option>
                                 <option value="bayesian">Bayesian Average</option>
                                 <option value="composite">Composite Score</option>
                             </select>
-                            <select id="minGameRequirement" class="form-select form-select-sm bg-success-dark text-light border-success" style="width: auto;">
+                            <select id="minGameRequirement" class="form-select form-select-sm" style="width: auto;">
                                 <option value="3%">3% Min Games</option>
                                 <option value="5%">5% Min Games</option>
                                 <option value="10%">10% Min Games</option>

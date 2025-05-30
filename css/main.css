@@ -1,11 +1,520 @@
 @import url('https://fonts.googleapis.com/css2?family=SUSE:wght@100..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+
+/* Modern CSS Properties for Animations */
+@property --hue-rotate {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@property --bg-gradient-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@property --particle-offset {
+  syntax: "<number>";
+  initial-value: 0;
+  inherits: false;
+}
+
+/* Root Variables for Gaming Theme */
+:root {
+  --gaming-primary: #00d4ff;
+  --gaming-secondary: #ff6b35;
+  --gaming-accent: #7b68ee;
+  --gaming-success: #00ff88;
+  --gaming-warning: #ffaa00;
+  --gaming-danger: #ff3366;
+  --gaming-dark: #0a0a0f;
+  --gaming-darker: #050507;
+  --gaming-light: #e8e8ff;
+  --gaming-glow: #00d4ff;
+  --gaming-gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gaming-gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --gaming-gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --shiny-cta-bg: #000000;
+  --shiny-cta-bg-subtle: #1a1818;
+  --shiny-cta-fg: #ffffff;
+  --shiny-cta-highlight: var(--gaming-glow);
+  --shiny-cta-highlight-subtle: var(--gaming-accent);
+}
 
 body {
-  background: #02040c;
+  background: var(--gaming-darker);
   font-family: "SUSE", sans-serif !important;
   font-optical-sizing: auto;
   font-weight: 400;
   font-style: normal;
+  position: relative;
+  overflow-x: hidden;
+  animation: background-pulse 20s ease-in-out infinite;
+}
+
+/* Animated Background with Particles */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.1) 0%, transparent 50%),
+    linear-gradient(135deg, var(--gaming-darker) 0%, #0f0f1a 50%, var(--gaming-darker) 100%);
+  z-index: -2;
+  animation: background-shift 30s ease-in-out infinite;
+}
+
+/* Particle Effect Overlay */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, var(--gaming-glow), transparent),
+    radial-gradient(2px 2px at 40px 70px, var(--gaming-accent), transparent),
+    radial-gradient(1px 1px at 90px 40px, var(--gaming-success), transparent),
+    radial-gradient(1px 1px at 130px 80px, var(--gaming-secondary), transparent);
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  opacity: 0.3;
+  z-index: -1;
+  animation: particles-float 25s linear infinite;
+}
+
+@keyframes background-shift {
+  0%, 100% { 
+    transform: scale(1) rotate(0deg);
+    filter: hue-rotate(0deg);
+  }
+  25% { 
+    transform: scale(1.02) rotate(0.5deg);
+    filter: hue-rotate(15deg);
+  }
+  50% { 
+    transform: scale(1) rotate(0deg);
+    filter: hue-rotate(30deg);
+  }
+  75% { 
+    transform: scale(1.02) rotate(-0.5deg);
+    filter: hue-rotate(15deg);
+  }
+}
+
+@keyframes particles-float {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(-200px, -200px); }
+}
+
+@keyframes background-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.95; }
+}
+
+/* Enhanced Navigation */
+.navbar {
+  background: rgba(10, 10, 15, 0.9) !important;
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.navbar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gaming-glow), transparent);
+  animation: navbar-glow 3s ease-in-out infinite;
+}
+
+@keyframes navbar-glow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+.navbar-brand {
+  font-family: 'Orbitron', monospace !important;
+  font-weight: 700;
+  text-shadow: 0 0 10px var(--gaming-glow);
+  transition: all 0.3s ease;
+}
+
+.navbar-brand:hover {
+  transform: scale(1.05);
+  text-shadow: 0 0 20px var(--gaming-glow);
+}
+
+/* Modern Glass Cards */
+.card {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 16px !important;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gaming-glow), transparent);
+  transition: left 0.5s ease;
+}
+
+.card:hover::before {
+  left: 100%;
+}
+
+.card:hover {
+  transform: translateY(-8px);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.4),
+    0 0 30px rgba(0, 212, 255, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border-color: rgba(0, 212, 255, 0.3) !important;
+}
+
+.card-header {
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(123, 104, 238, 0.1)) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  border-radius: 16px 16px 0 0 !important;
+  font-weight: 600;
+  font-family: 'Orbitron', monospace;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  position: relative;
+}
+
+/* Enhanced Summary Stats Cards */
+.stats-summary .card {
+  background: var(--glass-bg) !important;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+}
+
+.stats-summary .card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--gaming-primary), var(--gaming-accent));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.stats-summary .card:hover::after {
+  opacity: 0.1;
+}
+
+.stats-summary .card:hover {
+  transform: translateY(-12px);
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(0, 212, 255, 0.3);
+}
+
+/* Gaming-Style Buttons */
+.btn {
+  border-radius: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn:hover::before {
+  left: 100%;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, var(--gaming-success), #00cc77) !important;
+  border: none !important;
+  box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+}
+
+.btn-success:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 255, 136, 0.5);
+}
+
+.btn-purple {
+  background: linear-gradient(135deg, var(--gaming-accent), #6a5acd) !important;
+  border: none !important;
+  box-shadow: 0 4px 15px rgba(123, 104, 238, 0.3);
+}
+
+.btn-purple:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(123, 104, 238, 0.5);
+}
+
+/* Form Controls */
+.form-select {
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 8px;
+  color: var(--gaming-light) !important;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.form-select:focus {
+  border-color: var(--gaming-glow) !important;
+  box-shadow: 0 0 0 0.25rem rgba(0, 212, 255, 0.25) !important;
+  background: rgba(0, 212, 255, 0.05) !important;
+}
+
+/* Enhanced Live Indicator */
+#liveIndicator li {
+  background: rgba(0, 255, 136, 0.8);
+  box-shadow: 
+    inset 0px 0px 10px 2px rgba(0, 255, 182, 0.5),
+    0px 0px 20px 5px rgba(0, 255, 135, 0.4);
+  animation: pulse-enhanced 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-enhanced {
+  0% {
+    background: rgba(0, 255, 136, 0.6);
+    box-shadow: 
+      inset 0px 0px 10px 2px rgba(0, 255, 182, 0.5),
+      0px 0px 15px 3px rgba(0, 255, 135, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    background: rgba(0, 255, 136, 1);
+    box-shadow: 
+      inset 0px 0px 15px 3px rgba(0, 255, 182, 0.8),
+      0px 0px 30px 8px rgba(0, 255, 135, 0.6);
+    transform: scale(1.1);
+  }
+  100% {
+    background: rgba(0, 255, 136, 0.6);
+    box-shadow: 
+      inset 0px 0px 10px 2px rgba(0, 255, 182, 0.5),
+      0px 0px 15px 3px rgba(0, 255, 135, 0.3);
+    transform: scale(1);
+  }
+}
+
+/* Chart Container Enhancements */
+.card-body canvas {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.card-body:hover canvas {
+  filter: saturate(1.1);
+}
+
+/* Enhanced Bar Chart Effects */
+canvas[id*="Chart"] {
+  transition: filter 0.3s ease, transform 0.2s ease;
+}
+
+/* Bar Chart Shimmer Animation */
+@keyframes bar-shimmer {
+  0% { 
+    filter: drop-shadow(0 0 5px rgba(0, 212, 255, 0.3)); 
+  }
+  50% { 
+    filter: drop-shadow(0 0 15px rgba(0, 212, 255, 0.6)); 
+  }
+  100% { 
+    filter: drop-shadow(0 0 5px rgba(0, 212, 255, 0.3)); 
+  }
+}
+
+/* Chart Glow Pulse Effect */
+.chart-container:hover canvas {
+  animation: chart-glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes chart-glow-pulse {
+  0%, 100% { 
+    filter: saturate(1.1) drop-shadow(0 0 10px rgba(0, 212, 255, 0.2)); 
+  }
+  50% { 
+    filter: saturate(1.2) drop-shadow(0 0 20px rgba(0, 212, 255, 0.4)); 
+  }
+}
+
+/* Gradient Overlay for Bar Charts */
+.bar-chart-container {
+  position: relative;
+}
+
+.bar-chart-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    45deg,
+    transparent 30%, 
+    rgba(0, 212, 255, 0.1) 50%, 
+    transparent 70%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 8px;
+}
+
+.bar-chart-container:hover::before {
+  opacity: 1;
+  animation: gradient-sweep 2s ease-in-out infinite;
+}
+
+@keyframes gradient-sweep {
+  0% { 
+    background-position: -100% -100%;
+  }
+  50% { 
+    background-position: 0% 0%;
+  }
+  100% { 
+    background-position: 100% 100%;
+  }
+}
+
+/* Maximize Chart Button Enhancement */
+.maximize-chart {
+  border: none !important;
+  background: rgba(0, 212, 255, 0.1) !important;
+  padding: 8px !important;
+  border-radius: 8px !important;
+  color: var(--gaming-glow) !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  backdrop-filter: blur(10px);
+}
+
+.maximize-chart:hover {
+  background: rgba(0, 212, 255, 0.2) !important;
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+}
+
+.maximize-chart svg {
+  width: 20px;
+  height: 20px;
+  filter: drop-shadow(0 0 5px var(--gaming-glow));
+}
+
+/* Modal Enhancements */
+.modal-content {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(30px);
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(123, 104, 238, 0.1)) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  font-family: 'Orbitron', monospace;
+}
+
+.modal-body {
+  background: rgba(5, 5, 7, 0.8) !important;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--gaming-glow), var(--gaming-accent));
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--gaming-accent), var(--gaming-glow));
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.8);
+}
+
+/* Loading Animation */
+@keyframes data-load {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.chart-container {
+  animation: data-load 0.8s ease-out;
+}
+
+/* Gaming Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Orbitron', monospace;
+  font-weight: 600;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+/* Enhanced Text Colors */
+.text-primary { color: var(--gaming-primary) !important; }
+.text-success { color: var(--gaming-success) !important; }
+.text-warning { color: var(--gaming-warning) !important; }
+.text-danger { color: var(--gaming-danger) !important; }
+.text-info { color: var(--gaming-glow) !important; }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .card:hover {
+        transform: translateY(-4px);
+    }
+    
+    .stats-summary .card:hover {
+        transform: translateY(-6px);
+    }
 }
 
 .bg-vsr {
@@ -23,11 +532,6 @@ body {
 
 .btn-steam:hover {
   --bs-bg-opacity: .75 !important;
-}
-
-.btn-purple {
-  /* background-color: #6f42c1; */
-  background-color: #633aaf;
 }
 
 .btn-purple-subtle,
@@ -151,186 +655,6 @@ body {
 #hadeanBuildTree::-webkit-scrollbar-thumb:hover,
 #scionBuildTree::-webkit-scrollbar-thumb:hover {
     background: rgba(13, 110, 253, 1.0);
-}
-
-/***********************************/
-/******** VSR BUTTON GLOW **********/
-/***********************************/
-
-:root {
-  --shiny-cta-bg: #000000;
-  --shiny-cta-bg-subtle: #1a1818;
-  --shiny-cta-fg: #ffffff;
-  --shiny-cta-highlight: blue;
-  --shiny-cta-highlight-subtle: #8484ff;
-}
-
-@property --gradient-angle {
-  syntax: "<angle>";
-  initial-value: 0deg;
-  inherits: false;
-}
-
-@property --gradient-angle-offset {
-  syntax: "<angle>";
-  initial-value: 0deg;
-  inherits: false;
-}
-
-@property --gradient-percent {
-  syntax: "<percentage>";
-  initial-value: 5%;
-  inherits: false;
-}
-
-@property --gradient-shine {
-  syntax: "<color>";
-  initial-value: white;
-  inherits: false;
-}
-
-.shiny-cta {
-  --animation: gradient-angle linear infinite;
-  --duration: 3s;
-  --shadow-size: 2px;
-  isolation: isolate;
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  outline-offset: 4px;
-  border: 1px solid transparent;
-  color: var(--shiny-cta-fg);
-  background: linear-gradient(var(--shiny-cta-bg), var(--shiny-cta-bg)) padding-box,
-    conic-gradient(from calc(var(--gradient-angle) - var(--gradient-angle-offset)),
-      transparent,
-      var(--shiny-cta-highlight) var(--gradient-percent),
-      var(--gradient-shine) calc(var(--gradient-percent) * 2),
-      var(--shiny-cta-highlight) calc(var(--gradient-percent) * 3),
-      transparent calc(var(--gradient-percent) * 4)) border-box;
-  box-shadow: inset 0 0 0 1px var(--shiny-cta-bg-subtle);
-
-  &::before,
-  &::after,
-  span::before {
-    content: "";
-    pointer-events: none;
-    position: absolute;
-    inset-inline-start: 50%;
-    inset-block-start: 50%;
-    translate: -50% -50%;
-    z-index: -1;
-  }
-
-  &:active {
-    translate: 0 1px;
-  }
-}
-
-/* Dots pattern */
-.shiny-cta::before {
-  --size: calc(100% - var(--shadow-size) * 3);
-  --position: 2px;
-  --space: calc(var(--position) * 2);
-  width: var(--size);
-  height: var(--size);
-  background: radial-gradient(circle at var(--position) var(--position),
-      white calc(var(--position) / 4),
-      transparent 0) padding-box;
-  background-size: var(--space) var(--space);
-  background-repeat: space;
-  mask-image: conic-gradient(from calc(var(--gradient-angle) + 45deg),
-      black,
-      transparent 10% 90%,
-      black);
-  border-radius: inherit;
-  opacity: 0.4;
-  z-index: -1;
-}
-
-/* Inner shimmer */
-.shiny-cta::after {
-  --animation: shimmer linear infinite;
-  width: 100%;
-  aspect-ratio: 1;
-  background: linear-gradient(-50deg,
-      transparent,
-      var(--shiny-cta-highlight),
-      transparent);
-  mask-image: radial-gradient(circle at bottom, transparent 40%, black);
-  opacity: 0.6;
-}
-
-.shiny-cta span {
-  z-index: 1;
-
-  &::before {
-    --size: calc(100% + 1rem);
-    width: var(--size);
-    height: var(--size);
-    box-shadow: inset 0 -1ex 2rem 4px var(--shiny-cta-highlight);
-    opacity: 0;
-  }
-}
-
-/* Animate */
-.shiny-cta {
-  --transition: 800ms cubic-bezier(0.25, 1, 0.5, 1);
-  transition: var(--transition);
-  transition-property: --gradient-angle-offset, --gradient-percent,
-    --gradient-shine;
-
-  &,
-  &::before,
-  &::after {
-    animation: var(--animation) var(--duration),
-      var(--animation) calc(var(--duration) / 0.4) reverse paused;
-    animation-composition: add;
-  }
-
-  span::before {
-    transition: opacity var(--transition);
-    animation: calc(var(--duration) * 1.5) breathe linear infinite;
-  }
-}
-
-.shiny-cta:is(:hover, :focus-visible) {
-  --gradient-percent: 20%;
-  --gradient-angle-offset: 95deg;
-  --gradient-shine: var(--shiny-cta-highlight-subtle);
-
-  &,
-  &::before,
-  &::after {
-    animation-play-state: running;
-  }
-
-  span::before {
-    opacity: 1;
-  }
-}
-
-@keyframes gradient-angle {
-  to {
-    --gradient-angle: 360deg;
-  }
-}
-
-@keyframes shimmer {
-  to {
-    rotate: 360deg;
-  }
-}
-
-@keyframes breathe {
-
-  from,
-  to {
-    scale: 1;
-  }
-
-  50% {
-    scale: 1.2;
-  }
 }
 
 /***********************************/
@@ -1000,11 +1324,6 @@ a:hover .player-card.list-group-item:not(.no-hover) {
     }
 }
 
-/* Ranking dropdown controls styling */
-.bg-success-dark {
-    background-color: #145a32 !important; /* Darker version of Bootstrap's success color */
-}
-
 /* Maximize chart button styling */
 .maximize-chart {
     border: none !important;
@@ -1072,6 +1391,376 @@ a:hover .player-card.list-group-item:not(.no-hover) {
         width: 16px;
         height: 16px;
     }
+}
+
+/* Gaming Grid Animation */
+@keyframes grid-shift {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(50px, 50px); }
+}
+
+/* Gaming Loading Spinner */
+.gaming-spinner {
+    width: 60px;
+    height: 60px;
+    border: 3px solid transparent;
+    border-top: 3px solid var(--gaming-glow);
+    border-right: 3px solid var(--gaming-accent);
+    border-radius: 50%;
+    animation: spin-gaming 1.5s linear infinite;
+    position: relative;
+}
+
+.gaming-spinner::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    border: 2px solid transparent;
+    border-left: 2px solid var(--gaming-success);
+    border-bottom: 2px solid var(--gaming-secondary);
+    border-radius: 50%;
+    animation: spin-gaming 2s linear infinite reverse;
+}
+
+.gaming-spinner::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    background: radial-gradient(circle, var(--gaming-glow), transparent);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: pulse-core 1s ease-in-out infinite;
+}
+
+@keyframes spin-gaming {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse-core {
+    0%, 100% { 
+        opacity: 1; 
+        transform: translate(-50%, -50%) scale(1); 
+    }
+    50% { 
+        opacity: 0.5; 
+        transform: translate(-50%, -50%) scale(1.2); 
+    }
+}
+
+/* Contributor Cards */
+.contributor-card {
+    background: rgba(0, 212, 255, 0.05) !important;
+    border: 1px solid rgba(0, 212, 255, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.contributor-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gaming-glow), transparent);
+    transition: left 0.5s ease;
+}
+
+.contributor-card:hover::before {
+    left: 100%;
+}
+
+.contributor-card:hover {
+    background: rgba(0, 212, 255, 0.1) !important;
+    border-color: rgba(0, 212, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 212, 255, 0.2);
+}
+
+.contributor-card h6 {
+    color: var(--gaming-glow);
+    font-family: 'Orbitron', monospace;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+/* Additional Gaming UI Elements */
+.text-glow {
+    text-shadow: 0 0 10px currentColor;
+}
+
+.border-glow {
+    border: 1px solid var(--gaming-glow);
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+}
+
+.bg-gaming-dark {
+    background: linear-gradient(135deg, var(--gaming-darker), rgba(10, 10, 15, 0.9)) !important;
+}
+
+/* Floating Action Elements */
+.floating-element {
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+/* Enhanced Tooltip Styling */
+.tooltip {
+    font-family: 'Orbitron', monospace;
+}
+
+.tooltip-inner {
+    background: rgba(10, 10, 15, 0.95);
+    border: 1px solid var(--gaming-glow);
+    color: var(--gaming-light);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.tooltip.bs-tooltip-top .tooltip-arrow::before {
+    border-top-color: var(--gaming-glow);
+}
+
+.tooltip.bs-tooltip-bottom .tooltip-arrow::before {
+    border-bottom-color: var(--gaming-glow);
+}
+
+/* Loading State Enhancements */
+#loading-overlay {
+    background: 
+        radial-gradient(circle at 30% 70%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 70% 30%, rgba(123, 104, 238, 0.1) 0%, transparent 50%),
+        rgba(5, 5, 7, 0.95);
+}
+
+/* Print Styles */
+@media print {
+    body::before,
+    body::after,
+    #gaming-bg-overlay,
+    #loading-overlay {
+        display: none !important;
+    }
+    
+    .card {
+        background: white !important;
+        color: black !important;
+        border: 1px solid #ccc !important;
+    }
+}
+
+/* Enhanced Shiny Button Effect */
+@property --gradient-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@property --gradient-angle-offset {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@property --gradient-percent {
+  syntax: "<percentage>";
+  initial-value: 5%;
+  inherits: false;
+}
+
+@property --gradient-shine {
+  syntax: "<color>";
+  initial-value: white;
+  inherits: false;
+}
+
+.shiny-cta {
+  --animation: gradient-angle linear infinite;
+  --duration: 3s;
+  --shadow-size: 2px;
+  isolation: isolate;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  outline-offset: 4px;
+  border: 1px solid transparent;
+  color: var(--shiny-cta-fg);
+  background: linear-gradient(var(--shiny-cta-bg), var(--shiny-cta-bg)) padding-box,
+    conic-gradient(from calc(var(--gradient-angle) - var(--gradient-angle-offset)),
+      transparent,
+      var(--shiny-cta-highlight) var(--gradient-percent),
+      var(--gradient-shine) calc(var(--gradient-percent) * 2),
+      var(--shiny-cta-highlight) calc(var(--gradient-percent) * 3),
+      transparent calc(var(--gradient-percent) * 4)) border-box;
+  box-shadow: inset 0 0 0 1px var(--shiny-cta-bg-subtle);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.shiny-cta::before,
+.shiny-cta::after,
+.shiny-cta span::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-start: 50%;
+  translate: -50% -50%;
+  z-index: -1;
+}
+
+.shiny-cta:active {
+  translate: 0 1px;
+}
+
+/* Dots pattern */
+.shiny-cta::before {
+  --size: calc(100% - var(--shadow-size) * 3);
+  --position: 2px;
+  --space: calc(var(--position) * 2);
+  width: var(--size);
+  height: var(--size);
+  background: radial-gradient(circle at var(--position) var(--position),
+      white calc(var(--position) / 4),
+      transparent 0) padding-box;
+  background-size: var(--space) var(--space);
+  background-repeat: space;
+  mask-image: conic-gradient(from calc(var(--gradient-angle) + 45deg),
+      black,
+      transparent 10% 90%,
+      black);
+  border-radius: inherit;
+  opacity: 0.4;
+  z-index: -1;
+}
+
+/* Inner shimmer */
+.shiny-cta::after {
+  --animation: shimmer linear infinite;
+  width: 100%;
+  aspect-ratio: 1;
+  background: linear-gradient(-50deg,
+      transparent,
+      var(--shiny-cta-highlight),
+      transparent);
+  mask-image: radial-gradient(circle at bottom, transparent 40%, black);
+  opacity: 0.6;
+}
+
+.shiny-cta span {
+  z-index: 1;
+}
+
+.shiny-cta span::before {
+  --size: calc(100% + 1rem);
+  width: var(--size);
+  height: var(--size);
+  box-shadow: inset 0 -1ex 2rem 4px var(--shiny-cta-highlight);
+  opacity: 0;
+}
+
+/* Animate */
+.shiny-cta {
+  --transition: 800ms cubic-bezier(0.25, 1, 0.5, 1);
+  transition: var(--transition);
+  transition-property: --gradient-angle-offset, --gradient-percent,
+    --gradient-shine;
+}
+
+.shiny-cta,
+.shiny-cta::before,
+.shiny-cta::after {
+  animation: var(--animation) var(--duration),
+    var(--animation) calc(var(--duration) / 0.4) reverse paused;
+  animation-composition: add;
+}
+
+.shiny-cta span::before {
+  transition: opacity var(--transition);
+  animation: calc(var(--duration) * 1.5) breathe linear infinite;
+}
+
+.shiny-cta:is(:hover, :focus-visible) {
+  --gradient-percent: 20%;
+  --gradient-angle-offset: 95deg;
+  --gradient-shine: var(--shiny-cta-highlight-subtle);
+}
+
+.shiny-cta:is(:hover, :focus-visible),
+.shiny-cta:is(:hover, :focus-visible)::before,
+.shiny-cta:is(:hover, :focus-visible)::after {
+  animation-play-state: running;
+}
+
+.shiny-cta:is(:hover, :focus-visible) span::before {
+  opacity: 1;
+}
+
+@keyframes gradient-angle {
+  to {
+    --gradient-angle: 360deg;
+  }
+}
+
+@keyframes shimmer {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes breathe {
+  from, to {
+    scale: 1;
+  }
+  50% {
+    scale: 1.2;
+  }
+}
+
+/* Data Table Enhancements */
+table.table.dataTable > tbody > tr.selected > * {
+    box-shadow: inset 0 0 0 9999px rgba(0, 212, 255, 0.2) !important;
+    color: rgb(255, 255, 255) !important;
+}
+
+/* Chart Container Glow Enhancement */
+.chart-glow-added {
+    position: relative;
+}
+
+.chart-glow-added::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, var(--gaming-glow), var(--gaming-accent), var(--gaming-success), var(--gaming-glow));
+    background-size: 400% 400%;
+    border-radius: 14px;
+    z-index: -1;
+    opacity: 0;
+    animation: gradient-shift 3s ease infinite;
+    transition: opacity 0.3s ease;
+}
+
+.chart-glow-added:hover::after {
+    opacity: 0.3;
+}
+
+@keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
 }
 
 

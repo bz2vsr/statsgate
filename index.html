@@ -22,11 +22,23 @@
 
     </head>
     <body class="d-flex flex-column h-100">
+        <!-- Gaming Theme Background Elements -->
+        <div id="gaming-bg-overlay" class="position-fixed w-100 h-100" style="top: 0; left: 0; pointer-events: none; z-index: -1;">
+            <!-- Animated grid lines -->
+            <div class="position-absolute w-100 h-100" style="background-image: 
+                linear-gradient(rgba(0, 212, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.1) 1px, transparent 1px);
+                background-size: 50px 50px;
+                animation: grid-shift 20s linear infinite;
+                opacity: 0.3;">
+            </div>
+        </div>
+
         <nav class="navbar navbar-expand-lg navbar-dark mb-1">
             <div class="container-fluid">
                 <div class="d-inline m-0 p-0">
                     <a class="navbar-brand me-2">
-                        <img src="/img/logo.png" class="img-fluid ms-2 me-1" height="30" width="30">
+                        <img src="/img/logo.png" class="img-fluid ms-2 me-1" height="30" width="30" style="filter: drop-shadow(0 0 10px var(--gaming-glow));">
                         <span class="d-none d-lg-inline" style="position:relative;top:1px;">GameWatch</span>
                     </a>
                     <ul id="liveIndicator" class="d-none" title="Live updates active.">
@@ -42,7 +54,7 @@
                     <ul class="navbar-nav ms-auto">
                         <li class="nav-item mx-2">
                             <span class="nav-link text-secondary" id="lastUpdated">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clock-history mb-1 me-1" viewBox="0 0 16 16">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clock-history mb-1 me-1" viewBox="0 0 16 16" style="filter: drop-shadow(0 0 5px var(--gaming-glow));">
                                     <path d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022zm2.004.45a7 7 0 0 0-.985-.299l.219-.976q.576.129 1.126.342zm1.37.71a7 7 0 0 0-.439-.27l.493-.87a8 8 0 0 1 .979.654l-.615.789a7 7 0 0 0-.418-.302zm1.834 1.79a7 7 0 0 0-.653-.796l.724-.69q.406.429.747.91zm.744 1.352a7 7 0 0 0-.214-.468l.893-.45a8 8 0 0 1 .45 1.088l-.95.313a7 7 0 0 0-.179-.483m.53 2.507a7 7 0 0 0-.1-1.025l.985-.17q.1.58.116 1.17zm-.131 1.538q.05-.254.081-.51l.993.123a8 8 0 0 1-.23 1.155l-.964-.267q.069-.247.12-.501m-.952 2.379q.276-.436.486-.908l.914.405q-.24.54-.555 1.038zm-.964 1.205q.183-.183.35-.378l.758.653a8 8 0 0 1-.401.432z"/>
                                     <path d="M8 1a7 7 0 1 0 4.95 11.95l.707.707A8.001 8.001 0 1 1 8 0z"/>
                                     <path d="M7.5 3a.5.5 0 0 1 .5.5v5.21l3.248 1.856a.5.5 0 0 1-.496.868l-3.5-2A.5.5 0 0 1 7 9V3.5a.5.5 0 0 1 .5-.5"/>
@@ -52,7 +64,7 @@
                         </li>
                         <li class="nav-item mx-2">
                                 <a class="nav-link" data-bs-toggle="modal" data-bs-target="#aboutModal">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle-fill mb-1 me-1" viewBox="0 0 16 16">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle-fill mb-1 me-1" viewBox="0 0 16 16" style="filter: drop-shadow(0 0 5px var(--gaming-glow));">
                                         <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2"/>
                                     </svg>
                                     About
@@ -62,7 +74,7 @@
                             <a href="/" class="btn btn-success">
                                 Return Home
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    class="bi bi-house-door-fill mb-1" viewBox="0 0 16 16">
+                                    class="bi bi-house-door-fill mb-1" viewBox="0 0 16 16" style="filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));">
                                     <path
                                         d="M6.5 14.5v-3.505c0-.245.25-.495.5-.495h2c.25 0 .5.25.5.5v3.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5" />
                                 </svg>
@@ -72,68 +84,123 @@
                 </div>
             </div>
         </nav>
+        
+        <!-- Enhanced Toolbar with Gaming Theme -->
         <div class="container-fluid mb-3 toolbar">
             <!-- Toolbar -->
         </div>
+        
+        <!-- Main Content with Loading State -->
         <main class="container-fluid">
+            <div id="loading-overlay" class="position-fixed w-100 h-100 d-flex align-items-center justify-content-center" style="top: 0; left: 0; background: rgba(5, 5, 7, 0.95); z-index: 9999; backdrop-filter: blur(10px);">
+                <div class="text-center">
+                    <div class="spinner-container mb-4">
+                        <div class="gaming-spinner"></div>
+                    </div>
+                    <h3 class="text-info mb-2">Loading Battle Statistics</h3>
+                    <p class="text-light">Analyzing tactical data...</p>
+                </div>
+            </div>
             <!-- Main Content-->
         </main>
 
 
-        <!-- About Modal -->
+        <!-- Enhanced About Modal -->
         <div class="modal fade" id="aboutModal" tabindex="-1">
             <div class="modal-dialog modal-lg modal-dialog-centered">
                 <div class="modal-content">
-                    <div class="modal-header bg-dark-subtle">
-                        <h5 class="modal-title">About</h5>
+                    <div class="modal-header">
+                        <h5 class="modal-title">About GameWatch</h5>
                         <button id="modalCloseButton" type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body bg-opacity-0 border-0">
-                        <p>
-                            This page displays statistics for players, maps, and factions via a manual collection process by <a target="_blank" href="https://steamcommunity.com/profiles/76561198026325621/">F9bomber</a>. While this can never be truly comprehensive, it provides a fun and interesting overview of various aspects of the game.
-                        </p>
-                        <h5>Site Credits</h5>
-                        <ul>
-                            <li>
-                                Game Data API created by Nielk1 (<a target="_blank" href="https://github.com/Nielk1">Github</a> | <a target="_blank" href="https://x.com/nielk1">Twitter</a>).
-                            </li>
-                            <li>
-                                ODF data provided by <a target="_blank" href="https://discord.com/users/125055986632228865">AI_Unit</a>.
-                            </li>
-                            <li>
-                                Game statistics provided by <a target="_blank" href="https://steamcommunity.com/profiles/76561198026325621/">F9bomber</a>.
-                            </li>
-                            <li>
-                                Map size data provided by VTrider (<a target="_blank" href="https://github.com/VTrider/Divine-TER-Parser">Github</a> | <a target="_blank" href="https://steamcommunity.com/id/vtrider/">Steam</a>).
-                            </li>
-                            <li>
-                                Map scrap loose data provided by <a target="_blank" href="https://www.twitch.tv/blue_banana_bz2">Blue Banana</a>.
-                            </li>
-                        </ul>
-                        <p>
-                            For source code and technical details, see the <a target="_blank" href="https://github.com/bz2vsr/bz2vsr.github.io">Github repo</a>.
-                        </p>
+                    <div class="modal-body">
+                        <div class="mb-4">
+                            <p class="lead">
+                                Welcome to the ultimate Battlezone II tactical analysis platform. This advanced dashboard provides real-time insights into player performance, strategic patterns, and battlefield dynamics.
+                            </p>
+                        </div>
+                        
+                        <h6 class="text-info mb-3">Data Sources & Contributors</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="contributor-card p-3 rounded">
+                                    <h6>Game Data Collection</h6>
+                                    <p class="mb-1">Manual analysis by <a target="_blank" href="https://steamcommunity.com/profiles/76561198026325621/" class="text-info">F9bomber</a></p>
+                                    <small class="text-muted">Strategic gameplay analysis and match recording</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="contributor-card p-3 rounded">
+                                    <h6>API Development</h6>
+                                    <p class="mb-1">Created by Nielk1 (<a target="_blank" href="https://github.com/Nielk1" class="text-info">Github</a> | <a target="_blank" href="https://x.com/nielk1" class="text-info">Twitter</a>)</p>
+                                    <small class="text-muted">Backend infrastructure and data processing</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="contributor-card p-3 rounded">
+                                    <h6>ODF Database</h6>
+                                    <p class="mb-1">Maintained by <a target="_blank" href="https://discord.com/users/125055986632228865" class="text-info">AI_Unit</a></p>
+                                    <small class="text-muted">Unit specifications and technical data</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="contributor-card p-3 rounded">
+                                    <h6>Map Analytics</h6>
+                                    <p class="mb-1">VTrider (<a target="_blank" href="https://github.com/VTrider/Divine-TER-Parser" class="text-info">Github</a> | <a target="_blank" href="https://steamcommunity.com/id/vtrider/" class="text-info">Steam</a>)</p>
+                                    <small class="text-muted">Terrain analysis and map data processing</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h6 class="text-warning mb-2">Special Recognition</h6>
+                            <p>Resource analysis data provided by <a target="_blank" href="https://www.twitch.tv/blue_banana_bz2" class="text-warning">Blue Banana</a> - Community content creator and tactical analyst.</p>
+                        </div>
+                        
+                        <div class="mt-4 p-3 rounded" style="background: rgba(0, 212, 255, 0.1); border-left: 4px solid var(--gaming-glow);">
+                            <p class="mb-0">
+                                <strong>Open Source:</strong> This project is completely open source and community-driven. 
+                                View the complete source code and contribute at our <a target="_blank" href="https://github.com/bz2vsr/bz2vsr.github.io" class="text-info">Github repository</a>.
+                            </p>
+                        </div>
                     </div>
-                    <div class="modal-footer p-2">
-                        <a target="_blank" href="https://github.com/bz2vsr/bz2vsr.github.io" class="btn btn-secondary text-light bg-gradient">
-                            Source Code
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-github mb-1 ms-1" viewBox="0 0 16 16">
+                    <div class="modal-footer p-3">
+                        <a target="_blank" href="https://github.com/bz2vsr/bz2vsr.github.io" class="btn btn-secondary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-github me-2" viewBox="0 0 16 16">
                             <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
                             </svg>
+                            Source Code
                         </a>
-                        <a target="_blank" href="https://discord.gg/battlezonecommunity" class="btn btn-purple text-light bg-gradient">
-                            Battlezone Community
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-discord mb-1 ms-1" viewBox="0 0 16 16">
+                        <a target="_blank" href="https://discord.gg/battlezonecommunity" class="btn btn-purple">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-discord me-2" viewBox="0 0 16 16">
                             <path d="M13.545 2.907a13.2 13.2 0 0 0-3.257-1.011.05.05 0 0 0-.052.025c-.141.25-.297.577-.406.833a12.2 12.2 0 0 0-3.658 0 8 8 0 0 0-.412-.833.05.05 0 0 0-.052-.025c-1.125.194-2.22.534-3.257 1.011a.04.04 0 0 0-.021.018C.356 6.024-.213 9.047.066 12.032q.003.022.021.037a13.3 13.3 0 0 0 3.995 2.02.05.05 0 0 0 .056-.019q.463-.63.818-1.329a.05.05 0 0 0-.01-.059l-.018-.011a9 9 0 0 1-1.248-.595.05.05 0 0 1-.02-.066l.015-.019q.127-.095.248-.195a.05.05 0 0 1 .051-.007c2.619 1.196 5.454 1.196 8.041 0a.05.05 0 0 1 .053.007q.121.1.248.195a.05.05 0 0 1-.004.085 8 8 0 0 1-1.249.594.05.05 0 0 0-.03.03.05.05 0 0 0 .003.041c.24.465.515.909.817 1.329a.05.05 0 0 0 .056.019 13.2 13.2 0 0 0 4.001-2.02.05.05 0 0 0 .021-.037c.334-3.451-.559-6.449-2.366-9.106a.03.03 0 0 0-.02-.019m-8.198 7.307c-.789 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.45.73 1.438 1.613 0 .888-.637 1.612-1.438 1.612m5.316 0c-.788 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.451.73 1.438 1.613 0 .888-.631 1.612-1.438 1.612"/>
                             </svg>
+                            Join Community
                         </a>
-                        <a target="_blank" href="https://store.steampowered.com/app/624970/Battlezone_Combat_Commander/" class="btn btn-primary text-light bg-gradient">
-                            Get Battlezone
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-steam mb-1 ms-1" viewBox="0 0 16 16">
+                        <a target="_blank" href="https://store.steampowered.com/app/624970/Battlezone_Combat_Commander/" class="btn btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-steam me-2" viewBox="0 0 16 16">
                             <path d="M.329 10.333A8.01 8.01 0 0 0 7.99 16C12.414 16 16 12.418 16 8s-3.586-8-8.009-8A8.006 8.006 0 0 0 0 7.468l.003.006 4.304 1.769A2.2 2.2 0 0 1 5.62 8.88l1.96-2.844-.001-.04a3.046 3.046 0 0 1 3.042-3.043 3.046 3.046 0 0 1 3.042 3.043 3.047 3.047 0 0 1-3.111 3.044l-2.804 2a2.223 2.223 0 0 1-3.075 2.11 2.22 2.22 0 0 1-1.312-1.568L.33 10.333Z"/>
                             <path d="M4.868 12.683a1.715 1.715 0 0 0 1.318-3.165 1.7 1.7 0 0 0-1.263-.02l1.023.424a1.261 1.261 0 1 1-.97 2.33l-.99-.41a1.7 1.7 0 0 0 .882.84Zm3.726-6.687a2.03 2.03 0 0 0 2.027 2.029 2.03 2.03 0 0 0 2.027-2.029 2.03 2.03 0 0 0-2.027-2.027 2.03 2.03 0 0 0-2.027 2.027m2.03-1.527a1.524 1.524 0 1 1-.002 3.048 1.524 1.524 0 0 1 .002-3.048"/>
                             </svg>
+                            Get Game
                         </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart Modal Enhancement -->
+        <div class="modal fade" id="chartModal" tabindex="-1" aria-labelledby="chartModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-fullscreen">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="chartModalLabel">Chart Analysis</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <div id="modalChartContainer">
+                            <canvas id="modalChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -146,5 +213,22 @@
         <script src="/js/bootstrap.bundle.min.js"></script>
         <script src="/js/stats.js"></script>
         <script async data-id="101466371" src="//static.getclicky.com/js"></script>
+        
+        <!-- Enhanced Loading Script -->
+        <script>
+            // Hide loading overlay when page is fully loaded
+            window.addEventListener('load', function() {
+                setTimeout(() => {
+                    const loadingOverlay = document.getElementById('loading-overlay');
+                    if (loadingOverlay) {
+                        loadingOverlay.style.opacity = '0';
+                        loadingOverlay.style.transition = 'opacity 0.5s ease-out';
+                        setTimeout(() => {
+                            loadingOverlay.style.display = 'none';
+                        }, 500);
+                    }
+                }, 1000); // Show loading for at least 1 second for effect
+            });
+        </script>
     </body>
 </html>
