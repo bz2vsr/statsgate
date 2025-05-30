@@ -302,6 +302,41 @@ body::after {
   background: rgba(0, 212, 255, 0.05) !important;
 }
 
+/* Fix dropdown options to match dark theme */
+.form-select option {
+  background: #1a1d23 !important;
+  color: #e8e8ff !important;
+  border: none !important;
+}
+
+.form-select option:checked,
+.form-select option:hover {
+  background: var(--gaming-glow) !important;
+  color: #000 !important;
+}
+
+/* Additional styling for dropdown options in dark theme */
+select.form-select option {
+  background-color: #1a1d23 !important;
+  color: #e8e8ff !important;
+}
+
+select.form-select option:checked {
+  background-color: var(--gaming-glow) !important;
+  color: #000000 !important;
+}
+
+/* Ensure consistent styling across browsers */
+.form-select.bg-dark option {
+  background: #1a1d23 !important;
+  color: #e8e8ff !important;
+}
+
+.form-select.text-light option {
+  background: #1a1d23 !important;
+  color: #e8e8ff !important;
+}
+
 /* Enhanced Live Indicator */
 #liveIndicator li {
   background: rgba(0, 255, 136, 0.8);
