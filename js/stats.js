@@ -1136,8 +1136,16 @@ function loadGeneralOverview() {
             const minGameRequirement = document.getElementById('minGameRequirement')?.value || '3%';
             const teamSize = document.getElementById('teamSize')?.value || '4';
             
-            console.log('Updating commander chart with:', { rankingMethod, minGameRequirement, teamSize });
-            createCommanderWinRateChart(games, rankingMethod, minGameRequirement, teamSize);
+            // CRITICAL FIX: Get current filtered games instead of using stale closure variable
+            const currentFilteredGames = getFilteredGames();
+            
+            console.log('Updating commander chart with:', { 
+                rankingMethod, 
+                minGameRequirement, 
+                teamSize,
+                currentGameCount: currentFilteredGames.length 
+            });
+            createCommanderWinRateChart(currentFilteredGames, rankingMethod, minGameRequirement, teamSize);
             
             // Realign heights after chart update
             alignCommanderChartHeights();
@@ -1158,7 +1166,10 @@ function loadGeneralOverview() {
         button.addEventListener('click', (e) => {
             const chartType = e.currentTarget.dataset.chartType;
             const chartTitle = e.currentTarget.dataset.chartTitle;
-            showModalChart(games, chartType, chartTitle);
+            
+            // CRITICAL FIX: Get current filtered games instead of using stale closure variable
+            const currentFilteredGames = getFilteredGames();
+            showModalChart(currentFilteredGames, chartType, chartTitle);
         });
     });
 }
@@ -1565,7 +1576,7 @@ function createFactionDistributionChart(games) {
             indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
-            maxBarThickness: 15,
+            maxBarThickness: 35, // INCREASED from 15 to 35 for wider bars
             scales: {
                 x: {
                     stacked: true,
@@ -1580,55 +1591,15 @@ function createFactionDistributionChart(games) {
                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                 }
             },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        title: function(context) {
-                            return context[0].dataset.label;
-                        },
-                        label: function(context) {
-                            const count = context.parsed.x;
-                            return `Selections: ${count}`;
-                        }
-                    }
-                },
-                datalabels: {
-                    display: true,
-                    color: 'white',
-                    font: {
-                        weight: 'bold',
-                        size: 16
-                    },
-                    formatter: function(value, context) {
-                        if (value > 0) {
-                            return value;
-                        }
-                        return '';
-                    },
-                    anchor: 'center',
-                    align: 'center'
-                }
-            },
-            layout: {
-                padding: {
-                    top: 15,
-                    bottom: 15,
-                    left: 20,
-                    right: 20
-                }
-            }
-        },
-        plugins: []
+            plugins: [] // Removed ChartDataLabels plugin that was breaking stacked bars
+        }
     });
     
-    // Set specific height constraint to make chart compact
+    // INCREASED height constraint for better visibility with wider bars
     const canvas = document.getElementById('factionDistributionChart');
     if (canvas) {
-        canvas.style.height = '80px';
-        canvas.style.maxHeight = '80px';
+        canvas.style.height = '120px'; // INCREASED from 80px to 120px
+        canvas.style.maxHeight = '120px';
     }
 }
 
@@ -4063,9 +4034,9 @@ function createModalFactionDistributionChart(games, canvas) {
         'Hadean': 'rgba(220, 53, 69, 0.9)'       // Red for Hadean
     };
     
-    // Fixed dimensions for stacked bar chart
+    // Fixed dimensions for stacked bar chart - INCREASED height for better visibility
     const CHART_WIDTH = 1200;
-    const CHART_HEIGHT = 400; // Fixed height for horizontal stacked bar
+    const CHART_HEIGHT = 500; // INCREASED from 400 to 500 for wider bars
     
     // Ensure the modal container can handle the full size
     const container = canvas.parentElement;
@@ -4102,6 +4073,7 @@ function createModalFactionDistributionChart(games, canvas) {
             interaction: {
                 intersect: false
             },
+            maxBarThickness: 80, // INCREASED for modal version to make bars more prominent
             scales: {
                 x: {
                     stacked: true,
@@ -4118,48 +4090,25 @@ function createModalFactionDistributionChart(games, canvas) {
             },
             plugins: {
                 legend: {
-                    labels: { 
-                        color: 'white',
-                        padding: 8,
-                        usePointStyle: true,
-                        pointStyle: 'circle',
-                        font: { size: 11 }
-                    },
-                    position: 'top'
+                    display: false
                 },
                 tooltip: {
                     callbacks: {
-                        title: function() {
-                            return `Faction Choice Distribution (${totalSelections} total)`;
+                        title: function(context) {
+                            return context[0].dataset.label;
                         },
                         label: function(context) {
                             const count = context.parsed.x;
                             const percentage = ((count / totalSelections) * 100).toFixed(1);
-                            return `${context.dataset.label}: ${count} selections (${percentage}%)`;
+                            return `Selections: ${count} (${percentage}%)`;
                         }
                     }
-                },
-                datalabels: {
-                    display: true,
-                    color: 'white',
-                    font: {
-                        weight: 'bold',
-                        size: 16
-                    },
-                    formatter: function(value, context) {
-                        if (value > 0) {
-                            return value;
-                        }
-                        return '';
-                    },
-                    anchor: 'center',
-                    align: 'center'
                 }
             },
             layout: {
                 padding: {
-                    top: 2,
-                    bottom: 2,
+                    top: 20,
+                    bottom: 20,
                     left: 20,
                     right: 20
                 }
@@ -4441,3 +4390,4 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load the game data
     loadGameData();
 }); 
+
