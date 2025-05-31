@@ -975,7 +975,7 @@ function loadGeneralOverview() {
                 <div class="card bg-dark border-secondary" id="commanderGamesCard">
                     <div class="card-header bg-primary text-white">
                         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                            <h5 class="mb-0 flex-shrink-0">Commander Ranking - Games Played</h5>
+                            <h5 class="mb-0 flex-shrink-0">Games Commanded</h5>
                             <div class="d-flex flex-wrap gap-2 align-items-center">
                                 <select id="teamSizeGames" class="form-select form-select-sm" style="width: auto; min-width: 80px;">
                                     <option value="ignore">Ignore</option>
@@ -1009,7 +1009,7 @@ function loadGeneralOverview() {
                 <div class="card bg-dark border-secondary" id="commanderWinRateCard">
                     <div class="card-header bg-success text-white">
                         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                            <h5 class="mb-0 flex-shrink-0">Commander Ranking - Winrate</h5>
+                            <h5 class="mb-0 flex-shrink-0">Commander Ranking</h5>
                             <div class="d-flex flex-wrap gap-2 align-items-center">
                                 <select id="rankingMethod" class="form-select form-select-sm" style="width: auto; min-width: 120px;">
                                     <option value="wilson">Wilson Score</option>
