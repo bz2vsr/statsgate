@@ -1,2 +1,2 @@
-# statsgate
+# STATSGATE
 The Statsgate Refactor
