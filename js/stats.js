@@ -370,7 +370,21 @@ function enhanceScales(scales) {
     return enhancedScales;
 }
 
-// Fetch and display game statistics data
+// Helper function to calculate Wilson Score
+function calculateWilsonScore(wins, games) {
+    if (games === 0) return 0;
+    
+    const p = wins / games;
+    const n = games;
+    const z = 1.96; // 95% confidence interval
+    
+    const numerator = p + (z * z) / (2 * n) - z * Math.sqrt((p * (1 - p) + (z * z) / (4 * n)) / n);
+    const denominator = 1 + (z * z) / n;
+    
+    return numerator / denominator;
+}
+
+// Load game data with comprehensive error handling and progress feedback
 async function loadGameData() {
     try {
         const response = await fetch('https://raw.githubusercontent.com/HerndonE/battlezone-combat-commander-strategy-statistics/refs/heads/main/data/data.json');
@@ -959,13 +973,30 @@ function loadGeneralOverview() {
             <!-- Commander Rankings -->
             <div class="col-lg-6 mb-4">
                 <div class="card bg-dark border-secondary" id="commanderGamesCard">
-                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Commander Ranking - Games Played</h5>
-                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="commanderGames" data-chart-title="Commander Rankings - All Players (Games Played)">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
-                            </svg>
-                        </button>
+                    <div class="card-header bg-primary text-white">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                            <h5 class="mb-0 flex-shrink-0">Commander Ranking - Games Played</h5>
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                <select id="teamSizeGames" class="form-select form-select-sm" style="width: auto; min-width: 80px;">
+                                    <option value="ignore">Ignore</option>
+                                    <option value="1">1 thug</option>
+                                    <option value="2">2 thugs</option>
+                                    <option value="3">3 thugs</option>
+                                    <option value="4" selected>4 thugs</option>
+                                </select>
+                                <button id="linkFilters" class="btn btn-sm btn-outline-light" title="Link/Unlink team size filters">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-link-45deg" viewBox="0 0 16 16">
+                                        <path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z"/>
+                                        <path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z"/>
+                                    </svg>
+                                </button>
+                                <button class="btn btn-sm btn-outline-light maximize-chart flex-shrink-0" data-chart-type="commanderGames" data-chart-title="Commander Rankings - All Players (Games Played)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     <div class="card-body">
                         <canvas id="commanderGamesChart"></canvas>
@@ -1124,42 +1155,138 @@ function loadGeneralOverview() {
     // Align commander chart heights after they're created
     alignCommanderChartHeights();
     
+    // Global state for filter linking
+    let filtersLinked = true;
+    
     // Add event listeners for the ranking dropdowns
     const rankingMethodEl = document.getElementById('rankingMethod');
     const minGameRequirementEl = document.getElementById('minGameRequirement');
     const teamSizeEl = document.getElementById('teamSize');
+    const teamSizeGamesEl = document.getElementById('teamSizeGames');
+    const linkButton = document.getElementById('linkFilters');
     
-    // Store reference to avoid creating new functions each time
-    if (!window._commanderChartUpdateHandler) {
-        window._commanderChartUpdateHandler = () => {
-            const rankingMethod = document.getElementById('rankingMethod')?.value || 'wilson';
-            const minGameRequirement = document.getElementById('minGameRequirement')?.value || '3%';
-            const teamSize = document.getElementById('teamSize')?.value || '4';
-            
-            // CRITICAL FIX: Get current filtered games instead of using stale closure variable
-            const currentFilteredGames = getFilteredGames();
-            
-            console.log('Updating commander chart with:', { 
-                rankingMethod, 
-                minGameRequirement, 
-                teamSize,
-                currentGameCount: currentFilteredGames.length 
-            });
-            createCommanderWinRateChart(currentFilteredGames, rankingMethod, minGameRequirement, teamSize);
-            
-            // Realign heights after chart update
-            alignCommanderChartHeights();
-        };
+    // Update link button appearance
+    function updateLinkButton() {
+        const linkIcon = linkButton.querySelector('svg');
+        if (filtersLinked) {
+            linkButton.classList.remove('btn-outline-light');
+            linkButton.classList.add('btn-light');
+            linkButton.title = 'Filters are linked - click to unlink';
+            linkIcon.innerHTML = `
+                <path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z"/>
+                <path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z"/>
+            `;
+        } else {
+            linkButton.classList.remove('btn-light');
+            linkButton.classList.add('btn-outline-light');
+            linkButton.title = 'Filters are unlinked - click to link';
+            linkIcon.innerHTML = `
+                <path d="M13 3a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zM19 3a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+                <path fill-rule="evenodd" d="M1.5 11.5a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0-.5.5zm-2-3a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0-.5.5zm8 0a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0-.5.5zm2 3a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0-.5.5z"/>
+                <path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l.77-.77a1 1 0 0 0-1.415-1.414l-.77.77a1 1 0 1 1-1.414-1.414l1.372-1.372a1 1 0 0 0-1.414-1.414zm4.57-2A3 3 0 0 0 7.914 3.1l-.77.77a1 1 0 0 0 1.415 1.414l.77-.77a1 1 0 1 1 1.414 1.414L9.371 7.3a1 1 0 0 0 1.414 1.414l1.372-1.372z"/>
+            `;
+        }
     }
     
-    // Only add listeners if elements exist and don't already have them
-    [rankingMethodEl, minGameRequirementEl, teamSizeEl].forEach(element => {
+    // Sync dropdowns when linked
+    function syncDropdowns(sourceDropdown, targetDropdown) {
+        if (filtersLinked && sourceDropdown && targetDropdown) {
+            targetDropdown.value = sourceDropdown.value;
+        }
+    }
+    
+    // Update charts based on current settings
+    function updateCharts() {
+        const rankingMethod = rankingMethodEl?.value || 'wilson';
+        const minGameRequirement = minGameRequirementEl?.value || '3%';
+        const teamSize = teamSizeEl?.value || '4';
+        
+        const currentFilteredGames = getFilteredGames();
+        
+        console.log('Updating both charts with linked status:', filtersLinked);
+        
+        // Always update both charts (used for ranking method, min games, and when linked)
+        createCommanderGamesChart(currentFilteredGames);
+        createCommanderWinRateChart(currentFilteredGames, rankingMethod, minGameRequirement, teamSize);
+        
+        // Realign heights after chart update
+        alignCommanderChartHeights();
+    }
+    
+    // Update only the games chart
+    function updateGamesChart() {
+        const currentFilteredGames = getFilteredGames();
+        console.log('Updating games chart only');
+        createCommanderGamesChart(currentFilteredGames);
+        alignCommanderChartHeights();
+    }
+    
+    // Update only the win rate chart
+    function updateWinRateChart() {
+        const rankingMethod = rankingMethodEl?.value || 'wilson';
+        const minGameRequirement = minGameRequirementEl?.value || '3%';
+        const teamSize = teamSizeEl?.value || '4';
+        
+        const currentFilteredGames = getFilteredGames();
+        console.log('Updating win rate chart only');
+        createCommanderWinRateChart(currentFilteredGames, rankingMethod, minGameRequirement, teamSize);
+        alignCommanderChartHeights();
+    }
+    
+    // Link toggle functionality
+    if (linkButton) {
+        linkButton.addEventListener('click', () => {
+            filtersLinked = !filtersLinked;
+            updateLinkButton();
+            
+            if (filtersLinked) {
+                // When linking, sync the dropdowns and update charts
+                syncDropdowns(teamSizeEl, teamSizeGamesEl);
+                updateCharts();
+            }
+        });
+    }
+    
+    // Initialize link button appearance
+    updateLinkButton();
+    
+    // Event handlers for win rate chart dropdowns (always affect win rate chart)
+    [rankingMethodEl, minGameRequirementEl].forEach(element => {
         if (element && !element.dataset.listenerAdded) {
-            element.addEventListener('change', window._commanderChartUpdateHandler);
+            element.addEventListener('change', updateWinRateChart);
             element.dataset.listenerAdded = 'true';
-            console.log(`Listener added to ${element.id}`);
         }
     });
+    
+    // Team size dropdown for win rate chart
+    if (teamSizeEl && !teamSizeEl.dataset.listenerAdded) {
+        teamSizeEl.addEventListener('change', () => {
+            if (filtersLinked) {
+                // When linked: sync both dropdowns and update both charts
+                syncDropdowns(teamSizeEl, teamSizeGamesEl);
+                updateCharts();
+            } else {
+                // When unlinked: only update the win rate chart
+                updateWinRateChart();
+            }
+        });
+        teamSizeEl.dataset.listenerAdded = 'true';
+    }
+    
+    // Team size dropdown for games chart
+    if (teamSizeGamesEl && !teamSizeGamesEl.dataset.listenerAdded) {
+        teamSizeGamesEl.addEventListener('change', () => {
+            if (filtersLinked) {
+                // When linked: sync both dropdowns and update both charts
+                syncDropdowns(teamSizeGamesEl, teamSizeEl);
+                updateCharts();
+            } else {
+                // When unlinked: only update the games chart
+                updateGamesChart();
+            }
+        });
+        teamSizeGamesEl.dataset.listenerAdded = 'true';
+    }
     
     // Add event listeners for maximize buttons
     document.querySelectorAll('.maximize-chart').forEach(button => {
@@ -1167,7 +1294,7 @@ function loadGeneralOverview() {
             const chartType = e.currentTarget.dataset.chartType;
             const chartTitle = e.currentTarget.dataset.chartTitle;
             
-            // CRITICAL FIX: Get current filtered games instead of using stale closure variable
+            // Get current filtered games for modal
             const currentFilteredGames = getFilteredGames();
             showModalChart(currentFilteredGames, chartType, chartTitle);
         });
@@ -1176,11 +1303,41 @@ function loadGeneralOverview() {
 
 // Create commander games chart
 function createCommanderGamesChart(games) {
+    const teamSize = document.getElementById('teamSizeGames') ? document.getElementById('teamSizeGames').value : 'ignore';
+    
     const commanderStats = {};
     
-    games.forEach(game => {
-        commanderStats[game.commander1] = (commanderStats[game.commander1] || 0) + 1;
-        commanderStats[game.commander2] = (commanderStats[game.commander2] || 0) + 1;
+    // Filter games by team size first (unless "ignore" is selected)
+    let filteredGames = games;
+    if (teamSize !== 'ignore') {
+        const targetTeamSize = parseInt(teamSize) + 1; // thugs + commander = team size
+        filteredGames = games.filter(game => {
+            const commander1TeamSize = (game.teamOne ? game.teamOne.length : 0) + 1;
+            const commander2TeamSize = (game.teamTwo ? game.teamTwo.length : 0) + 1;
+            return commander1TeamSize == targetTeamSize || commander2TeamSize == targetTeamSize;
+        });
+    }
+    
+    // Calculate stats for each commander
+    filteredGames.forEach(game => {
+        [game.commander1, game.commander2].forEach(commander => {
+            if (teamSize === 'ignore') {
+                // No team size filtering, include all games for this commander
+                commanderStats[commander] = (commanderStats[commander] || 0) + 1;
+            } else {
+                // Team size filtering: only include if this commander had the specified team size
+                const isCommander1 = commander === game.commander1;
+                const commanderTeamSize = isCommander1 ? 
+                    (game.teamOne ? game.teamOne.length : 0) + 1 : 
+                    (game.teamTwo ? game.teamTwo.length : 0) + 1;
+                
+                const targetTeamSize = parseInt(teamSize) + 1;
+                
+                if (commanderTeamSize == targetTeamSize) {
+                    commanderStats[commander] = (commanderStats[commander] || 0) + 1;
+                }
+            }
+        });
     });
     
     const sortedCommanders = Object.entries(commanderStats)
@@ -1807,7 +1964,20 @@ function showModalChart(games, chartType, chartTitle) {
     const modalBody = document.querySelector('#chartModal .modal-body');
     const modalContainer = document.getElementById('modalChartContainer');
     
-    modalTitle.textContent = chartTitle;
+    // Get the actual card header text instead of using hardcoded title
+    let actualTitle = chartTitle; // fallback
+    const chartButton = document.querySelector(`[data-chart-type="${chartType}"]`);
+    if (chartButton) {
+        const card = chartButton.closest('.card');
+        if (card) {
+            const cardHeaderH5 = card.querySelector('.card-header h5');
+            if (cardHeaderH5) {
+                actualTitle = cardHeaderH5.textContent.trim();
+            }
+        }
+    }
+    
+    modalTitle.textContent = actualTitle;
     
     // Clear previous chart
     const existingChart = Chart.getChart(modalChart);
@@ -1815,52 +1985,134 @@ function showModalChart(games, chartType, chartTitle) {
         existingChart.destroy();
     }
     
-    // Reset modal body and container styling for proper scrolling
+    // Enhanced modal body styling for full screen utilization
     modalBody.style.cssText = `
         padding: 0;
-        height: calc(100vh - 120px);
-        overflow-y: auto;
-        overflow-x: auto;
+        height: calc(100vh - 80px);
+        overflow: hidden;
         background-color: #212529;
+        display: flex;
+        flex-direction: column;
     `;
     
-    modalContainer.style.cssText = `
-        padding: 20px;
-        min-height: 100%;
-        background-color: #212529;
+    // Create filter section if applicable
+    let filterHtml = '';
+    if (chartType === 'commanderWinRate') {
+        const rankingMethod = document.getElementById('rankingMethod').value;
+        const minGameRequirement = document.getElementById('minGameRequirement').value;
+        const teamSize = document.getElementById('teamSize').value;
+        
+        filterHtml = `
+            <div class="filter-section p-3 border-bottom border-secondary">
+                <div class="row g-3 align-items-center">
+                    <div class="col-auto">
+                        <label class="form-label text-light mb-0">Ranking Method:</label>
+                    </div>
+                    <div class="col-auto">
+                        <select id="modalRankingMethod" class="form-select form-select-sm">
+                            <option value="wilson" ${rankingMethod === 'wilson' ? 'selected' : ''}>Wilson Score</option>
+                            <option value="winRate" ${rankingMethod === 'winRate' ? 'selected' : ''}>Win Rate</option>
+                            <option value="volumeWeighted" ${rankingMethod === 'volumeWeighted' ? 'selected' : ''}>Volume-Weighted</option>
+                            <option value="bayesian" ${rankingMethod === 'bayesian' ? 'selected' : ''}>Bayesian Average</option>
+                            <option value="composite" ${rankingMethod === 'composite' ? 'selected' : ''}>Composite Score</option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label text-light mb-0">Min Games:</label>
+                    </div>
+                    <div class="col-auto">
+                        <select id="modalMinGameRequirement" class="form-select form-select-sm">
+                            <option value="3%" ${minGameRequirement === '3%' ? 'selected' : ''}>3% Min Games</option>
+                            <option value="5%" ${minGameRequirement === '5%' ? 'selected' : ''}>5% Min Games</option>
+                            <option value="10%" ${minGameRequirement === '10%' ? 'selected' : ''}>10% Min Games</option>
+                            <option value="30" ${minGameRequirement === '30' ? 'selected' : ''}>30 Games Min</option>
+                            <option value="50" ${minGameRequirement === '50' ? 'selected' : ''}>50 Games Min</option>
+                            <option value="100" ${minGameRequirement === '100' ? 'selected' : ''}>100 Games Min</option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label text-light mb-0">Team Size:</label>
+                    </div>
+                    <div class="col-auto">
+                        <select id="modalTeamSize" class="form-select form-select-sm">
+                            <option value="ignore" ${teamSize === 'ignore' ? 'selected' : ''}>Ignore</option>
+                            <option value="1" ${teamSize === '1' ? 'selected' : ''}>1 thug</option>
+                            <option value="2" ${teamSize === '2' ? 'selected' : ''}>2 thugs</option>
+                            <option value="3" ${teamSize === '3' ? 'selected' : ''}>3 thugs</option>
+                            <option value="4" ${teamSize === '4' ? 'selected' : ''}>4 thugs</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    modalContainer.innerHTML = `
+        ${filterHtml}
+        <div class="chart-container" style="flex: 1; padding: 20px; overflow: auto; min-height: 0;">
+            <canvas id="modalChart"></canvas>
+        </div>
     `;
+    
+    // Get the new canvas reference after innerHTML update
+    const newModalChart = document.getElementById('modalChart');
     
     // Reset canvas completely
-    modalChart.style.cssText = '';
-    modalChart.removeAttribute('width');
-    modalChart.removeAttribute('height');
-    modalChart.removeAttribute('style');
+    newModalChart.style.cssText = '';
+    newModalChart.removeAttribute('width');
+    newModalChart.removeAttribute('height');
     
     // Create modal chart based on type
     switch (chartType) {
         case 'commanderGames':
-            createModalCommanderGamesChart(games, modalChart);
+            createModalCommanderGamesChart(games, newModalChart);
             break;
         case 'commanderWinRate':
-            const rankingMethod = document.getElementById('rankingMethod').value;
-            const minGameRequirement = document.getElementById('minGameRequirement').value;
-            const teamSize = document.getElementById('teamSize').value;
-            createModalCommanderWinRateChart(games, modalChart, rankingMethod, minGameRequirement, teamSize);
+            const modalRankingMethod = document.getElementById('modalRankingMethod').value;
+            const modalMinGameRequirement = document.getElementById('modalMinGameRequirement').value;
+            const modalTeamSize = document.getElementById('modalTeamSize').value;
+            createModalCommanderWinRateChart(games, newModalChart, modalRankingMethod, modalMinGameRequirement, modalTeamSize);
+            
+            // Add event listeners for filter changes
+            document.getElementById('modalRankingMethod').addEventListener('change', () => {
+                const chart = Chart.getChart(newModalChart);
+                if (chart) chart.destroy();
+                createModalCommanderWinRateChart(games, newModalChart, 
+                    document.getElementById('modalRankingMethod').value,
+                    document.getElementById('modalMinGameRequirement').value,
+                    document.getElementById('modalTeamSize').value);
+            });
+            document.getElementById('modalMinGameRequirement').addEventListener('change', () => {
+                const chart = Chart.getChart(newModalChart);
+                if (chart) chart.destroy();
+                createModalCommanderWinRateChart(games, newModalChart, 
+                    document.getElementById('modalRankingMethod').value,
+                    document.getElementById('modalMinGameRequirement').value,
+                    document.getElementById('modalTeamSize').value);
+            });
+            document.getElementById('modalTeamSize').addEventListener('change', () => {
+                const chart = Chart.getChart(newModalChart);
+                if (chart) chart.destroy();
+                createModalCommanderWinRateChart(games, newModalChart, 
+                    document.getElementById('modalRankingMethod').value,
+                    document.getElementById('modalMinGameRequirement').value,
+                    document.getElementById('modalTeamSize').value);
+            });
             break;
         case 'mapPopularity':
-            createModalMapPopularityChart(games, modalChart);
+            createModalMapPopularityChart(games, newModalChart);
             break;
         case 'commanderFaction':
-            createModalCommanderFactionChart(games, modalChart);
+            createModalCommanderFactionChart(games, newModalChart);
             break;
         case 'factionDistribution':
-            createModalFactionDistributionChart(games, modalChart);
+            createModalFactionDistributionChart(games, newModalChart);
             break;
         case 'factionPerformance':
-            createModalFactionPerformanceChart(games, modalChart);
+            createModalFactionPerformanceChart(games, newModalChart);
             break;
         case 'gameDuration':
-            createModalGameDurationChart(games, modalChart);
+            createModalGameDurationChart(games, newModalChart);
             break;
     }
     
@@ -1878,27 +2130,19 @@ function createModalCommanderGamesChart(games, canvas) {
     const sortedCommanders = Object.entries(commanderStats)
         .sort(([,a], [,b]) => b - a);
     
-    // Enforce minimum readable dimensions - never compress
-    const MIN_BAR_HEIGHT = 35; // Minimum height per bar for readability
-    const CHART_WIDTH = 1200; // Fixed comfortable width
-    const PADDING = 100; // Top/bottom padding
-    
-    // Calculate height based on data - ensure every bar is readable
-    const chartHeight = (sortedCommanders.length * MIN_BAR_HEIGHT) + PADDING;
-    
-    // Ensure the modal container can handle the full size
+    // Make the chart responsive to the container
     const container = canvas.parentElement;
-    container.style.width = `${CHART_WIDTH + 40}px`; // Extra padding
-    container.style.minHeight = `${chartHeight}px`;
     
-    // Set canvas to exact dimensions - no scaling allowed
-    canvas.width = CHART_WIDTH;
-    canvas.height = chartHeight;
-    canvas.style.width = `${CHART_WIDTH}px`;
-    canvas.style.height = `${chartHeight}px`;
-    canvas.style.display = 'block';
-    canvas.style.maxWidth = 'none';
-    canvas.style.maxHeight = 'none';
+    // Set container to utilize full available space
+    container.style.height = '100%';
+    container.style.width = '100%';
+    container.style.position = 'relative';
+    
+    // Make canvas responsive
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.maxWidth = '100%';
+    canvas.style.maxHeight = '100%';
     
     new Chart(canvas.getContext('2d'), {
         type: 'bar',
@@ -1914,10 +2158,8 @@ function createModalCommanderGamesChart(games, canvas) {
         },
         options: {
             indexAxis: 'y',
-            responsive: false,
+            responsive: true,
             maintainAspectRatio: false,
-            resizeDelay: 0,
-            animation: false,
             interaction: {
                 intersect: false
             },
@@ -1935,7 +2177,7 @@ function createModalCommanderGamesChart(games, canvas) {
                     type: 'category',
                     ticks: { 
                         color: 'white',
-                        font: { size: 13 },
+                        font: { size: 12 },
                         maxTicksLimit: false,
                         autoSkip: false,
                         padding: 8
@@ -1950,7 +2192,7 @@ function createModalCommanderGamesChart(games, canvas) {
                     beginAtZero: true,
                     ticks: { 
                         color: 'white',
-                        font: { size: 13 }
+                        font: { size: 12 }
                     },
                     grid: { 
                         color: 'rgba(255, 255, 255, 0.1)',
@@ -1962,236 +2204,8 @@ function createModalCommanderGamesChart(games, canvas) {
                 padding: {
                     top: 20,
                     bottom: 20,
-                    left: 150, // Space for long names
-                    right: 50
-                }
-            },
-            elements: {
-                bar: {
-                    borderWidth: 1
-                }
-            }
-        }
-    });
-}
-
-function createModalCommanderWinRateChart(games, canvas, rankingMethod, minGameRequirement, teamSize) {
-    const commanderStats = {};
-    
-    // Filter games by team size first (unless "ignore" is selected)
-    let filteredGames = games;
-    if (teamSize !== 'ignore') {
-        const targetTeamSize = parseInt(teamSize) + 1; // thugs + commander = team size
-        filteredGames = games.filter(game => {
-            const commander1TeamSize = (game.teamOne ? game.teamOne.length : 0) + 1;
-            const commander2TeamSize = (game.teamTwo ? game.teamTwo.length : 0) + 1;
-            return commander1TeamSize == targetTeamSize || commander2TeamSize == targetTeamSize;
-        });
-    }
-    
-    // Calculate comprehensive stats for each commander
-    filteredGames.forEach(game => {
-        [game.commander1, game.commander2].forEach(commander => {
-            if (teamSize === 'ignore') {
-                // No team size filtering, include all games for this commander
-                if (!commanderStats[commander]) {
-                    commanderStats[commander] = { games: 0, wins: 0, faction: {} };
-                }
-                commanderStats[commander].games++;
-                
-                if (game.winner === commander) {
-                    commanderStats[commander].wins++;
-                }
-                
-                // Track faction usage
-                const faction = commander === game.commander1 ? game.faction1 : game.faction2;
-                commanderStats[commander].faction[faction] = (commanderStats[commander].faction[faction] || 0) + 1;
-            } else {
-                // Team size filtering: only include if this commander had the specified team size
-                const isCommander1 = commander === game.commander1;
-                const commanderTeamSize = isCommander1 ? 
-                    (game.teamOne ? game.teamOne.length : 0) + 1 : 
-                    (game.teamTwo ? game.teamTwo.length : 0) + 1;
-                
-                const targetTeamSize = parseInt(teamSize) + 1;
-                
-                if (commanderTeamSize == targetTeamSize) {
-                    if (!commanderStats[commander]) {
-                        commanderStats[commander] = { games: 0, wins: 0, faction: {} };
-                    }
-                    commanderStats[commander].games++;
-                    
-                    if (game.winner === commander) {
-                        commanderStats[commander].wins++;
-                    }
-                    
-                    // Track faction usage
-                    const faction = isCommander1 ? game.faction1 : game.faction2;
-                    commanderStats[commander].faction[faction] = (commanderStats[commander].faction[faction] || 0) + 1;
-                }
-            }
-        });
-    });
-    
-    // Apply minimum games filter
-    let minGames;
-    if (minGameRequirement.includes('%')) {
-        const percentage = parseFloat(minGameRequirement.replace('%', ''));
-        minGames = Math.ceil(filteredGames.length * (percentage / 100));
-    } else {
-        minGames = parseInt(minGameRequirement);
-    }
-    
-    const qualifiedCommanders = Object.entries(commanderStats)
-        .filter(([, stats]) => stats.games >= minGames);
-    
-    console.log(`Qualified commanders after min games filter (${minGames}): ${qualifiedCommanders.length}`);
-    
-    // Calculate scores based on method
-    const scoredCommanders = qualifiedCommanders.map(([name, stats]) => {
-        const winRate = stats.wins / stats.games;
-        let score = winRate;
-        
-        switch (rankingMethod) {
-            case 'wilson':
-                // Wilson Score Interval
-                const n = stats.games;
-                const p = winRate;
-                const z = 1.96; // 95% confidence
-                score = (p + z*z/(2*n) - z * Math.sqrt((p*(1-p)+z*z/(4*n))/n)) / (1+z*z/n);
-                break;
-            case 'winRate':
-                score = winRate;
-                break;
-            case 'volumeWeighted':
-                score = winRate * Math.log(stats.games + 1);
-                break;
-            case 'bayesian':
-                // Bayesian average
-                const globalWinRate = filteredGames.filter(g => g.winner).length / (filteredGames.length * 2);
-                const confidence = 30;
-                score = (confidence * globalWinRate + stats.games * winRate) / (confidence + stats.games);
-                break;
-            case 'composite':
-                const wilsonScore = (winRate + 1.96*1.96/(2*stats.games) - 1.96 * Math.sqrt((winRate*(1-winRate)+1.96*1.96/(4*stats.games))/stats.games)) / (1+1.96*1.96/stats.games);
-                const volumeScore = Math.log(stats.games + 1) / Math.log(Math.max(...qualifiedCommanders.map(([,s]) => s.games)) + 1);
-                score = wilsonScore * 0.7 + volumeScore * 0.3;
-                break;
-        }
-        
-        return {
-            name,
-            score,
-            winRate: winRate * 100,
-            games: stats.games,
-            wins: stats.wins
-        };
-    });
-    
-    const sortedCommanders = scoredCommanders.sort((a, b) => b.score - a.score);
-    
-    // Enforce minimum readable dimensions - never compress
-    const MIN_BAR_HEIGHT = 35; // Minimum height per bar for readability
-    const CHART_WIDTH = 1200; // Fixed comfortable width
-    const PADDING = 100; // Top/bottom padding
-    
-    // Calculate height based on data - ensure every bar is readable
-    const chartHeight = (sortedCommanders.length * MIN_BAR_HEIGHT) + PADDING;
-    
-    // Ensure the modal container can handle the full size
-    const container = canvas.parentElement;
-    container.style.width = `${CHART_WIDTH + 40}px`; // Extra padding
-    container.style.minHeight = `${chartHeight}px`;
-    
-    // Set canvas to exact dimensions - no scaling allowed
-    canvas.width = CHART_WIDTH;
-    canvas.height = chartHeight;
-    canvas.style.width = `${CHART_WIDTH}px`;
-    canvas.style.height = `${chartHeight}px`;
-    canvas.style.display = 'block';
-    canvas.style.maxWidth = 'none';
-    canvas.style.maxHeight = 'none';
-    
-    new Chart(canvas.getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: sortedCommanders.map(c => c.name),
-            datasets: [{
-                label: `${rankingMethod === 'wilson' ? 'Wilson Score' : 
-                        rankingMethod === 'winRate' ? 'Win Rate (%)' :
-                        rankingMethod === 'volumeWeighted' ? 'Volume-Weighted Score' :
-                        rankingMethod === 'bayesian' ? 'Bayesian Average' : 'Composite Score'}`,
-                data: sortedCommanders.map(c => rankingMethod === 'winRate' ? c.winRate : c.score),
-                backgroundColor: 'rgba(25, 135, 84, 0.8)',
-                borderColor: 'rgba(25, 135, 84, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: false,
-            maintainAspectRatio: false,
-            resizeDelay: 0,
-            animation: false,
-            interaction: {
-                intersect: false
-            },
-            plugins: {
-                legend: {
-                    display: true,
-                    labels: { 
-                        color: 'white',
-                        font: { size: 16 }
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const commander = sortedCommanders[context.dataIndex];
-                            return [
-                                `${context.dataset.label}: ${context.parsed.x.toFixed(3)}`,
-                                `Win Rate: ${commander.winRate.toFixed(1)}%`,
-                                `Games: ${commander.games}`,
-                                `Wins: ${commander.wins}`
-                            ];
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    type: 'category',
-                    ticks: { 
-                        color: 'white',
-                        font: { size: 13 },
-                        maxTicksLimit: false,
-                        autoSkip: false,
-                        padding: 8
-                    },
-                    grid: { 
-                        color: 'rgba(255, 255, 255, 0.1)',
-                        display: true
-                    }
-                },
-                x: {
-                    type: 'linear',
-                    beginAtZero: true,
-                    ticks: { 
-                        color: 'white',
-                        font: { size: 13 }
-                    },
-                    grid: { 
-                        color: 'rgba(255, 255, 255, 0.1)',
-                        display: true
-                    }
-                }
-            },
-            layout: {
-                padding: {
-                    top: 20,
-                    bottom: 20,
-                    left: 150, // Space for long names
-                    right: 50
+                    left: 20,
+                    right: 20
                 }
             },
             elements: {
@@ -2213,27 +2227,19 @@ function createModalMapPopularityChart(games, canvas) {
     const sortedMaps = Object.entries(mapStats)
         .sort(([,a], [,b]) => b - a);
     
-    // Enforce minimum readable dimensions - never compress
-    const MIN_BAR_HEIGHT = 35; // Minimum height per bar for readability
-    const CHART_WIDTH = 1200; // Fixed comfortable width
-    const PADDING = 100; // Top/bottom padding
-    
-    // Calculate height based on data - ensure every bar is readable
-    const chartHeight = (sortedMaps.length * MIN_BAR_HEIGHT) + PADDING;
-    
-    // Ensure the modal container can handle the full size
+    // Make the chart responsive to the container
     const container = canvas.parentElement;
-    container.style.width = `${CHART_WIDTH + 40}px`; // Extra padding
-    container.style.minHeight = `${chartHeight}px`;
     
-    // Set canvas to exact dimensions - no scaling allowed
-    canvas.width = CHART_WIDTH;
-    canvas.height = chartHeight;
-    canvas.style.width = `${CHART_WIDTH}px`;
-    canvas.style.height = `${chartHeight}px`;
-    canvas.style.display = 'block';
-    canvas.style.maxWidth = 'none';
-    canvas.style.maxHeight = 'none';
+    // Set container to utilize full available space
+    container.style.height = '100%';
+    container.style.width = '100%';
+    container.style.position = 'relative';
+    
+    // Make canvas responsive
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.maxWidth = '100%';
+    canvas.style.maxHeight = '100%';
     
     new Chart(canvas.getContext('2d'), {
         type: 'bar',
@@ -2249,10 +2255,8 @@ function createModalMapPopularityChart(games, canvas) {
         },
         options: {
             indexAxis: 'y',
-            responsive: false,
+            responsive: true,
             maintainAspectRatio: false,
-            resizeDelay: 0,
-            animation: false,
             interaction: {
                 intersect: false
             },
@@ -2270,7 +2274,7 @@ function createModalMapPopularityChart(games, canvas) {
                     type: 'category',
                     ticks: { 
                         color: 'white',
-                        font: { size: 13 },
+                        font: { size: 12 },
                         maxTicksLimit: false,
                         autoSkip: false,
                         padding: 8
@@ -2285,7 +2289,7 @@ function createModalMapPopularityChart(games, canvas) {
                     beginAtZero: true,
                     ticks: { 
                         color: 'white',
-                        font: { size: 13 }
+                        font: { size: 12 }
                     },
                     grid: { 
                         color: 'rgba(255, 255, 255, 0.1)',
@@ -2297,8 +2301,8 @@ function createModalMapPopularityChart(games, canvas) {
                 padding: {
                     top: 20,
                     bottom: 20,
-                    left: 150, // Space for long names
-                    right: 50
+                    left: 20,
+                    right: 20
                 }
             },
             elements: {
@@ -2342,27 +2346,19 @@ function createModalCommanderFactionChart(games, canvas) {
         })
         .sort((a, b) => b.totalGames - a.totalGames);
     
-    // Enforce minimum readable dimensions - never compress
-    const MIN_BAR_HEIGHT = 35; // Minimum height per bar for readability
-    const CHART_WIDTH = 1200; // Fixed comfortable width
-    const PADDING = 100; // Top/bottom padding
-    
-    // Calculate height based on data - ensure every bar is readable
-    const chartHeight = (commanderPreferences.length * MIN_BAR_HEIGHT) + PADDING;
-    
-    // Ensure the modal container can handle the full size
+    // Make the chart responsive to the container
     const container = canvas.parentElement;
-    container.style.width = `${CHART_WIDTH + 40}px`; // Extra padding
-    container.style.minHeight = `${chartHeight}px`;
     
-    // Set canvas to exact dimensions - no scaling allowed
-    canvas.width = CHART_WIDTH;
-    canvas.height = chartHeight;
-    canvas.style.width = `${CHART_WIDTH}px`;
-    canvas.style.height = `${chartHeight}px`;
-    canvas.style.display = 'block';
-    canvas.style.maxWidth = 'none';
-    canvas.style.maxHeight = 'none';
+    // Set container to utilize full available space
+    container.style.height = '100%';
+    container.style.width = '100%';
+    container.style.position = 'relative';
+    
+    // Make canvas responsive
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.maxWidth = '100%';
+    canvas.style.maxHeight = '100%';
     
     new Chart(canvas.getContext('2d'), {
         type: 'bar',
@@ -2378,10 +2374,8 @@ function createModalCommanderFactionChart(games, canvas) {
         },
         options: {
             indexAxis: 'y',
-            responsive: false,
+            responsive: true,
             maintainAspectRatio: false,
-            resizeDelay: 0,
-            animation: false,
             interaction: {
                 intersect: false
             },
@@ -2411,7 +2405,7 @@ function createModalCommanderFactionChart(games, canvas) {
                     type: 'category',
                     ticks: { 
                         color: 'white',
-                        font: { size: 13 },
+                        font: { size: 12 },
                         maxTicksLimit: false,
                         autoSkip: false,
                         padding: 8
@@ -2426,7 +2420,7 @@ function createModalCommanderFactionChart(games, canvas) {
                     beginAtZero: true,
                     ticks: { 
                         color: 'white',
-                        font: { size: 13 }
+                        font: { size: 12 }
                     },
                     grid: { 
                         color: 'rgba(255, 255, 255, 0.1)',
@@ -2438,8 +2432,8 @@ function createModalCommanderFactionChart(games, canvas) {
                 padding: {
                     top: 20,
                     bottom: 20,
-                    left: 200, // More space for commander+faction names
-                    right: 50
+                    left: 20,
+                    right: 20
                 }
             },
             elements: {
@@ -2477,27 +2471,19 @@ function createModalFactionPerformanceChart(games, canvas) {
         }))
         .sort((a, b) => b.winRate - a.winRate);
     
-    // Enforce minimum readable dimensions - vertical layout for better readability
-    const MIN_BAR_HEIGHT = 80; // Extra height for dual-axis chart
-    const CHART_WIDTH = 1200; // Fixed comfortable width
-    const PADDING = 150; // More padding for dual-axis
-    
-    // Calculate height based on data - ensure every bar is readable
-    const chartHeight = (factionPerformance.length * MIN_BAR_HEIGHT) + PADDING;
-    
-    // Ensure the modal container can handle the full size
+    // Make the chart responsive to the container
     const container = canvas.parentElement;
-    container.style.width = `${CHART_WIDTH + 40}px`; // Extra padding
-    container.style.minHeight = `${chartHeight}px`;
     
-    // Set canvas to exact dimensions - no scaling allowed
-    canvas.width = CHART_WIDTH;
-    canvas.height = chartHeight;
-    canvas.style.width = `${CHART_WIDTH}px`;
-    canvas.style.height = `${chartHeight}px`;
-    canvas.style.display = 'block';
-    canvas.style.maxWidth = 'none';
-    canvas.style.maxHeight = 'none';
+    // Set container to utilize full available space
+    container.style.height = '100%';
+    container.style.width = '100%';
+    container.style.position = 'relative';
+    
+    // Make canvas responsive
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.maxWidth = '100%';
+    canvas.style.maxHeight = '100%';
     
     new Chart(canvas.getContext('2d'), {
         type: 'bar',
@@ -2507,8 +2493,8 @@ function createModalFactionPerformanceChart(games, canvas) {
                 {
                     label: 'Win Rate (%)',
                     data: factionPerformance.map(f => f.winRate),
-                    backgroundColor: 'rgba(220, 53, 69, 0.8)',
-                    borderColor: 'rgba(220, 53, 69, 1)',
+                    backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                    borderColor: 'rgba(40, 167, 69, 1)',
                     borderWidth: 1,
                     yAxisID: 'y'
                 },
@@ -2523,10 +2509,8 @@ function createModalFactionPerformanceChart(games, canvas) {
             ]
         },
         options: {
-            responsive: false,
+            responsive: true,
             maintainAspectRatio: false,
-            resizeDelay: 0,
-            animation: false,
             interaction: {
                 intersect: false
             },
@@ -2541,11 +2525,11 @@ function createModalFactionPerformanceChart(games, canvas) {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            const faction = factionPerformance[context.dataIndex];
-                            if (context.datasetIndex === 0) {
-                                return `Win Rate: ${faction.winRate}% (${faction.wins}/${faction.games})`;
+                            const performance = factionPerformance[context.dataIndex];
+                            if (context.dataset.label === 'Win Rate (%)') {
+                                return `Win Rate: ${performance.winRate}%`;
                             } else {
-                                return `Total Games: ${faction.games}`;
+                                return `Games: ${performance.games} (${performance.wins}W/${performance.games - performance.wins}L)`;
                             }
                         }
                     }
@@ -2553,12 +2537,9 @@ function createModalFactionPerformanceChart(games, canvas) {
             },
             scales: {
                 x: {
-                    type: 'category',
                     ticks: { 
                         color: 'white',
-                        font: { size: 13 },
-                        maxTicksLimit: false,
-                        autoSkip: false
+                        font: { size: 12 }
                     },
                     grid: { 
                         color: 'rgba(255, 255, 255, 0.1)',
@@ -2570,9 +2551,13 @@ function createModalFactionPerformanceChart(games, canvas) {
                     display: true,
                     position: 'left',
                     beginAtZero: true,
+                    max: 100,
                     ticks: { 
                         color: 'white',
-                        font: { size: 13 }
+                        font: { size: 12 },
+                        callback: function(value) {
+                            return value + '%';
+                        }
                     },
                     grid: { 
                         color: 'rgba(255, 255, 255, 0.1)',
@@ -2581,8 +2566,7 @@ function createModalFactionPerformanceChart(games, canvas) {
                     title: {
                         display: true,
                         text: 'Win Rate (%)',
-                        color: 'white',
-                        font: { size: 16 }
+                        color: 'white'
                     }
                 },
                 y1: {
@@ -2592,25 +2576,25 @@ function createModalFactionPerformanceChart(games, canvas) {
                     beginAtZero: true,
                     ticks: { 
                         color: 'white',
-                        font: { size: 13 }
+                        font: { size: 12 }
                     },
                     grid: { 
-                        drawOnChartArea: false
+                        drawOnChartArea: false,
+                        color: 'rgba(255, 255, 255, 0.1)'
                     },
                     title: {
                         display: true,
                         text: 'Total Games',
-                        color: 'white',
-                        font: { size: 16 }
+                        color: 'white'
                     }
                 }
             },
             layout: {
                 padding: {
-                    top: 30,
-                    bottom: 30,
-                    left: 80,
-                    right: 80
+                    top: 20,
+                    bottom: 20,
+                    left: 20,
+                    right: 20
                 }
             },
             elements: {
@@ -2625,58 +2609,50 @@ function createModalFactionPerformanceChart(games, canvas) {
 function createModalGameDurationChart(games, canvas) {
     const durationBuckets = {};
     
-    games.forEach(game => {
-        if (!game.time || game.time.trim() === '') return;
-        
-        try {
-            const timeParts = game.time.split(':');
-            if (timeParts.length >= 2) {
-                const hours = parseInt(timeParts[0]) || 0;
-                const minutes = parseInt(timeParts[1]) || 0;
-                const totalMinutes = hours * 60 + minutes;
-                
-                // Create buckets in 10-minute intervals
-                const bucket = Math.floor(totalMinutes / 10) * 10;
-                const bucketLabel = `${Math.floor(bucket / 60)}:${(bucket % 60).toString().padStart(2, '0')} - ${Math.floor((bucket + 9) / 60)}:${((bucket + 9) % 60).toString().padStart(2, '0')}`;
-                
-                durationBuckets[bucketLabel] = (durationBuckets[bucketLabel] || 0) + 1;
-            }
-        } catch (e) {
-            console.warn('Error parsing game time:', game.time, e);
+    const getMinutes = (label) => {
+        const match = label.match(/(\d+):(\d+):(\d+)/);
+        if (match) {
+            const hours = parseInt(match[1]);
+            const minutes = parseInt(match[2]);
+            return hours * 60 + minutes;
         }
+        return 0;
+    };
+    
+    games.forEach(game => {
+        if (!game.duration) return; // Skip games without duration data
+        
+        const minutes = getMinutes(game.duration);
+        let bucket;
+        
+        if (minutes < 5) bucket = '0-5 min';
+        else if (minutes < 10) bucket = '5-10 min';
+        else if (minutes < 15) bucket = '10-15 min';
+        else if (minutes < 20) bucket = '15-20 min';
+        else if (minutes < 30) bucket = '20-30 min';
+        else if (minutes < 45) bucket = '30-45 min';
+        else if (minutes < 60) bucket = '45-60 min';
+        else bucket = '60+ min';
+        
+        durationBuckets[bucket] = (durationBuckets[bucket] || 0) + 1;
     });
     
-    const sortedBuckets = Object.entries(durationBuckets)
-        .sort(([a], [b]) => {
-            const getMinutes = (label) => {
-                const start = label.split(' - ')[0];
-                const [hours, mins] = start.split(':').map(Number);
-                return hours * 60 + mins;
-            };
-            return getMinutes(a) - getMinutes(b);
-        });
+    const bucketOrder = ['0-5 min', '5-10 min', '10-15 min', '15-20 min', '20-30 min', '30-45 min', '45-60 min', '60+ min'];
+    const sortedBuckets = bucketOrder.map(bucket => [bucket, durationBuckets[bucket] || 0]);
     
-    // Enforce minimum readable dimensions - horizontal layout for time
-    const MIN_BAR_HEIGHT = 40; // Height for horizontal bars
-    const CHART_WIDTH = 1200; // Fixed comfortable width
-    const PADDING = 100; // Top/bottom padding
-    
-    // Calculate height based on data - ensure every bar is readable
-    const chartHeight = Math.max(400, (sortedBuckets.length * MIN_BAR_HEIGHT) + PADDING);
-    
-    // Ensure the modal container can handle the full size
+    // Make the chart responsive to the container
     const container = canvas.parentElement;
-    container.style.width = `${CHART_WIDTH + 40}px`; // Extra padding
-    container.style.minHeight = `${chartHeight}px`;
     
-    // Set canvas to exact dimensions - no scaling allowed
-    canvas.width = CHART_WIDTH;
-    canvas.height = chartHeight;
-    canvas.style.width = `${CHART_WIDTH}px`;
-    canvas.style.height = `${chartHeight}px`;
-    canvas.style.display = 'block';
-    canvas.style.maxWidth = 'none';
-    canvas.style.maxHeight = 'none';
+    // Set container to utilize full available space
+    container.style.height = '100%';
+    container.style.width = '100%';
+    container.style.position = 'relative';
+    
+    // Make canvas responsive
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.maxWidth = '100%';
+    canvas.style.maxHeight = '100%';
     
     new Chart(canvas.getContext('2d'), {
         type: 'bar',
@@ -2691,10 +2667,8 @@ function createModalGameDurationChart(games, canvas) {
             }]
         },
         options: {
-            responsive: false,
+            responsive: true,
             maintainAspectRatio: false,
-            resizeDelay: 0,
-            animation: false,
             interaction: {
                 intersect: false
             },
@@ -2713,7 +2687,7 @@ function createModalGameDurationChart(games, canvas) {
                     ticks: { 
                         color: 'white',
                         maxRotation: 45,
-                        font: { size: 13 },
+                        font: { size: 12 },
                         maxTicksLimit: false,
                         autoSkip: false
                     },
@@ -2727,7 +2701,7 @@ function createModalGameDurationChart(games, canvas) {
                     beginAtZero: true,
                     ticks: { 
                         color: 'white',
-                        font: { size: 13 }
+                        font: { size: 12 }
                     },
                     grid: { 
                         color: 'rgba(255, 255, 255, 0.1)',
@@ -2737,10 +2711,10 @@ function createModalGameDurationChart(games, canvas) {
             },
             layout: {
                 padding: {
-                    top: 30,
-                    bottom: 30,
-                    left: 60,
-                    right: 40
+                    top: 20,
+                    bottom: 20,
+                    left: 20,
+                    right: 20
                 }
             },
             elements: {
@@ -4034,23 +4008,19 @@ function createModalFactionDistributionChart(games, canvas) {
         'Hadean': 'rgba(220, 53, 69, 0.9)'       // Red for Hadean
     };
     
-    // Fixed dimensions for stacked bar chart - INCREASED height for better visibility
-    const CHART_WIDTH = 1200;
-    const CHART_HEIGHT = 500; // INCREASED from 400 to 500 for wider bars
-    
-    // Ensure the modal container can handle the full size
+    // Make the chart responsive to the container
     const container = canvas.parentElement;
-    container.style.width = `${CHART_WIDTH + 40}px`;
-    container.style.minHeight = `${CHART_HEIGHT}px`;
     
-    // Set canvas to exact dimensions
-    canvas.width = CHART_WIDTH;
-    canvas.height = CHART_HEIGHT;
-    canvas.style.width = `${CHART_WIDTH}px`;
-    canvas.style.height = `${CHART_HEIGHT}px`;
-    canvas.style.display = 'block';
-    canvas.style.maxWidth = 'none';
-    canvas.style.maxHeight = 'none';
+    // Set container to utilize full available space
+    container.style.height = '100%';
+    container.style.width = '100%';
+    container.style.position = 'relative';
+    
+    // Make canvas responsive
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.maxWidth = '100%';
+    canvas.style.maxHeight = '100%';
     
     new Chart(canvas.getContext('2d'), {
         type: 'bar',
@@ -4066,41 +4036,55 @@ function createModalFactionDistributionChart(games, canvas) {
         },
         options: {
             indexAxis: 'y',
-            responsive: false,
+            responsive: true,
             maintainAspectRatio: false,
-            resizeDelay: 0,
-            animation: false,
             interaction: {
                 intersect: false
             },
-            maxBarThickness: 80, // INCREASED for modal version to make bars more prominent
             scales: {
                 x: {
                     stacked: true,
                     beginAtZero: true,
                     max: totalSelections,
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 12 }
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
                 },
                 y: {
                     stacked: true,
-                    ticks: { color: 'white' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 12 }
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
                 }
             },
             plugins: {
                 legend: {
-                    display: false
+                    display: true,
+                    position: 'bottom',
+                    labels: { 
+                        color: 'white',
+                        font: { size: 14 },
+                        padding: 20,
+                        usePointStyle: true
+                    }
                 },
                 tooltip: {
                     callbacks: {
-                        title: function(context) {
-                            return context[0].dataset.label;
-                        },
                         label: function(context) {
+                            const faction = context.dataset.label;
                             const count = context.parsed.x;
                             const percentage = ((count / totalSelections) * 100).toFixed(1);
-                            return `Selections: ${count} (${percentage}%)`;
+                            return `${faction}: ${count} selections (${percentage}%)`;
                         }
                     }
                 }
@@ -4112,9 +4096,13 @@ function createModalFactionDistributionChart(games, canvas) {
                     left: 20,
                     right: 20
                 }
+            },
+            elements: {
+                bar: {
+                    borderWidth: 1
+                }
             }
-        },
-        plugins: []
+        }
     });
 }
 
@@ -4390,4 +4378,322 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load the game data
     loadGameData();
 }); 
+
+function createModalCommanderWinRateChart(games, canvas, rankingMethod, minGameRequirement, teamSize) {
+    const commanderStats = {};
+    
+    // Filter games by team size first (unless "ignore" is selected)
+    let filteredGames = games;
+    if (teamSize !== 'ignore') {
+        const targetTeamSize = parseInt(teamSize) + 1; // thugs + commander = team size
+        filteredGames = games.filter(game => {
+            const commander1TeamSize = (game.teamOne ? game.teamOne.length : 0) + 1;
+            const commander2TeamSize = (game.teamTwo ? game.teamTwo.length : 0) + 1;
+            return commander1TeamSize == targetTeamSize || commander2TeamSize == targetTeamSize;
+        });
+    }
+    
+    // Calculate comprehensive stats for each commander
+    filteredGames.forEach(game => {
+        [game.commander1, game.commander2].forEach(commander => {
+            if (teamSize === 'ignore') {
+                // No team size filtering, include all games for this commander
+                if (!commanderStats[commander]) {
+                    commanderStats[commander] = { games: 0, wins: 0, faction: {} };
+                }
+                commanderStats[commander].games++;
+                
+                if (game.winner === commander) {
+                    commanderStats[commander].wins++;
+                }
+                
+                // Track faction usage
+                const faction = commander === game.commander1 ? game.faction1 : game.faction2;
+                commanderStats[commander].faction[faction] = (commanderStats[commander].faction[faction] || 0) + 1;
+            } else {
+                // Team size filtering: only include if this commander had the specified team size
+                const isCommander1 = commander === game.commander1;
+                const commanderTeamSize = isCommander1 ? 
+                    (game.teamOne ? game.teamOne.length : 0) + 1 : 
+                    (game.teamTwo ? game.teamTwo.length : 0) + 1;
+                
+                const targetTeamSize = parseInt(teamSize) + 1;
+                
+                if (commanderTeamSize == targetTeamSize) {
+                    if (!commanderStats[commander]) {
+                        commanderStats[commander] = { games: 0, wins: 0, faction: {} };
+                    }
+                    commanderStats[commander].games++;
+                    
+                    if (game.winner === commander) {
+                        commanderStats[commander].wins++;
+                    }
+                    
+                    // Track faction usage
+                    const faction = isCommander1 ? game.faction1 : game.faction2;
+                    commanderStats[commander].faction[faction] = (commanderStats[commander].faction[faction] || 0) + 1;
+                }
+            }
+        });
+    });
+    
+    // Apply minimum games filter
+    let minGames;
+    if (minGameRequirement.includes('%')) {
+        const percentage = parseFloat(minGameRequirement.replace('%', ''));
+        minGames = Math.ceil(filteredGames.length * (percentage / 100));
+    } else {
+        minGames = parseInt(minGameRequirement);
+    }
+    
+    const qualifiedCommanders = Object.entries(commanderStats)
+        .filter(([, stats]) => stats.games >= minGames);
+    
+    // Calculate scores based on method
+    const scoredCommanders = qualifiedCommanders.map(([name, stats]) => {
+        const winRate = stats.wins / stats.games;
+        let score = winRate;
+        
+        switch (rankingMethod) {
+            case 'wilson':
+                // Wilson Score Interval
+                const n = stats.games;
+                const p = winRate;
+                const z = 1.96; // 95% confidence
+                score = (p + z*z/(2*n) - z * Math.sqrt((p*(1-p)+z*z/(4*n))/n)) / (1+z*z/n);
+                break;
+            case 'winRate':
+                score = winRate;
+                break;
+            case 'volumeWeighted':
+                score = winRate * Math.log(stats.games + 1);
+                break;
+            case 'bayesian':
+                // Bayesian average
+                const globalWinRate = filteredGames.filter(g => g.winner).length / (filteredGames.length * 2);
+                const confidence = 30;
+                score = (confidence * globalWinRate + stats.games * winRate) / (confidence + stats.games);
+                break;
+            case 'composite':
+                const wilsonScore = (winRate + 1.96*1.96/(2*stats.games) - 1.96 * Math.sqrt((winRate*(1-winRate)+1.96*1.96/(4*stats.games))/stats.games)) / (1+1.96*1.96/stats.games);
+                const volumeScore = Math.log(stats.games + 1) / Math.log(Math.max(...qualifiedCommanders.map(([,s]) => s.games)) + 1);
+                score = wilsonScore * 0.7 + volumeScore * 0.3;
+                break;
+        }
+        
+        return {
+            name,
+            score,
+            winRate: winRate * 100,
+            games: stats.games,
+            wins: stats.wins
+        };
+    });
+    
+    const sortedCommanders = scoredCommanders.sort((a, b) => b.score - a.score);
+    
+    // Make the chart responsive to the container
+    const container = canvas.parentElement;
+    
+    // Set container to utilize full available space
+    container.style.height = '100%';
+    container.style.width = '100%';
+    container.style.position = 'relative';
+    
+    // Make canvas responsive
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.maxWidth = '100%';
+    canvas.style.maxHeight = '100%';
+    
+    new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: sortedCommanders.map(c => c.name),
+            datasets: [{
+                label: `${rankingMethod === 'wilson' ? 'Wilson Score' : 
+                        rankingMethod === 'winRate' ? 'Win Rate (%)' :
+                        rankingMethod === 'volumeWeighted' ? 'Volume-Weighted Score' :
+                        rankingMethod === 'bayesian' ? 'Bayesian Average' : 'Composite Score'}`,
+                data: sortedCommanders.map(c => rankingMethod === 'winRate' ? c.winRate : c.score),
+                backgroundColor: 'rgba(25, 135, 84, 0.8)',
+                borderColor: 'rgba(25, 135, 84, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: { 
+                        color: 'white',
+                        font: { size: 16 }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const commander = sortedCommanders[context.dataIndex];
+                            return [
+                                `${context.dataset.label}: ${context.parsed.x.toFixed(3)}`,
+                                `Win Rate: ${commander.winRate.toFixed(1)}%`,
+                                `Games: ${commander.games}`,
+                                `Wins: ${commander.wins}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'category',
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 12 },
+                        maxTicksLimit: false,
+                        autoSkip: false,
+                        padding: 8
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
+                },
+                x: {
+                    type: 'linear',
+                    beginAtZero: true,
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 12 }
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
+                }
+            },
+            layout: {
+                padding: {
+                    top: 20,
+                    bottom: 20,
+                    left: 20,
+                    right: 20
+                }
+            },
+            elements: {
+                bar: {
+                    borderWidth: 1
+                }
+            }
+        }
+    });
+}
+
+function createModalMapPopularityChart(games, canvas) {
+    const mapStats = {};
+    
+    games.forEach(game => {
+        mapStats[game.map] = (mapStats[game.map] || 0) + 1;
+    });
+    
+    const sortedMaps = Object.entries(mapStats)
+        .sort(([,a], [,b]) => b - a);
+    
+    // Make the chart responsive to the container
+    const container = canvas.parentElement;
+    
+    // Set container to utilize full available space
+    container.style.height = '100%';
+    container.style.width = '100%';
+    container.style.position = 'relative';
+    
+    // Make canvas responsive
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.maxWidth = '100%';
+    canvas.style.maxHeight = '100%';
+    
+    new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: sortedMaps.map(([name]) => name),
+            datasets: [{
+                label: 'Games Played',
+                data: sortedMaps.map(([,count]) => count),
+                backgroundColor: 'rgba(13, 202, 240, 0.8)',
+                borderColor: 'rgba(13, 202, 240, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: { 
+                        color: 'white',
+                        font: { size: 16 }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'category',
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 12 },
+                        maxTicksLimit: false,
+                        autoSkip: false,
+                        padding: 8
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
+                },
+                x: {
+                    type: 'linear',
+                    beginAtZero: true,
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 12 }
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
+                }
+            },
+            layout: {
+                padding: {
+                    top: 20,
+                    bottom: 20,
+                    left: 20,
+                    right: 20
+                }
+            },
+            elements: {
+                bar: {
+                    borderWidth: 1
+                }
+            }
+        }
+    });
+}
+
+$(document).ready(function() {
+    loadGameData();
+});
+
 
