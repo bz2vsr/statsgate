@@ -2,6 +2,30 @@
 let gameData = null;
 let allGames = [];
 
+// PERFORMANCE OPTIMIZATION: Detect device capabilities
+const performanceConfig = {
+    isLowEndDevice: () => {
+        // Detect based on available memory, cores, and performance
+        const memory = navigator.deviceMemory || 4; // Default to 4GB if not supported
+        const cores = navigator.hardwareConcurrency || 4;
+        const isSlowDevice = memory <= 2 || cores <= 2;
+        
+        // Also check if user has enabled reduced motion
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        
+        return isSlowDevice || prefersReducedMotion;
+    },
+    shouldUseAnimations: function() {
+        return !this.isLowEndDevice();
+    },
+    getOptimalAnimationDuration: function() {
+        return this.isLowEndDevice() ? 200 : 800;
+    }
+};
+
+// Chart cache to avoid recreating identical charts
+const chartCache = new Map();
+
 // Enhanced Chart.js defaults for gaming theme
 Chart.defaults.font.family = "'Orbitron', 'SUSE', sans-serif";
 Chart.defaults.font.size = 12;
@@ -37,42 +61,30 @@ const gamingColors = {
     ]
 };
 
-// Enhanced animation configurations
+// Enhanced animation configurations - OPTIMIZED
 const chartAnimations = {
     standard: {
-        duration: 2000,
+        duration: 1000, // Reduced from 2000
         easing: 'easeOutQuart',
-        delay: (context) => context.dataIndex * 100,
-        onProgress: (animation) => {
-            const chart = animation.chart;
-            const canvas = chart.canvas;
-            const ctx = chart.ctx;
-            
-            // Add glow effect during animation
-            if (animation.currentStep < animation.numSteps) {
-                ctx.save();
-                ctx.globalCompositeOperation = 'screen';
-                ctx.filter = `blur(${3 - (animation.currentStep / animation.numSteps) * 3}px) brightness(1.2)`;
-                ctx.restore();
-            }
-        },
+        delay: (context) => context.dataIndex * 50, // Reduced from 100
+        // Removed heavy onProgress callback that was causing performance issues
         onComplete: (animation) => {
             const chart = animation.chart;
             addChartGlowEffect(chart);
         }
     },
     staggered: {
-        duration: 2500,
-        easing: 'easeOutElastic',
-        delay: (context) => context.dataIndex * 150,
+        duration: 1500, // Reduced from 2500
+        easing: 'easeOutCubic', // Less intensive easing
+        delay: (context) => context.dataIndex * 75, // Reduced from 150
     },
     smooth: {
-        duration: 1500,
+        duration: 800, // Reduced from 1500
         easing: 'easeInOutCubic'
     }
 };
 
-// Add glow effect to charts
+// Add glow effect to charts - OPTIMIZED VERSION
 function addChartGlowEffect(chart) {
     const canvas = chart.canvas;
     const container = canvas.parentElement;
@@ -80,19 +92,53 @@ function addChartGlowEffect(chart) {
     if (!container.classList.contains('chart-glow-added')) {
         container.style.position = 'relative';
         container.style.borderRadius = '12px';
-        container.style.boxShadow = '0 0 30px rgba(0, 212, 255, 0.1)';
+        container.style.boxShadow = '0 0 30px rgba(0, 212, 255, 0.15)';
         container.classList.add('chart-glow-added');
         
-        // Add subtle pulsing effect
-        const glowInterval = setInterval(() => {
-            if (!document.contains(canvas)) {
-                clearInterval(glowInterval);
-                return;
-            }
+        // OPTIMIZED: Use static glow instead of continuous animation
+        // Only add subtle pulsing on hover instead of constant animation
+        let isHovering = false;
+        let animationId = null;
+        
+        const startPulse = () => {
+            if (animationId || !isHovering) return;
             
-            const intensity = 0.1 + Math.sin(Date.now() / 2000) * 0.05;
-            container.style.boxShadow = `0 0 30px rgba(0, 212, 255, ${intensity})`;
-        }, 100);
+            const pulse = () => {
+                if (!isHovering || !document.contains(canvas)) {
+                    if (animationId) {
+                        cancelAnimationFrame(animationId);
+                        animationId = null;
+                    }
+                    return;
+                }
+                
+                const intensity = 0.15 + Math.sin(Date.now() / 1500) * 0.05;
+                container.style.boxShadow = `0 0 30px rgba(0, 212, 255, ${intensity})`;
+                animationId = requestAnimationFrame(pulse);
+            };
+            
+            animationId = requestAnimationFrame(pulse);
+        };
+        
+        const stopPulse = () => {
+            isHovering = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            container.style.boxShadow = '0 0 30px rgba(0, 212, 255, 0.15)';
+        };
+        
+        container.addEventListener('mouseenter', () => {
+            isHovering = true;
+            startPulse();
+        });
+        
+        container.addEventListener('mouseleave', stopPulse);
+        
+        // Cleanup on destroy
+        chart.config._cleanup = chart.config._cleanup || [];
+        chart.config._cleanup.push(stopPulse);
     }
 }
 
@@ -112,6 +158,10 @@ function safeCreateChart(canvasId, config) {
     // Destroy existing chart if it exists
     const existingChart = Chart.getChart(canvas);
     if (existingChart) {
+        // OPTIMIZED: Proper cleanup before destroying
+        if (existingChart.config._cleanup) {
+            existingChart.config._cleanup.forEach(cleanup => cleanup());
+        }
         existingChart.destroy();
     }
     
@@ -122,12 +172,34 @@ function safeCreateChart(canvasId, config) {
             container.classList.add('chart-container');
         }
         
-        // Enhanced config with modern styling
+        // Enhanced config with modern styling and PERFORMANCE OPTIMIZATION
         const enhancedConfig = {
             ...config,
             options: {
                 ...config.options,
-                animation: config.options?.animation !== false ? chartAnimations.standard : false,
+                animation: config.options?.animation !== false && performanceConfig.shouldUseAnimations() ? 
+                    {
+                        ...chartAnimations.standard,
+                        duration: performanceConfig.getOptimalAnimationDuration()
+                    } : false,
+                interaction: {
+                    intersect: config.type === 'bar' ? true : false,
+                    mode: config.type === 'bar' ? 'point' : 'index',
+                    ...config.options?.interaction
+                },
+                // OPTIMIZED: Simplified hover effects for better performance
+                onHover: performanceConfig.isLowEndDevice() ? undefined : (event, activeElements, chart) => {
+                    if (config.type === 'bar' && activeElements.length > 0) {
+                        chart.canvas.style.filter = 'drop-shadow(0 0 10px rgba(0, 212, 255, 0.8))';
+                        chart.canvas.style.transition = 'filter 0.2s ease';
+                    } else {
+                        chart.canvas.style.filter = 'none';
+                    }
+                    
+                    if (config.options?.onHover) {
+                        config.options.onHover(event, activeElements, chart);
+                    }
+                },
                 plugins: {
                     ...config.options?.plugins,
                     legend: {
@@ -161,65 +233,51 @@ function safeCreateChart(canvasId, config) {
                             size: 18
                         },
                         displayColors: true,
-                        boxPadding: 8
+                        boxPadding: 8,
+                        // OPTIMIZED: Reduce animation on low-end devices
+                        animation: performanceConfig.shouldUseAnimations() ? undefined : false
                     }
                 },
                 scales: enhanceScales(config.options?.scales || {}),
                 responsive: config.options?.responsive !== false,
-                maintainAspectRatio: config.options?.maintainAspectRatio !== false,
-                interaction: {
-                    intersect: config.type === 'bar' ? true : false,
-                    mode: config.type === 'bar' ? 'point' : 'index',
-                    ...config.options?.interaction
-                },
-                // Enhanced hover effects for bars
-                onHover: (event, activeElements, chart) => {
-                    if (config.type === 'bar' && activeElements.length > 0) {
-                        // Add glow effect to hovered bar
-                        chart.canvas.style.filter = 'drop-shadow(0 0 10px rgba(0, 212, 255, 0.8))';
-                        chart.canvas.style.transition = 'filter 0.2s ease';
-                    } else {
-                        chart.canvas.style.filter = 'none';
-                    }
-                    
-                    // Call original hover handler if it exists
-                    if (config.options?.onHover) {
-                        config.options.onHover(event, activeElements, chart);
-                    }
-                }
+                maintainAspectRatio: config.options?.maintainAspectRatio !== false
             }
         };
         
         // Create gradient backgrounds for bar charts
         const ctx = canvas.getContext('2d');
-        const createGradient = (color1, color2) => {
-            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            gradient.addColorStop(0, color1);
-            gradient.addColorStop(0.6, color2);
-            gradient.addColorStop(1, color1);
-            return gradient;
-        };
+        let gradientColors = null;
         
-        // Enhanced gradient colors for bars
-        const gradientColors = [
-            () => createGradient('rgba(0, 212, 255, 0.9)', 'rgba(0, 212, 255, 0.6)'),
-            () => createGradient('rgba(255, 107, 53, 0.9)', 'rgba(255, 107, 53, 0.6)'),
-            () => createGradient('rgba(123, 104, 238, 0.9)', 'rgba(123, 104, 238, 0.6)'),
-            () => createGradient('rgba(0, 255, 136, 0.9)', 'rgba(0, 255, 136, 0.6)'),
-            () => createGradient('rgba(255, 170, 0, 0.9)', 'rgba(255, 170, 0, 0.6)'),
-            () => createGradient('rgba(255, 51, 102, 0.9)', 'rgba(255, 51, 102, 0.6)'),
-            () => createGradient('rgba(102, 126, 234, 0.9)', 'rgba(102, 126, 234, 0.6)'),
-            () => createGradient('rgba(240, 147, 251, 0.9)', 'rgba(240, 147, 251, 0.6)')
-        ];
+        if (!performanceConfig.isLowEndDevice() && config.type === 'bar') {
+            const createGradient = (color1, color2) => {
+                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                gradient.addColorStop(0, color1);
+                gradient.addColorStop(0.6, color2);
+                gradient.addColorStop(1, color1);
+                return gradient;
+            };
+            
+            // Enhanced gradient colors for bars
+            gradientColors = [
+                () => createGradient('rgba(0, 212, 255, 0.9)', 'rgba(0, 212, 255, 0.6)'),
+                () => createGradient('rgba(255, 107, 53, 0.9)', 'rgba(255, 107, 53, 0.6)'),
+                () => createGradient('rgba(123, 104, 238, 0.9)', 'rgba(123, 104, 238, 0.6)'),
+                () => createGradient('rgba(0, 255, 136, 0.9)', 'rgba(0, 255, 136, 0.6)'),
+                () => createGradient('rgba(255, 170, 0, 0.9)', 'rgba(255, 170, 0, 0.6)'),
+                () => createGradient('rgba(255, 51, 102, 0.9)', 'rgba(255, 51, 102, 0.6)'),
+                () => createGradient('rgba(102, 126, 234, 0.9)', 'rgba(102, 126, 234, 0.6)'),
+                () => createGradient('rgba(240, 147, 251, 0.9)', 'rgba(240, 147, 251, 0.6)')
+            ];
+        }
         
-        // Enhance dataset colors and styling
+        // Enhance dataset colors and styling with PERFORMANCE OPTIMIZATION
         if (enhancedConfig.data?.datasets) {
             enhancedConfig.data.datasets = enhancedConfig.data.datasets.map((dataset, index) => {
                 const isBarChart = config.type === 'bar';
                 
                 return {
                     ...dataset,
-                    backgroundColor: isBarChart ? 
+                    backgroundColor: isBarChart && gradientColors ? 
                         gradientColors[index % gradientColors.length]() : 
                         dataset.backgroundColor || gamingColors.solidColors[index % gamingColors.solidColors.length],
                     borderColor: dataset.borderColor || gamingColors.solidColors[index % gamingColors.solidColors.length].replace('0.8', '1'),
@@ -243,7 +301,7 @@ function safeCreateChart(canvasId, config) {
                             // Vertical bars - round top end only  
                             { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 }
                         ) : 0,
-                    hoverBackgroundColor: isBarChart ? 
+                    hoverBackgroundColor: isBarChart && gradientColors ? 
                         gradientColors[index % gradientColors.length]() : 
                         dataset.hoverBackgroundColor,
                     hoverBorderColor: dataset.hoverBorderColor,
@@ -254,36 +312,13 @@ function safeCreateChart(canvasId, config) {
         
         const chart = new Chart(canvas.getContext('2d'), enhancedConfig);
         
-        // Add bar-specific enhancements
-        if (config.type === 'bar') {
-            // Add shimmer effect to bars
-            const addBarShimmer = () => {
-                const meta = chart.getDatasetMeta(0);
-                if (meta && meta.data) {
-                    meta.data.forEach((bar, index) => {
-                        const element = bar.element || bar;
-                        if (element) {
-                            // Add subtle glow animation
-                            setTimeout(() => {
-                                if (chart.canvas && document.contains(chart.canvas)) {
-                                    chart.canvas.style.filter = `drop-shadow(0 0 5px rgba(0, 212, 255, ${0.3 + Math.sin(Date.now() / 1000 + index) * 0.1}))`;
-                                }
-                            }, index * 200);
-                        }
-                    });
-                }
-            };
-            
-            // Apply shimmer after chart is fully rendered
-            setTimeout(addBarShimmer, 2500);
-        }
-        
-        // Add entry animation delay
+        // OPTIMIZED: Removed heavy bar shimmer effect that was causing continuous animations
+        // Instead, apply glow effect only after chart is fully rendered
         setTimeout(() => {
             if (chart && chart.canvas && document.contains(chart.canvas)) {
                 addChartGlowEffect(chart);
             }
-        }, 2200);
+        }, enhancedConfig.options?.animation !== false ? 1200 : 100); // Reduced timing
         
         return chart;
     } catch (error) {
@@ -1094,36 +1129,29 @@ function loadGeneralOverview() {
     const minGameRequirementEl = document.getElementById('minGameRequirement');
     const teamSizeEl = document.getElementById('teamSize');
     
-    const updateCommanderChart = () => {
-        const rankingMethod = document.getElementById('rankingMethod').value;
-        const minGameRequirement = document.getElementById('minGameRequirement').value;
-        const teamSize = document.getElementById('teamSize').value;
-        
-        console.log('Updating commander chart with:', { rankingMethod, minGameRequirement, teamSize });
-        createCommanderWinRateChart(games, rankingMethod, minGameRequirement, teamSize);
-        
-        // Realign heights after chart update
-        alignCommanderChartHeights();
-    };
-    
-    if (rankingMethodEl) {
-        // Remove existing listeners to prevent duplicates
-        rankingMethodEl.removeEventListener('change', updateCommanderChart);
-        rankingMethodEl.addEventListener('change', updateCommanderChart);
-        console.log('Ranking method listener added');
+    // Store reference to avoid creating new functions each time
+    if (!window._commanderChartUpdateHandler) {
+        window._commanderChartUpdateHandler = () => {
+            const rankingMethod = document.getElementById('rankingMethod')?.value || 'wilson';
+            const minGameRequirement = document.getElementById('minGameRequirement')?.value || '3%';
+            const teamSize = document.getElementById('teamSize')?.value || '4';
+            
+            console.log('Updating commander chart with:', { rankingMethod, minGameRequirement, teamSize });
+            createCommanderWinRateChart(games, rankingMethod, minGameRequirement, teamSize);
+            
+            // Realign heights after chart update
+            alignCommanderChartHeights();
+        };
     }
     
-    if (minGameRequirementEl) {
-        minGameRequirementEl.removeEventListener('change', updateCommanderChart);
-        minGameRequirementEl.addEventListener('change', updateCommanderChart);
-        console.log('Min game requirement listener added');
-    }
-    
-    if (teamSizeEl) {
-        teamSizeEl.removeEventListener('change', updateCommanderChart);
-        teamSizeEl.addEventListener('change', updateCommanderChart);
-        console.log('Team size listener added');
-    }
+    // Only add listeners if elements exist and don't already have them
+    [rankingMethodEl, minGameRequirementEl, teamSizeEl].forEach(element => {
+        if (element && !element.dataset.listenerAdded) {
+            element.addEventListener('change', window._commanderChartUpdateHandler);
+            element.dataset.listenerAdded = 'true';
+            console.log(`Listener added to ${element.id}`);
+        }
+    });
     
     // Add event listeners for maximize buttons
     document.querySelectorAll('.maximize-chart').forEach(button => {
