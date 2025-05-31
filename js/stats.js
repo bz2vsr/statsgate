@@ -941,36 +941,38 @@ function loadGeneralOverview() {
             <!-- Commander Win Rates -->
             <div class="col-lg-6 mb-4">
                 <div class="card bg-dark border-secondary" id="commanderWinRateCard">
-                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Commander Ranking - Winrate</h5>
-                        <div class="d-flex gap-2 align-items-center">
-                            <select id="rankingMethod" class="form-select form-select-sm" style="width: auto;">
-                                <option value="wilson">Wilson Score</option>
-                                <option value="winRate">Win Rate</option>
-                                <option value="volumeWeighted">Volume-Weighted</option>
-                                <option value="bayesian">Bayesian Average</option>
-                                <option value="composite">Composite Score</option>
-                            </select>
-                            <select id="minGameRequirement" class="form-select form-select-sm" style="width: auto;">
-                                <option value="3%">3% Min Games</option>
-                                <option value="5%">5% Min Games</option>
-                                <option value="10%">10% Min Games</option>
-                                <option value="30">30 Games Min</option>
-                                <option value="50">50 Games Min</option>
-                                <option value="100">100 Games Min</option>
-                            </select>
-                            <select id="teamSize" class="form-select form-select-sm" style="width: auto;">
-                                <option value="ignore">Ignore</option>
-                                <option value="1">1 thug</option>
-                                <option value="2">2 thugs</option>
-                                <option value="3">3 thugs</option>
-                                <option value="4" selected>4 thugs</option>
-                            </select>
-                            <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="commanderWinRate" data-chart-title="Commander Rankings - All Players">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
-                                </svg>
-                            </button>
+                    <div class="card-header bg-success text-white">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                            <h5 class="mb-0 flex-shrink-0">Commander Ranking - Winrate</h5>
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                <select id="rankingMethod" class="form-select form-select-sm" style="width: auto; min-width: 120px;">
+                                    <option value="wilson">Wilson Score</option>
+                                    <option value="winRate">Win Rate</option>
+                                    <option value="volumeWeighted">Volume-Weighted</option>
+                                    <option value="bayesian">Bayesian Average</option>
+                                    <option value="composite">Composite Score</option>
+                                </select>
+                                <select id="minGameRequirement" class="form-select form-select-sm" style="width: auto; min-width: 100px;">
+                                    <option value="3%">3% Min Games</option>
+                                    <option value="5%">5% Min Games</option>
+                                    <option value="10%">10% Min Games</option>
+                                    <option value="30">30 Games Min</option>
+                                    <option value="50">50 Games Min</option>
+                                    <option value="100">100 Games Min</option>
+                                </select>
+                                <select id="teamSize" class="form-select form-select-sm" style="width: auto; min-width: 80px;">
+                                    <option value="ignore">Ignore</option>
+                                    <option value="1">1 thug</option>
+                                    <option value="2">2 thugs</option>
+                                    <option value="3">3 thugs</option>
+                                    <option value="4" selected>4 thugs</option>
+                                </select>
+                                <button class="btn btn-sm btn-outline-light maximize-chart flex-shrink-0" data-chart-type="commanderWinRate" data-chart-title="Commander Rankings - All Players">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="card-body">
