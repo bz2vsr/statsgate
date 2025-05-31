@@ -109,6 +109,12 @@ function safeCreateChart(canvasId, config) {
         return null;
     }
     
+    // Destroy existing chart if it exists
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+        existingChart.destroy();
+    }
+    
     try {
         // Add container animation class
         const container = canvas.parentElement;
@@ -541,6 +547,31 @@ function initializeDashboard() {
                 <!-- Content will be dynamically loaded here -->
             </div>
         </div>
+        
+        <!-- Chart Maximize Modal -->
+        <div class="modal fade" id="chartModal" tabindex="-1" aria-labelledby="chartModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-fullscreen">
+                <div class="modal-content bg-dark">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="chartModalLabel">Chart Details</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" style="overflow-y: auto; max-height: calc(100vh - 120px);">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card bg-dark border-secondary">
+                                        <div class="card-body" id="modalChartContainer">
+                                            <canvas id="modalChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     `;
     
     // Initialize event listeners
@@ -870,12 +901,31 @@ function loadGeneralOverview() {
     
     const mainAnalysis = document.getElementById('mainAnalysis');
     mainAnalysis.innerHTML = `
+        <!-- Faction Distribution - Full Width -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Faction Choice Distribution</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="factionDistribution" data-chart-title="Faction Choice Distribution - Total Selections">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="factionDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <!-- Commander Rankings -->
             <div class="col-lg-6 mb-4">
                 <div class="card bg-dark border-secondary">
                     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Commander Rankings (Games Played)</h5>
+                        <h5 class="mb-0">Commander Ranking - Games Played</h5>
                         <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="commanderGames" data-chart-title="Commander Rankings - All Players (Games Played)">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                 <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
@@ -892,7 +942,7 @@ function loadGeneralOverview() {
             <div class="col-lg-6 mb-4">
                 <div class="card bg-dark border-secondary">
                     <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Commander Rankings</h5>
+                        <h5 class="mb-0">Commander Ranking - Winrate</h5>
                         <div class="d-flex gap-2 align-items-center">
                             <select id="rankingMethod" class="form-select form-select-sm" style="width: auto;">
                                 <option value="wilson">Wilson Score</option>
@@ -909,6 +959,13 @@ function loadGeneralOverview() {
                                 <option value="50">50 Games Min</option>
                                 <option value="100">100 Games Min</option>
                             </select>
+                            <select id="teamSize" class="form-select form-select-sm" style="width: auto;">
+                                <option value="ignore">Ignore</option>
+                                <option value="1">1 thug</option>
+                                <option value="2">2 thugs</option>
+                                <option value="3">3 thugs</option>
+                                <option value="4" selected>4 thugs</option>
+                            </select>
                             <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="commanderWinRate" data-chart-title="Commander Rankings - All Players">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                     <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
@@ -917,6 +974,7 @@ function loadGeneralOverview() {
                         </div>
                     </div>
                     <div class="card-body">
+                        <div id="commanderFilterInfo" class="mb-3 text-muted small"></div>
                         <canvas id="commanderWinRateChart"></canvas>
                     </div>
                 </div>
@@ -1019,30 +1077,44 @@ function loadGeneralOverview() {
     
     // Create all charts
     createCommanderGamesChart(games);
-    createCommanderWinRateChart(games, 'wilson', '3%');
+    createCommanderWinRateChart(games, 'wilson', '3%', '4');
     createMapPopularityChart(games);
     createCommanderFactionChart(games);
+    createFactionDistributionChart(games);
     createFactionPerformanceChart(games);
     createGameDurationChart(games);
     
     // Add event listeners for the ranking dropdowns
     const rankingMethodEl = document.getElementById('rankingMethod');
     const minGameRequirementEl = document.getElementById('minGameRequirement');
+    const teamSizeEl = document.getElementById('teamSize');
+    
+    const updateCommanderChart = () => {
+        const rankingMethod = document.getElementById('rankingMethod').value;
+        const minGameRequirement = document.getElementById('minGameRequirement').value;
+        const teamSize = document.getElementById('teamSize').value;
+        
+        console.log('Updating commander chart with:', { rankingMethod, minGameRequirement, teamSize });
+        createCommanderWinRateChart(games, rankingMethod, minGameRequirement, teamSize);
+    };
     
     if (rankingMethodEl) {
-        rankingMethodEl.addEventListener('change', () => {
-            const rankingMethod = document.getElementById('rankingMethod').value;
-            const minGameRequirement = document.getElementById('minGameRequirement').value;
-            createCommanderWinRateChart(games, rankingMethod, minGameRequirement);
-        });
+        // Remove existing listeners to prevent duplicates
+        rankingMethodEl.removeEventListener('change', updateCommanderChart);
+        rankingMethodEl.addEventListener('change', updateCommanderChart);
+        console.log('Ranking method listener added');
     }
     
     if (minGameRequirementEl) {
-        minGameRequirementEl.addEventListener('change', () => {
-            const rankingMethod = document.getElementById('rankingMethod').value;
-            const minGameRequirement = document.getElementById('minGameRequirement').value;
-            createCommanderWinRateChart(games, rankingMethod, minGameRequirement);
-        });
+        minGameRequirementEl.removeEventListener('change', updateCommanderChart);
+        minGameRequirementEl.addEventListener('change', updateCommanderChart);
+        console.log('Min game requirement listener added');
+    }
+    
+    if (teamSizeEl) {
+        teamSizeEl.removeEventListener('change', updateCommanderChart);
+        teamSizeEl.addEventListener('change', updateCommanderChart);
+        console.log('Team size listener added');
     }
     
     // Add event listeners for maximize buttons
@@ -1105,24 +1177,65 @@ function createCommanderGamesChart(games) {
 }
 
 // Create commander win rate chart
-function createCommanderWinRateChart(games, rankingMethod, minGameRequirement) {
+function createCommanderWinRateChart(games, rankingMethod, minGameRequirement, teamSize) {
+    console.log('Creating commander win rate chart with filters:', { rankingMethod, minGameRequirement, teamSize });
+    
     const commanderStats = {};
     
+    // Filter games by team size first (unless "ignore" is selected)
+    let filteredGames = games;
+    if (teamSize !== 'ignore') {
+        const targetTeamSize = parseInt(teamSize) + 1; // thugs + commander = team size
+        filteredGames = games.filter(game => {
+            const commander1TeamSize = (game.teamOne ? game.teamOne.length : 0) + 1;
+            const commander2TeamSize = (game.teamTwo ? game.teamTwo.length : 0) + 1;
+            return commander1TeamSize == targetTeamSize || commander2TeamSize == targetTeamSize;
+        });
+    }
+    
+    console.log(`Filtered games by team size ${teamSize}: ${filteredGames.length} games from ${games.length} total`);
+    
     // Calculate comprehensive stats for each commander
-    games.forEach(game => {
+    filteredGames.forEach(game => {
         [game.commander1, game.commander2].forEach(commander => {
-            if (!commanderStats[commander]) {
-                commanderStats[commander] = { games: 0, wins: 0, faction: {} };
+            if (teamSize === 'ignore') {
+                // No team size filtering, include all games for this commander
+                if (!commanderStats[commander]) {
+                    commanderStats[commander] = { games: 0, wins: 0, faction: {} };
+                }
+                commanderStats[commander].games++;
+                
+                if (game.winner === commander) {
+                    commanderStats[commander].wins++;
+                }
+                
+                // Track faction usage
+                const faction = commander === game.commander1 ? game.faction1 : game.faction2;
+                commanderStats[commander].faction[faction] = (commanderStats[commander].faction[faction] || 0) + 1;
+            } else {
+                // Team size filtering: only include if this commander had the specified team size
+                const isCommander1 = commander === game.commander1;
+                const commanderTeamSize = isCommander1 ? 
+                    (game.teamOne ? game.teamOne.length : 0) + 1 : 
+                    (game.teamTwo ? game.teamTwo.length : 0) + 1;
+                
+                const targetTeamSize = parseInt(teamSize) + 1;
+                
+                if (commanderTeamSize == targetTeamSize) {
+                    if (!commanderStats[commander]) {
+                        commanderStats[commander] = { games: 0, wins: 0, faction: {} };
+                    }
+                    commanderStats[commander].games++;
+                    
+                    if (game.winner === commander) {
+                        commanderStats[commander].wins++;
+                    }
+                    
+                    // Track faction usage
+                    const faction = isCommander1 ? game.faction1 : game.faction2;
+                    commanderStats[commander].faction[faction] = (commanderStats[commander].faction[faction] || 0) + 1;
+                }
             }
-            commanderStats[commander].games++;
-            
-            if (game.winner === commander) {
-                commanderStats[commander].wins++;
-            }
-            
-            // Track faction usage
-            const faction = commander === game.commander1 ? game.faction1 : game.faction2;
-            commanderStats[commander].faction[faction] = (commanderStats[commander].faction[faction] || 0) + 1;
         });
     });
     
@@ -1130,13 +1243,18 @@ function createCommanderWinRateChart(games, rankingMethod, minGameRequirement) {
     let minGames;
     if (minGameRequirement.includes('%')) {
         const percentage = parseFloat(minGameRequirement.replace('%', ''));
-        minGames = Math.ceil(games.length * (percentage / 100));
+        minGames = Math.ceil(filteredGames.length * (percentage / 100));
     } else {
         minGames = parseInt(minGameRequirement);
     }
     
     const qualifiedCommanders = Object.entries(commanderStats)
         .filter(([, stats]) => stats.games >= minGames);
+    
+    console.log(`Qualified commanders after min games filter (${minGames}): ${qualifiedCommanders.length}`);
+    
+    // Update the informational display
+    updateCommanderFilterInfo(filteredGames.length, minGames, minGameRequirement, teamSize);
     
     // Calculate scores based on method
     const scoredCommanders = qualifiedCommanders.map(([name, stats]) => {
@@ -1159,7 +1277,7 @@ function createCommanderWinRateChart(games, rankingMethod, minGameRequirement) {
                 break;
             case 'bayesian':
                 // Bayesian average
-                const globalWinRate = games.filter(g => g.winner).length / (games.length * 2);
+                const globalWinRate = filteredGames.filter(g => g.winner).length / (filteredGames.length * 2);
                 const confidence = 30;
                 score = (confidence * globalWinRate + stats.games * winRate) / (confidence + stats.games);
                 break;
@@ -1363,6 +1481,121 @@ function createCommanderFactionChart(games) {
     });
 }
 
+// Create faction distribution chart
+function createFactionDistributionChart(games) {
+    const factionStats = {};
+    
+    // Count each faction selection (both faction1 and faction2 from each game)
+    games.forEach(game => {
+        [game.faction1, game.faction2].forEach(faction => {
+            if (faction) {
+                factionStats[faction] = (factionStats[faction] || 0) + 1;
+            }
+        });
+    });
+    
+    // Sort factions by count and get totals
+    const sortedFactions = Object.entries(factionStats)
+        .sort(([,a], [,b]) => b - a);
+    
+    const totalSelections = Object.values(factionStats).reduce((sum, count) => sum + count, 0);
+    
+    // Update the card header with total count
+    const cardHeader = document.querySelector('#mainAnalysis .bg-danger h5');
+    if (cardHeader) {
+        cardHeader.textContent = `Faction Choice Distribution (${totalSelections} total)`;
+    }
+    
+    // Define faction colors to match gaming theme
+    const factionColors = {
+        'I.S.D.F': 'rgba(13, 110, 253, 0.9)',    // Blue for ISDF
+        'Scion': 'rgba(255, 193, 7, 0.9)',       // Yellow/Orange for Scion  
+        'Hadean': 'rgba(220, 53, 69, 0.9)'       // Red for Hadean
+    };
+    
+    safeCreateChart('factionDistributionChart', {
+        type: 'bar',
+        data: {
+            labels: [''],
+            datasets: sortedFactions.map(([faction, count]) => ({
+                label: faction,
+                data: [count],
+                backgroundColor: factionColors[faction] || 'rgba(108, 117, 125, 0.9)',
+                borderColor: factionColors[faction] || 'rgba(108, 117, 125, 1)',
+                borderWidth: 1
+            }))
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            maxBarThickness: 15,
+            scales: {
+                x: {
+                    stacked: true,
+                    beginAtZero: true,
+                    max: totalSelections,
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                y: {
+                    stacked: true,
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].dataset.label;
+                        },
+                        label: function(context) {
+                            const count = context.parsed.x;
+                            return `Selections: ${count}`;
+                        }
+                    }
+                },
+                datalabels: {
+                    display: true,
+                    color: 'white',
+                    font: {
+                        weight: 'bold',
+                        size: 16
+                    },
+                    formatter: function(value, context) {
+                        if (value > 0) {
+                            return value;
+                        }
+                        return '';
+                    },
+                    anchor: 'center',
+                    align: 'center'
+                }
+            },
+            layout: {
+                padding: {
+                    top: 15,
+                    bottom: 15,
+                    left: 20,
+                    right: 20
+                }
+            }
+        },
+        plugins: []
+    });
+    
+    // Set specific height constraint to make chart compact
+    const canvas = document.getElementById('factionDistributionChart');
+    if (canvas) {
+        canvas.style.height = '80px';
+        canvas.style.maxHeight = '80px';
+    }
+}
+
 // Create faction performance chart
 function createFactionPerformanceChart(games) {
     const factionStats = {};
@@ -1417,6 +1650,7 @@ function createFactionPerformanceChart(games) {
         options: {
             responsive: true,
             maintainAspectRatio: true,
+            maxBarThickness: 25,
             plugins: {
                 legend: {
                     labels: { color: 'white' }
@@ -1443,6 +1677,7 @@ function createFactionPerformanceChart(games) {
                     type: 'linear',
                     display: true,
                     position: 'left',
+                    beginAtZero: true,
                     ticks: { color: 'white' },
                     grid: { color: 'rgba(255, 255, 255, 0.1)' },
                     title: {
@@ -1455,6 +1690,7 @@ function createFactionPerformanceChart(games) {
                     type: 'linear',
                     display: true,
                     position: 'right',
+                    beginAtZero: true,
                     ticks: { color: 'white' },
                     grid: { drawOnChartArea: false },
                     title: {
@@ -1532,6 +1768,7 @@ function createGameDurationChart(games) {
         options: {
             responsive: true,
             maintainAspectRatio: true,
+            maxBarThickness: 25,
             plugins: {
                 legend: {
                     labels: { color: 'white' }
@@ -1600,13 +1837,17 @@ function showModalChart(games, chartType, chartTitle) {
         case 'commanderWinRate':
             const rankingMethod = document.getElementById('rankingMethod').value;
             const minGameRequirement = document.getElementById('minGameRequirement').value;
-            createModalCommanderWinRateChart(games, modalChart, rankingMethod, minGameRequirement);
+            const teamSize = document.getElementById('teamSize').value;
+            createModalCommanderWinRateChart(games, modalChart, rankingMethod, minGameRequirement, teamSize);
             break;
         case 'mapPopularity':
             createModalMapPopularityChart(games, modalChart);
             break;
         case 'commanderFaction':
             createModalCommanderFactionChart(games, modalChart);
+            break;
+        case 'factionDistribution':
+            createModalFactionDistributionChart(games, modalChart);
             break;
         case 'factionPerformance':
             createModalFactionPerformanceChart(games, modalChart);
@@ -1727,24 +1968,61 @@ function createModalCommanderGamesChart(games, canvas) {
     });
 }
 
-function createModalCommanderWinRateChart(games, canvas, rankingMethod, minGameRequirement) {
+function createModalCommanderWinRateChart(games, canvas, rankingMethod, minGameRequirement, teamSize) {
     const commanderStats = {};
     
+    // Filter games by team size first (unless "ignore" is selected)
+    let filteredGames = games;
+    if (teamSize !== 'ignore') {
+        const targetTeamSize = parseInt(teamSize) + 1; // thugs + commander = team size
+        filteredGames = games.filter(game => {
+            const commander1TeamSize = (game.teamOne ? game.teamOne.length : 0) + 1;
+            const commander2TeamSize = (game.teamTwo ? game.teamTwo.length : 0) + 1;
+            return commander1TeamSize == targetTeamSize || commander2TeamSize == targetTeamSize;
+        });
+    }
+    
     // Calculate comprehensive stats for each commander
-    games.forEach(game => {
+    filteredGames.forEach(game => {
         [game.commander1, game.commander2].forEach(commander => {
-            if (!commanderStats[commander]) {
-                commanderStats[commander] = { games: 0, wins: 0, faction: {} };
+            if (teamSize === 'ignore') {
+                // No team size filtering, include all games for this commander
+                if (!commanderStats[commander]) {
+                    commanderStats[commander] = { games: 0, wins: 0, faction: {} };
+                }
+                commanderStats[commander].games++;
+                
+                if (game.winner === commander) {
+                    commanderStats[commander].wins++;
+                }
+                
+                // Track faction usage
+                const faction = commander === game.commander1 ? game.faction1 : game.faction2;
+                commanderStats[commander].faction[faction] = (commanderStats[commander].faction[faction] || 0) + 1;
+            } else {
+                // Team size filtering: only include if this commander had the specified team size
+                const isCommander1 = commander === game.commander1;
+                const commanderTeamSize = isCommander1 ? 
+                    (game.teamOne ? game.teamOne.length : 0) + 1 : 
+                    (game.teamTwo ? game.teamTwo.length : 0) + 1;
+                
+                const targetTeamSize = parseInt(teamSize) + 1;
+                
+                if (commanderTeamSize == targetTeamSize) {
+                    if (!commanderStats[commander]) {
+                        commanderStats[commander] = { games: 0, wins: 0, faction: {} };
+                    }
+                    commanderStats[commander].games++;
+                    
+                    if (game.winner === commander) {
+                        commanderStats[commander].wins++;
+                    }
+                    
+                    // Track faction usage
+                    const faction = isCommander1 ? game.faction1 : game.faction2;
+                    commanderStats[commander].faction[faction] = (commanderStats[commander].faction[faction] || 0) + 1;
+                }
             }
-            commanderStats[commander].games++;
-            
-            if (game.winner === commander) {
-                commanderStats[commander].wins++;
-            }
-            
-            // Track faction usage
-            const faction = commander === game.commander1 ? game.faction1 : game.faction2;
-            commanderStats[commander].faction[faction] = (commanderStats[commander].faction[faction] || 0) + 1;
         });
     });
     
@@ -1752,13 +2030,15 @@ function createModalCommanderWinRateChart(games, canvas, rankingMethod, minGameR
     let minGames;
     if (minGameRequirement.includes('%')) {
         const percentage = parseFloat(minGameRequirement.replace('%', ''));
-        minGames = Math.ceil(games.length * (percentage / 100));
+        minGames = Math.ceil(filteredGames.length * (percentage / 100));
     } else {
         minGames = parseInt(minGameRequirement);
     }
     
     const qualifiedCommanders = Object.entries(commanderStats)
         .filter(([, stats]) => stats.games >= minGames);
+    
+    console.log(`Qualified commanders after min games filter (${minGames}): ${qualifiedCommanders.length}`);
     
     // Calculate scores based on method
     const scoredCommanders = qualifiedCommanders.map(([name, stats]) => {
@@ -1781,7 +2061,7 @@ function createModalCommanderWinRateChart(games, canvas, rankingMethod, minGameR
                 break;
             case 'bayesian':
                 // Bayesian average
-                const globalWinRate = games.filter(g => g.winner).length / (games.length * 2);
+                const globalWinRate = filteredGames.filter(g => g.winner).length / (filteredGames.length * 2);
                 const confidence = 30;
                 score = (confidence * globalWinRate + stats.games * winRate) / (confidence + stats.games);
                 break;
@@ -2749,6 +3029,7 @@ function createPlayerMapWinRateChart(games, player) {
         options: {
             responsive: true,
             maintainAspectRatio: true,
+            maxBarThickness: 25,
             plugins: {
                 legend: {
                     labels: { color: 'white' }
@@ -2871,6 +3152,7 @@ function createPlayerFactionWinRateChart(games, player) {
         options: {
             responsive: true,
             maintainAspectRatio: true,
+            maxBarThickness: 25,
             plugins: {
                 legend: {
                     labels: { color: 'white' }
@@ -2975,6 +3257,7 @@ function createPlayerGameDurationChart(games, player) {
         options: {
             responsive: true,
             maintainAspectRatio: true,
+            maxBarThickness: 25,
             plugins: {
                 legend: {
                     labels: { color: 'white' }
@@ -3060,6 +3343,7 @@ function createPlayerTeamSizeChart(games, player) {
         options: {
             responsive: true,
             maintainAspectRatio: true,
+            maxBarThickness: 25,
             plugins: {
                 legend: {
                     labels: { color: 'white' }
@@ -3403,6 +3687,7 @@ function createMapFactionPerformanceChart(games, map) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            maxBarThickness: 25,
             interaction: {
                 intersect: false,
                 mode: 'index'
@@ -3500,6 +3785,7 @@ function createMapGameDurationChart(games, map) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            maxBarThickness: 25,
             scales: {
                 y: {
                     beginAtZero: true,
@@ -3583,6 +3869,7 @@ function createFactionMapPerformanceChart(games, faction) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            maxBarThickness: 25,
             interaction: {
                 intersect: false,
                 mode: 'index'
@@ -3680,6 +3967,7 @@ function createFactionGameDurationChart(games, faction) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            maxBarThickness: 25,
             scales: {
                 y: {
                     beginAtZero: true,
@@ -3712,6 +4000,340 @@ function createFactionGameDurationChart(games, faction) {
             }
         }
     });
+}
+
+function createModalFactionDistributionChart(games, canvas) {
+    const factionStats = {};
+    
+    // Count each faction selection (both faction1 and faction2 from each game)
+    games.forEach(game => {
+        [game.faction1, game.faction2].forEach(faction => {
+            if (faction) {
+                factionStats[faction] = (factionStats[faction] || 0) + 1;
+            }
+        });
+    });
+    
+    // Sort factions by count and get totals
+    const sortedFactions = Object.entries(factionStats)
+        .sort(([,a], [,b]) => b - a);
+    
+    const totalSelections = Object.values(factionStats).reduce((sum, count) => sum + count, 0);
+    
+    // Define faction colors to match gaming theme
+    const factionColors = {
+        'I.S.D.F': 'rgba(13, 110, 253, 0.9)',    // Blue for ISDF
+        'Scion': 'rgba(255, 193, 7, 0.9)',       // Yellow/Orange for Scion  
+        'Hadean': 'rgba(220, 53, 69, 0.9)'       // Red for Hadean
+    };
+    
+    // Fixed dimensions for stacked bar chart
+    const CHART_WIDTH = 1200;
+    const CHART_HEIGHT = 400; // Fixed height for horizontal stacked bar
+    
+    // Ensure the modal container can handle the full size
+    const container = canvas.parentElement;
+    container.style.width = `${CHART_WIDTH + 40}px`;
+    container.style.minHeight = `${CHART_HEIGHT}px`;
+    
+    // Set canvas to exact dimensions
+    canvas.width = CHART_WIDTH;
+    canvas.height = CHART_HEIGHT;
+    canvas.style.width = `${CHART_WIDTH}px`;
+    canvas.style.height = `${CHART_HEIGHT}px`;
+    canvas.style.display = 'block';
+    canvas.style.maxWidth = 'none';
+    canvas.style.maxHeight = 'none';
+    
+    new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: ['Faction Choice Distribution'],
+            datasets: sortedFactions.map(([faction, count]) => ({
+                label: faction,
+                data: [count],
+                backgroundColor: factionColors[faction] || 'rgba(108, 117, 125, 0.9)',
+                borderColor: factionColors[faction] || 'rgba(108, 117, 125, 1)',
+                borderWidth: 1
+            }))
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: false,
+            maintainAspectRatio: false,
+            resizeDelay: 0,
+            animation: false,
+            interaction: {
+                intersect: false
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    beginAtZero: true,
+                    max: totalSelections,
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                y: {
+                    stacked: true,
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: { 
+                        color: 'white',
+                        padding: 8,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        font: { size: 11 }
+                    },
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function() {
+                            return `Faction Choice Distribution (${totalSelections} total)`;
+                        },
+                        label: function(context) {
+                            const count = context.parsed.x;
+                            const percentage = ((count / totalSelections) * 100).toFixed(1);
+                            return `${context.dataset.label}: ${count} selections (${percentage}%)`;
+                        }
+                    }
+                },
+                datalabels: {
+                    display: true,
+                    color: 'white',
+                    font: {
+                        weight: 'bold',
+                        size: 16
+                    },
+                    formatter: function(value, context) {
+                        if (value > 0) {
+                            return value;
+                        }
+                        return '';
+                    },
+                    anchor: 'center',
+                    align: 'center'
+                }
+            },
+            layout: {
+                padding: {
+                    top: 2,
+                    bottom: 2,
+                    left: 20,
+                    right: 20
+                }
+            }
+        },
+        plugins: []
+    });
+}
+
+function createModalFactionPerformanceChart(games, canvas) {
+    const factionStats = {};
+    
+    games.forEach(game => {
+        [game.faction1, game.faction2].forEach(faction => {
+            if (!factionStats[faction]) {
+                factionStats[faction] = { games: 0, wins: 0 };
+            }
+            factionStats[faction].games++;
+            
+            if ((game.winner === game.commander1 && faction === game.faction1) ||
+                (game.winner === game.commander2 && faction === game.faction2)) {
+                factionStats[faction].wins++;
+            }
+        });
+    });
+    
+    const factionPerformance = Object.entries(factionStats)
+        .map(([faction, stats]) => ({
+            faction,
+            winRate: (stats.wins / stats.games * 100).toFixed(1),
+            games: stats.games,
+            wins: stats.wins
+        }))
+        .sort((a, b) => b.winRate - a.winRate);
+    
+    // Enforce minimum readable dimensions - vertical layout for better readability
+    const MIN_BAR_HEIGHT = 80; // Extra height for dual-axis chart
+    const CHART_WIDTH = 1200; // Fixed comfortable width
+    const PADDING = 150; // More padding for dual-axis
+    
+    // Calculate height based on data - ensure every bar is readable
+    const chartHeight = (factionPerformance.length * MIN_BAR_HEIGHT) + PADDING;
+    
+    // Ensure the modal container can handle the full size
+    const container = canvas.parentElement;
+    container.style.width = `${CHART_WIDTH + 40}px`; // Extra padding
+    container.style.minHeight = `${chartHeight}px`;
+    
+    // Set canvas to exact dimensions - no scaling allowed
+    canvas.width = CHART_WIDTH;
+    canvas.height = chartHeight;
+    canvas.style.width = `${CHART_WIDTH}px`;
+    canvas.style.height = `${chartHeight}px`;
+    canvas.style.display = 'block';
+    canvas.style.maxWidth = 'none';
+    canvas.style.maxHeight = 'none';
+    
+    new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: factionPerformance.map(f => f.faction),
+            datasets: [
+                {
+                    label: 'Win Rate (%)',
+                    data: factionPerformance.map(f => f.winRate),
+                    backgroundColor: 'rgba(220, 53, 69, 0.8)',
+                    borderColor: 'rgba(220, 53, 69, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Total Games',
+                    data: factionPerformance.map(f => f.games),
+                    backgroundColor: 'rgba(108, 117, 125, 0.8)',
+                    borderColor: 'rgba(108, 117, 125, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: false,
+            maintainAspectRatio: false,
+            resizeDelay: 0,
+            animation: false,
+            interaction: {
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: { 
+                        color: 'white',
+                        font: { size: 16 }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].dataset.label;
+                        },
+                        label: function(context) {
+                            const count = context.parsed.x;
+                            return `Selections: ${count}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'category',
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 13 },
+                        maxTicksLimit: false,
+                        autoSkip: false
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    beginAtZero: true,
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 13 }
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    },
+                    title: {
+                        display: true,
+                        text: 'Win Rate (%)',
+                        color: 'white',
+                        font: { size: 16 }
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    beginAtZero: true,
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 13 }
+                    },
+                    grid: { 
+                        drawOnChartArea: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Total Games',
+                        color: 'white',
+                        font: { size: 16 }
+                    }
+                }
+            },
+            layout: {
+                padding: {
+                    top: 30,
+                    bottom: 30,
+                    left: 80,
+                    right: 80
+                }
+            },
+            elements: {
+                bar: {
+                    borderWidth: 1
+                }
+            }
+        }
+    });
+}
+
+// Update commander filter information display
+function updateCommanderFilterInfo(totalGames, minGames, minGameRequirement, teamSize) {
+    const infoElement = document.getElementById('commanderFilterInfo');
+    if (!infoElement) return;
+    
+    let teamSizeText = '';
+    if (teamSize === 'ignore') {
+        teamSizeText = 'All team sizes';
+    } else {
+        const teamSizeName = teamSize === '1' ? '1 thug (2v2)' :
+                            teamSize === '2' ? '2 thugs (3v3)' :
+                            teamSize === '3' ? '3 thugs (4v4)' :
+                            teamSize === '4' ? '4 thugs (5v5)' : `${teamSize} thugs`;
+        teamSizeText = teamSizeName;
+    }
+    
+    let minGamesText = '';
+    if (minGameRequirement.includes('%')) {
+        const percentage = minGameRequirement.replace('%', '');
+        minGamesText = `${percentage}% of filtered games (${minGames} games minimum)`;
+    } else {
+        minGamesText = `${minGames} games minimum`;
+    }
+    
+    infoElement.innerHTML = `
+        <div class="d-flex flex-wrap gap-3">
+            <span><strong>Filtered games:</strong> ${totalGames}</span>
+            <span><strong>Team size:</strong> ${teamSizeText}</span>
+            <span><strong>Minimum games:</strong> ${minGamesText}</span>
+        </div>
+    `;
 }
 
 // Wait for DOM to be ready, then load data
@@ -3749,5 +4371,4 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load the game data
     loadGameData();
-
 }); 
