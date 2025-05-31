@@ -923,7 +923,7 @@ function loadGeneralOverview() {
         <div class="row">
             <!-- Commander Rankings -->
             <div class="col-lg-6 mb-4">
-                <div class="card bg-dark border-secondary">
+                <div class="card bg-dark border-secondary" id="commanderGamesCard">
                     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Commander Ranking - Games Played</h5>
                         <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="commanderGames" data-chart-title="Commander Rankings - All Players (Games Played)">
@@ -940,7 +940,7 @@ function loadGeneralOverview() {
             
             <!-- Commander Win Rates -->
             <div class="col-lg-6 mb-4">
-                <div class="card bg-dark border-secondary">
+                <div class="card bg-dark border-secondary" id="commanderWinRateCard">
                     <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Commander Ranking - Winrate</h5>
                         <div class="d-flex gap-2 align-items-center">
@@ -1084,6 +1084,9 @@ function loadGeneralOverview() {
     createFactionPerformanceChart(games);
     createGameDurationChart(games);
     
+    // Align commander chart heights after they're created
+    alignCommanderChartHeights();
+    
     // Add event listeners for the ranking dropdowns
     const rankingMethodEl = document.getElementById('rankingMethod');
     const minGameRequirementEl = document.getElementById('minGameRequirement');
@@ -1096,6 +1099,9 @@ function loadGeneralOverview() {
         
         console.log('Updating commander chart with:', { rankingMethod, minGameRequirement, teamSize });
         createCommanderWinRateChart(games, rankingMethod, minGameRequirement, teamSize);
+        
+        // Realign heights after chart update
+        alignCommanderChartHeights();
     };
     
     if (rankingMethodEl) {
@@ -1155,7 +1161,7 @@ function createCommanderGamesChart(games) {
         options: {
             indexAxis: 'y',
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     labels: { color: 'white' }
@@ -1317,7 +1323,7 @@ function createCommanderWinRateChart(games, rankingMethod, minGameRequirement, t
         options: {
             indexAxis: 'y',
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     labels: { color: 'white' }
@@ -4334,6 +4340,39 @@ function updateCommanderFilterInfo(totalGames, minGames, minGameRequirement, tea
             <span><strong>Minimum games:</strong> ${minGamesText}</span>
         </div>
     `;
+}
+
+// Function to align commander chart heights dynamically
+function alignCommanderChartHeights() {
+    // Wait a bit for charts to fully render
+    setTimeout(() => {
+        const gamesCard = document.getElementById('commanderGamesCard');
+        const winRateCard = document.getElementById('commanderWinRateCard');
+        
+        if (!gamesCard || !winRateCard) return;
+        
+        // Reset any previous height adjustments
+        gamesCard.style.height = '';
+        winRateCard.style.height = '';
+        
+        // Let the browser recalculate natural heights
+        requestAnimationFrame(() => {
+            const gamesHeight = gamesCard.offsetHeight;
+            const winRateHeight = winRateCard.offsetHeight;
+            const maxHeight = Math.max(gamesHeight, winRateHeight);
+            
+            // Set both cards to the maximum height
+            gamesCard.style.height = maxHeight + 'px';
+            winRateCard.style.height = maxHeight + 'px';
+            
+            // Force chart resize to fill the new container heights
+            const gamesChart = Chart.getChart('commanderGamesChart');
+            const winRateChart = Chart.getChart('commanderWinRateChart');
+            
+            if (gamesChart) gamesChart.resize();
+            if (winRateChart) winRateChart.resize();
+        });
+    }, 100);
 }
 
 // Wait for DOM to be ready, then load data
