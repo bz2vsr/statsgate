@@ -241,7 +241,9 @@ function safeCreateChart(canvasId, config) {
                 },
                 scales: enhanceScales(config.options?.scales || {}),
                 responsive: config.options?.responsive !== false,
-                maintainAspectRatio: config.options?.maintainAspectRatio !== false
+                // FIXED: Respect individual chart maintainAspectRatio settings
+                maintainAspectRatio: config.options?.maintainAspectRatio !== undefined ? 
+                    config.options.maintainAspectRatio : true
             }
         };
         
