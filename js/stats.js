@@ -1863,10 +1863,10 @@ function createFactionPerformanceChart(games) {
             faction,
             winRate: (stats.wins / stats.games * 100).toFixed(1),
             games: stats.games,
-            wins: stats.wins
+            wins: stats.wins,
+            losses: stats.games - stats.wins
         }))
-        .sort((a, b) => b.winRate - a.winRate)
-        .slice(0, 10);
+        .sort((a, b) => b.wins - a.wins); // Sort by wins instead of win rate
     
     safeCreateChart('factionPerformanceChart', {
         type: 'bar',
@@ -1874,20 +1874,20 @@ function createFactionPerformanceChart(games) {
             labels: factionPerformance.map(f => f.faction),
             datasets: [
                 {
-                    label: 'Win Rate (%)',
-                    data: factionPerformance.map(f => f.winRate),
-                    backgroundColor: 'rgba(220, 53, 69, 0.8)',
-                    borderColor: 'rgba(220, 53, 69, 1)',
+                    label: 'Wins',
+                    data: factionPerformance.map(f => f.wins),
+                    backgroundColor: 'rgba(40, 167, 69, 0.8)', // Green for wins
+                    borderColor: 'rgba(40, 167, 69, 1)',
                     borderWidth: 1,
                     yAxisID: 'y'
                 },
                 {
-                    label: 'Total Games',
-                    data: factionPerformance.map(f => f.games),
-                    backgroundColor: 'rgba(108, 117, 125, 0.8)',
-                    borderColor: 'rgba(108, 117, 125, 1)',
+                    label: 'Losses',
+                    data: factionPerformance.map(f => f.losses),
+                    backgroundColor: 'rgba(220, 53, 69, 0.8)', // Red for losses
+                    borderColor: 'rgba(220, 53, 69, 1)',
                     borderWidth: 1,
-                    yAxisID: 'y1'
+                    yAxisID: 'y'
                 }
             ]
         },
@@ -1897,16 +1897,19 @@ function createFactionPerformanceChart(games) {
             maxBarThickness: 25,
             plugins: {
                 legend: {
-                    display: false
+                    display: true, // Show legend to distinguish wins vs losses
+                    labels: {
+                        color: 'white'
+                    }
                 },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
                             const faction = factionPerformance[context.dataIndex];
                             if (context.datasetIndex === 0) {
-                                return `Win Rate: ${faction.winRate}% (${faction.wins}/${faction.games})`;
+                                return `Wins: ${faction.wins} (${faction.winRate}% win rate)`;
                             } else {
-                                return `Total Games: ${faction.games}`;
+                                return `Losses: ${faction.losses} (${faction.games} total games)`;
                             }
                         }
                     }
@@ -1920,26 +1923,12 @@ function createFactionPerformanceChart(games) {
                 y: {
                     type: 'linear',
                     display: true,
-                    position: 'left',
                     beginAtZero: true,
                     ticks: { color: 'white' },
                     grid: { color: 'rgba(255, 255, 255, 0.1)' },
                     title: {
                         display: true,
-                        text: 'Win Rate (%)',
-                        color: 'white'
-                    }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    beginAtZero: true,
-                    ticks: { color: 'white' },
-                    grid: { drawOnChartArea: false },
-                    title: {
-                        display: true,
-                        text: 'Total Games',
+                        text: 'Games Won/Lost',
                         color: 'white'
                     }
                 }
@@ -2549,23 +2538,32 @@ function createModalFactionPerformanceChart(games, canvas) {
             faction,
             winRate: (stats.wins / stats.games * 100).toFixed(1),
             games: stats.games,
-            wins: stats.wins
+            wins: stats.wins,
+            losses: stats.games - stats.wins
         }))
-        .sort((a, b) => b.winRate - a.winRate);
+        .sort((a, b) => b.wins - a.wins); // Sort by wins instead of win rate
     
-    // Make the chart responsive to the container
+    // Enforce minimum readable dimensions - vertical layout for better readability
+    const MIN_BAR_HEIGHT = 80; // Extra height for dual-axis chart
+    const CHART_WIDTH = 1200; // Fixed comfortable width
+    const PADDING = 150; // More padding for dual-axis
+    
+    // Calculate height based on data - ensure every bar is readable
+    const chartHeight = (factionPerformance.length * MIN_BAR_HEIGHT) + PADDING;
+    
+    // Ensure the modal container can handle the full size
     const container = canvas.parentElement;
+    container.style.width = `${CHART_WIDTH + 40}px`; // Extra padding
+    container.style.minHeight = `${chartHeight}px`;
     
-    // Set container to utilize full available space
-    container.style.height = '100%';
-    container.style.width = '100%';
-    container.style.position = 'relative';
-    
-    // Make canvas responsive
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
-    canvas.style.maxWidth = '100%';
-    canvas.style.maxHeight = '100%';
+    // Set canvas to exact dimensions - no scaling allowed
+    canvas.width = CHART_WIDTH;
+    canvas.height = chartHeight;
+    canvas.style.width = `${CHART_WIDTH}px`;
+    canvas.style.height = `${chartHeight}px`;
+    canvas.style.display = 'block';
+    canvas.style.maxWidth = 'none';
+    canvas.style.maxHeight = 'none';
     
     new Chart(canvas.getContext('2d'), {
         type: 'bar',
@@ -2573,20 +2571,18 @@ function createModalFactionPerformanceChart(games, canvas) {
             labels: factionPerformance.map(f => f.faction),
             datasets: [
                 {
-                    label: 'Win Rate (%)',
-                    data: factionPerformance.map(f => f.winRate),
-                    backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                    label: 'Wins',
+                    data: factionPerformance.map(f => f.wins),
+                    backgroundColor: 'rgba(40, 167, 69, 0.8)', // Green for wins
                     borderColor: 'rgba(40, 167, 69, 1)',
-                    borderWidth: 1,
-                    yAxisID: 'y'
+                    borderWidth: 1
                 },
                 {
-                    label: 'Total Games',
-                    data: factionPerformance.map(f => f.games),
-                    backgroundColor: 'rgba(108, 117, 125, 0.8)',
-                    borderColor: 'rgba(108, 117, 125, 1)',
-                    borderWidth: 1,
-                    yAxisID: 'y1'
+                    label: 'Losses', 
+                    data: factionPerformance.map(f => f.losses),
+                    backgroundColor: 'rgba(220, 53, 69, 0.8)', // Red for losses
+                    borderColor: 'rgba(220, 53, 69, 1)',
+                    borderWidth: 1
                 }
             ]
         },
@@ -2598,16 +2594,20 @@ function createModalFactionPerformanceChart(games, canvas) {
             },
             plugins: {
                 legend: {
-                    display: false
+                    display: true, // Show legend to distinguish wins vs losses
+                    labels: {
+                        color: 'white',
+                        font: { size: 16 }
+                    }
                 },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
                             const performance = factionPerformance[context.dataIndex];
-                            if (context.dataset.label === 'Win Rate (%)') {
-                                return `Win Rate: ${performance.winRate}%`;
+                            if (context.dataset.label === 'Wins') {
+                                return `Wins: ${performance.wins} (${performance.winRate}% win rate)`;
                             } else {
-                                return `Games: ${performance.games} (${performance.wins}W/${performance.games - performance.wins}L)`;
+                                return `Losses: ${performance.losses} (${performance.games} total games)`;
                             }
                         }
                     }
@@ -2627,15 +2627,10 @@ function createModalFactionPerformanceChart(games, canvas) {
                 y: {
                     type: 'linear',
                     display: true,
-                    position: 'left',
                     beginAtZero: true,
-                    max: 100,
                     ticks: { 
                         color: 'white',
-                        font: { size: 12 },
-                        callback: function(value) {
-                            return value + '%';
-                        }
+                        font: { size: 12 }
                     },
                     grid: { 
                         color: 'rgba(255, 255, 255, 0.1)',
@@ -2643,27 +2638,9 @@ function createModalFactionPerformanceChart(games, canvas) {
                     },
                     title: {
                         display: true,
-                        text: 'Win Rate (%)',
-                        color: 'white'
-                    }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    beginAtZero: true,
-                    ticks: { 
+                        text: 'Games Won/Lost',
                         color: 'white',
-                        font: { size: 12 }
-                    },
-                    grid: { 
-                        drawOnChartArea: false,
-                        color: 'rgba(255, 255, 255, 0.1)'
-                    },
-                    title: {
-                        display: true,
-                        text: 'Total Games',
-                        color: 'white'
+                        font: { size: 14 }
                     }
                 }
             },
