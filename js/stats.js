@@ -1621,41 +1621,52 @@ function createCommanderFactionChart(games) {
             [game.commander2, game.faction2]
         ].forEach(([commander, faction]) => {
             if (!commanderFactionStats[commander]) {
-                commanderFactionStats[commander] = {};
+                commanderFactionStats[commander] = {
+                    'I.S.D.F': 0,
+                    'Hadean': 0,
+                    'Scion': 0
+                };
             }
-            commanderFactionStats[commander][faction] = (commanderFactionStats[commander][faction] || 0) + 1;
+            if (faction) {
+                commanderFactionStats[commander][faction] = (commanderFactionStats[commander][faction] || 0) + 1;
+            }
         });
     });
     
-    // Get most played commanders and their primary factions
-    const commanderPreferences = Object.entries(commanderFactionStats)
+    // Sort commanders by total games and get top 10
+    const commanderData = Object.entries(commanderFactionStats)
         .map(([commander, factions]) => {
             const totalGames = Object.values(factions).reduce((sum, count) => sum + count, 0);
-            const primaryFaction = Object.entries(factions)
-                .sort(([,a], [,b]) => b - a)[0];
-            
             return {
                 commander,
                 totalGames,
-                primaryFaction: primaryFaction[0],
-                primaryCount: primaryFaction[1],
-                percentage: (primaryFaction[1] / totalGames * 100).toFixed(1)
+                factions
             };
         })
         .sort((a, b) => b.totalGames - a.totalGames)
         .slice(0, 10);
     
+    // Define faction colors to match the screenshot
+    const factionColors = {
+        'I.S.D.F': 'rgba(13, 110, 253, 0.9)',    // Blue for ISDF
+        'Hadean': 'rgba(220, 53, 69, 0.9)',      // Red for Hadean
+        'Scion': 'rgba(255, 193, 7, 0.9)'        // Yellow for Scion
+    };
+    
+    // Create datasets for stacked bar chart
+    const datasets = Object.keys(factionColors).map(faction => ({
+        label: faction,
+        data: commanderData.map(cmd => cmd.factions[faction] || 0),
+        backgroundColor: factionColors[faction],
+        borderColor: factionColors[faction],
+        borderWidth: 1
+    }));
+    
     safeCreateChart('commanderFactionChart', {
         type: 'bar',
         data: {
-            labels: commanderPreferences.map(c => `${c.commander} (${c.primaryFaction})`),
-            datasets: [{
-                label: 'Primary Faction Usage',
-                data: commanderPreferences.map(c => c.primaryCount),
-                backgroundColor: 'rgba(255, 193, 7, 0.8)',
-                borderColor: 'rgba(255, 193, 7, 1)',
-                borderWidth: 1
-            }]
+            labels: commanderData.map(cmd => cmd.commander),
+            datasets: datasets
         },
         options: {
             indexAxis: 'y',
@@ -1663,28 +1674,41 @@ function createCommanderFactionChart(games) {
             maintainAspectRatio: true,
             plugins: {
                 legend: {
-                    display: false
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: 'white',
+                        usePointStyle: true,
+                        pointStyle: 'rect'
+                    }
                 },
                 tooltip: {
                     callbacks: {
+                        title: function(context) {
+                            const commanderIndex = context[0].dataIndex;
+                            const cmd = commanderData[commanderIndex];
+                            return `${cmd.commander} (${cmd.totalGames} total games)`;
+                        },
                         label: function(context) {
-                            const prefs = commanderPreferences[context.dataIndex];
-                            return [
-                                `Primary Faction: ${prefs.primaryFaction}`,
-                                `Games: ${prefs.primaryCount}/${prefs.totalGames}`,
-                                `Percentage: ${prefs.percentage}%`
-                            ];
+                            const faction = context.dataset.label;
+                            const count = context.raw;
+                            const commanderIndex = context.dataIndex;
+                            const cmd = commanderData[commanderIndex];
+                            const percentage = cmd.totalGames > 0 ? ((count / cmd.totalGames) * 100).toFixed(1) : '0.0';
+                            return `${faction}: ${count} games (${percentage}%)`;
                         }
                     }
                 }
             },
             scales: {
-                y: {
+                x: {
+                    stacked: true,
+                    beginAtZero: true,
                     ticks: { color: 'white' },
                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                 },
-                x: {
-                    beginAtZero: true,
+                y: {
+                    stacked: true,
                     ticks: { color: 'white' },
                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                 }
@@ -2317,28 +2341,45 @@ function createModalCommanderFactionChart(games, canvas) {
             [game.commander2, game.faction2]
         ].forEach(([commander, faction]) => {
             if (!commanderFactionStats[commander]) {
-                commanderFactionStats[commander] = {};
+                commanderFactionStats[commander] = {
+                    'I.S.D.F': 0,
+                    'Hadean': 0,
+                    'Scion': 0
+                };
             }
-            commanderFactionStats[commander][faction] = (commanderFactionStats[commander][faction] || 0) + 1;
+            if (faction) {
+                commanderFactionStats[commander][faction] = (commanderFactionStats[commander][faction] || 0) + 1;
+            }
         });
     });
     
-    // Get most played commanders and their primary factions
-    const commanderPreferences = Object.entries(commanderFactionStats)
+    // Sort commanders by total games (no limit for modal view)
+    const commanderData = Object.entries(commanderFactionStats)
         .map(([commander, factions]) => {
             const totalGames = Object.values(factions).reduce((sum, count) => sum + count, 0);
-            const primaryFaction = Object.entries(factions)
-                .sort(([,a], [,b]) => b - a)[0];
-            
             return {
                 commander,
                 totalGames,
-                primaryFaction: primaryFaction[0],
-                primaryCount: primaryFaction[1],
-                percentage: (primaryFaction[1] / totalGames * 100).toFixed(1)
+                factions
             };
         })
         .sort((a, b) => b.totalGames - a.totalGames);
+    
+    // Define faction colors to match the screenshot
+    const factionColors = {
+        'I.S.D.F': 'rgba(13, 110, 253, 0.9)',    // Blue for ISDF
+        'Hadean': 'rgba(220, 53, 69, 0.9)',      // Red for Hadean
+        'Scion': 'rgba(255, 193, 7, 0.9)'        // Yellow for Scion
+    };
+    
+    // Create datasets for stacked bar chart
+    const datasets = Object.keys(factionColors).map(faction => ({
+        label: faction,
+        data: commanderData.map(cmd => cmd.factions[faction] || 0),
+        backgroundColor: factionColors[faction],
+        borderColor: factionColors[faction],
+        borderWidth: 1
+    }));
     
     // Make the chart responsive to the container
     const container = canvas.parentElement;
@@ -2357,14 +2398,8 @@ function createModalCommanderFactionChart(games, canvas) {
     new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: {
-            labels: commanderPreferences.map(c => `${c.commander} (${c.primaryFaction})`),
-            datasets: [{
-                label: 'Primary Faction Usage',
-                data: commanderPreferences.map(c => c.primaryCount),
-                backgroundColor: 'rgba(255, 193, 7, 0.8)',
-                borderColor: 'rgba(255, 193, 7, 1)',
-                borderWidth: 1
-            }]
+            labels: commanderData.map(cmd => cmd.commander),
+            datasets: datasets
         },
         options: {
             indexAxis: 'y',
@@ -2375,39 +2410,51 @@ function createModalCommanderFactionChart(games, canvas) {
             },
             plugins: {
                 legend: {
-                    display: false
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: 'white',
+                        usePointStyle: true,
+                        pointStyle: 'rect',
+                        font: { size: 14 }
+                    }
                 },
                 tooltip: {
                     callbacks: {
+                        title: function(context) {
+                            const commanderIndex = context[0].dataIndex;
+                            const cmd = commanderData[commanderIndex];
+                            return `${cmd.commander} (${cmd.totalGames} total games)`;
+                        },
                         label: function(context) {
-                            const prefs = commanderPreferences[context.dataIndex];
-                            return [
-                                `Primary Faction: ${prefs.primaryFaction}`,
-                                `Games: ${prefs.primaryCount}/${prefs.totalGames}`,
-                                `Percentage: ${prefs.percentage}%`
-                            ];
+                            const faction = context.dataset.label;
+                            const count = context.raw;
+                            const commanderIndex = context.dataIndex;
+                            const cmd = commanderData[commanderIndex];
+                            const percentage = cmd.totalGames > 0 ? ((count / cmd.totalGames) * 100).toFixed(1) : '0.0';
+                            return `${faction}: ${count} games (${percentage}%)`;
                         }
                     }
                 }
             },
             scales: {
-                y: {
-                    type: 'category',
+                x: {
+                    stacked: true,
+                    beginAtZero: true,
                     ticks: { 
                         color: 'white',
-                        font: { size: 16 }
+                        font: { size: 12 }
                     },
                     grid: { 
                         color: 'rgba(255, 255, 255, 0.1)',
                         display: true
                     }
                 },
-                x: {
-                    type: 'linear',
-                    beginAtZero: true,
+                y: {
+                    stacked: true,
                     ticks: { 
                         color: 'white',
-                        font: { size: 12 }
+                        font: { size: 14 }
                     },
                     grid: { 
                         color: 'rgba(255, 255, 255, 0.1)',
