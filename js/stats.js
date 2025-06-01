@@ -1362,7 +1362,7 @@ function createCommanderGamesChart(games) {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    labels: { color: 'white' }
+                    display: false
                 }
             },
             scales: {
@@ -1524,7 +1524,7 @@ function createCommanderWinRateChart(games, rankingMethod, minGameRequirement, t
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    labels: { color: 'white' }
+                    display: false
                 },
                 tooltip: {
                     callbacks: {
@@ -1585,7 +1585,7 @@ function createMapPopularityChart(games) {
             maintainAspectRatio: true,
             plugins: {
                 legend: {
-                    labels: { color: 'white' }
+                    display: false
                 }
             },
             scales: {
@@ -1655,7 +1655,7 @@ function createCommanderFactionChart(games) {
             maintainAspectRatio: true,
             plugins: {
                 legend: {
-                    labels: { color: 'white' }
+                    display: false
                 },
                 tooltip: {
                     callbacks: {
@@ -1817,7 +1817,7 @@ function createFactionPerformanceChart(games) {
             maxBarThickness: 25,
             plugins: {
                 legend: {
-                    labels: { color: 'white' }
+                    display: false
                 },
                 tooltip: {
                     callbacks: {
@@ -1935,7 +1935,7 @@ function createGameDurationChart(games) {
             maxBarThickness: 25,
             plugins: {
                 legend: {
-                    labels: { color: 'white' }
+                    display: false
                 }
             },
             scales: {
@@ -2165,11 +2165,7 @@ function createModalCommanderGamesChart(games, canvas) {
             },
             plugins: {
                 legend: {
-                    display: true,
-                    labels: { 
-                        color: 'white',
-                        font: { size: 16 }
-                    }
+                    display: false
                 }
             },
             scales: {
@@ -2177,10 +2173,7 @@ function createModalCommanderGamesChart(games, canvas) {
                     type: 'category',
                     ticks: { 
                         color: 'white',
-                        font: { size: 12 },
-                        maxTicksLimit: false,
-                        autoSkip: false,
-                        padding: 8
+                        font: { size: 16 }
                     },
                     grid: { 
                         color: 'rgba(255, 255, 255, 0.1)',
@@ -2262,11 +2255,7 @@ function createModalMapPopularityChart(games, canvas) {
             },
             plugins: {
                 legend: {
-                    display: true,
-                    labels: { 
-                        color: 'white',
-                        font: { size: 16 }
-                    }
+                    display: false
                 }
             },
             scales: {
@@ -2274,10 +2263,7 @@ function createModalMapPopularityChart(games, canvas) {
                     type: 'category',
                     ticks: { 
                         color: 'white',
-                        font: { size: 12 },
-                        maxTicksLimit: false,
-                        autoSkip: false,
-                        padding: 8
+                        font: { size: 16 }
                     },
                     grid: { 
                         color: 'rgba(255, 255, 255, 0.1)',
@@ -2381,11 +2367,7 @@ function createModalCommanderFactionChart(games, canvas) {
             },
             plugins: {
                 legend: {
-                    display: true,
-                    labels: { 
-                        color: 'white',
-                        font: { size: 16 }
-                    }
+                    display: false
                 },
                 tooltip: {
                     callbacks: {
@@ -2405,10 +2387,7 @@ function createModalCommanderFactionChart(games, canvas) {
                     type: 'category',
                     ticks: { 
                         color: 'white',
-                        font: { size: 12 },
-                        maxTicksLimit: false,
-                        autoSkip: false,
-                        padding: 8
+                        font: { size: 16 }
                     },
                     grid: { 
                         color: 'rgba(255, 255, 255, 0.1)',
@@ -2516,11 +2495,7 @@ function createModalFactionPerformanceChart(games, canvas) {
             },
             plugins: {
                 legend: {
-                    display: true,
-                    labels: { 
-                        color: 'white',
-                        font: { size: 16 }
-                    }
+                    display: false
                 },
                 tooltip: {
                     callbacks: {
@@ -2674,11 +2649,7 @@ function createModalGameDurationChart(games, canvas) {
             },
             plugins: {
                 legend: {
-                    display: true,
-                    labels: { 
-                        color: 'white',
-                        font: { size: 16 }
-                    }
+                    display: false
                 }
             },
             scales: {
@@ -3013,7 +2984,7 @@ function createPlayerMapWinRateChart(games, player) {
             maxBarThickness: 25,
             plugins: {
                 legend: {
-                    labels: { color: 'white' }
+                    display: false
                 },
                 tooltip: {
                     callbacks: {
@@ -3136,7 +3107,7 @@ function createPlayerFactionWinRateChart(games, player) {
             maxBarThickness: 25,
             plugins: {
                 legend: {
-                    labels: { color: 'white' }
+                    display: false
                 },
                 tooltip: {
                     callbacks: {
@@ -3241,7 +3212,7 @@ function createPlayerGameDurationChart(games, player) {
             maxBarThickness: 25,
             plugins: {
                 legend: {
-                    labels: { color: 'white' }
+                    display: false
                 }
             },
             scales: {
@@ -3327,7 +3298,7 @@ function createPlayerTeamSizeChart(games, player) {
             maxBarThickness: 25,
             plugins: {
                 legend: {
-                    labels: { color: 'white' }
+                    display: false
                 },
                 tooltip: {
                     callbacks: {
@@ -3711,7 +3682,7 @@ function createMapFactionPerformanceChart(games, map) {
             },
             plugins: {
                 legend: {
-                    labels: { color: 'white' }
+                    display: false
                 },
                 tooltip: {
                     callbacks: {
@@ -3794,7 +3765,7 @@ function createMapGameDurationChart(games, map) {
             },
             plugins: {
                 legend: {
-                    labels: { color: 'white' }
+                    display: false
                 }
             }
         }
@@ -3893,7 +3864,7 @@ function createFactionMapPerformanceChart(games, faction) {
             },
             plugins: {
                 legend: {
-                    labels: { color: 'white' }
+                    display: false
                 },
                 tooltip: {
                     callbacks: {
@@ -3976,7 +3947,7 @@ function createFactionGameDurationChart(games, faction) {
             },
             plugins: {
                 legend: {
-                    labels: { color: 'white' }
+                    display: false
                 }
             }
         }
@@ -4069,7 +4040,7 @@ function createModalFactionDistributionChart(games, canvas) {
             },
             plugins: {
                 legend: {
-                    display: true,
+                    display: false,
                     position: 'bottom',
                     labels: { 
                         color: 'white',
@@ -4187,7 +4158,7 @@ function createModalFactionPerformanceChart(games, canvas) {
             },
             plugins: {
                 legend: {
-                    display: true,
+                    display: false,
                     labels: { 
                         color: 'white',
                         font: { size: 16 }
@@ -4530,11 +4501,7 @@ function createModalCommanderWinRateChart(games, canvas, rankingMethod, minGameR
             },
             plugins: {
                 legend: {
-                    display: true,
-                    labels: { 
-                        color: 'white',
-                        font: { size: 16 }
-                    }
+                    display: false
                 },
                 tooltip: {
                     callbacks: {
@@ -4640,11 +4607,7 @@ function createModalMapPopularityChart(games, canvas) {
             },
             plugins: {
                 legend: {
-                    display: true,
-                    labels: { 
-                        color: 'white',
-                        font: { size: 16 }
-                    }
+                    display: false
                 }
             },
             scales: {
@@ -4652,10 +4615,7 @@ function createModalMapPopularityChart(games, canvas) {
                     type: 'category',
                     ticks: { 
                         color: 'white',
-                        font: { size: 12 },
-                        maxTicksLimit: false,
-                        autoSkip: false,
-                        padding: 8
+                        font: { size: 16 }
                     },
                     grid: { 
                         color: 'rgba(255, 255, 255, 0.1)',
