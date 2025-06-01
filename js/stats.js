@@ -1895,6 +1895,9 @@ function createFactionPerformanceChart(games) {
             responsive: true,
             maintainAspectRatio: true,
             maxBarThickness: 25,
+            // Make bars closer together
+            categoryPercentage: 0.8, // Controls space between different factions
+            barPercentage: 0.9,      // Controls space between wins/losses bars within each faction
             plugins: {
                 legend: {
                     display: true, // Show legend to distinguish wins vs losses
@@ -2589,6 +2592,9 @@ function createModalFactionPerformanceChart(games, canvas) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            // Make bars closer together
+            categoryPercentage: 0.8, // Controls space between different factions
+            barPercentage: 0.9,      // Controls space between wins/losses bars within each faction
             interaction: {
                 intersect: false
             },
