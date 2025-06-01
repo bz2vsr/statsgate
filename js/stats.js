@@ -170,6 +170,7 @@ function safeCreateChart(canvasId, config) {
         const container = canvas.parentElement;
         if (container) {
             container.classList.add('chart-container');
+            container.style.borderRadius = '12px';
         }
         
         // Enhanced config with modern styling and PERFORMANCE OPTIMIZATION
@@ -181,7 +182,7 @@ function safeCreateChart(canvasId, config) {
                     {
                         ...chartAnimations.standard,
                         duration: performanceConfig.getOptimalAnimationDuration()
-                    } : false,
+                } : false,
                 interaction: {
                     intersect: config.type === 'bar' ? true : false,
                     mode: config.type === 'bar' ? 'point' : 'index',
@@ -270,10 +271,61 @@ function safeCreateChart(canvasId, config) {
             ];
         }
         
+        // Check if this is a bar chart
+        const isBarChart = config.type === 'bar';
+        
+        // Check if this is a stacked bar chart
+        const isStackedChart = isBarChart && (
+            config.options?.scales?.x?.stacked === true || 
+            config.options?.scales?.y?.stacked === true
+        );
+        
         // Enhance dataset colors and styling with PERFORMANCE OPTIMIZATION
         if (enhancedConfig.data?.datasets) {
             enhancedConfig.data.datasets = enhancedConfig.data.datasets.map((dataset, index) => {
-                const isBarChart = config.type === 'bar';
+                
+                // Calculate border-radius for stacked vs regular bar charts
+                let borderRadius = 0;
+                if (isBarChart) {
+                    if (isStackedChart) {
+                        // For stacked bar charts, only apply border-radius to end caps
+                        const totalDatasets = enhancedConfig.data.datasets.length;
+                        const isHorizontal = config.options?.indexAxis === 'y';
+                        
+                        if (isHorizontal) {
+                            // Horizontal stacked bars
+                            if (index === 0) {
+                                // First segment - round left side only
+                                borderRadius = { topLeft: 4, topRight: 0, bottomLeft: 4, bottomRight: 0 };
+                            } else if (index === totalDatasets - 1) {
+                                // Last segment - round right side only  
+                                borderRadius = { topLeft: 0, topRight: 4, bottomLeft: 0, bottomRight: 4 };
+                            } else {
+                                // Middle segments - no rounding
+                                borderRadius = 0;
+                            }
+                        } else {
+                            // Vertical stacked bars
+                            if (index === 0) {
+                                // First segment - round bottom only
+                                borderRadius = { topLeft: 0, topRight: 0, bottomLeft: 4, bottomRight: 4 };
+                            } else if (index === totalDatasets - 1) {
+                                // Last segment - round top only
+                                borderRadius = { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 };
+                            } else {
+                                // Middle segments - no rounding
+                                borderRadius = 0;
+                            }
+                        }
+                    } else {
+                        // Regular (non-stacked) bar charts - round the appropriate end
+                        borderRadius = config.options?.indexAxis === 'y' ? 
+                            // Horizontal bars - round right end only
+                            { topLeft: 0, topRight: 4, bottomLeft: 0, bottomRight: 4 } :
+                            // Vertical bars - round top end only  
+                            { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 };
+                    }
+                }
                 
                 return {
                     ...dataset,
@@ -292,15 +344,9 @@ function safeCreateChart(canvasId, config) {
                     pointHoverBackgroundColor: dataset.pointHoverBackgroundColor || gamingColors.primary,
                     pointHoverBorderColor: dataset.pointHoverBorderColor || '#ffffff',
                     pointHoverBorderWidth: dataset.pointHoverBorderWidth || 3,
-                    // Enhanced bar styling with selective rounding
+                    // Enhanced bar styling with stacked-aware rounding
                     borderSkipped: false,
-                    borderRadius: isBarChart ? 
-                        (config.options?.indexAxis === 'y' ? 
-                            // Horizontal bars - round right end only
-                            { topLeft: 0, topRight: 4, bottomLeft: 0, bottomRight: 4 } :
-                            // Vertical bars - round top end only  
-                            { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 }
-                        ) : 0,
+                    borderRadius: borderRadius,
                     hoverBackgroundColor: isBarChart && gradientColors ? 
                         gradientColors[index % gradientColors.length]() : 
                         dataset.hoverBackgroundColor,
