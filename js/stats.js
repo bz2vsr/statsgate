@@ -1553,6 +1553,14 @@ function createCommanderWinRateChart(games, rankingMethod, minGameRequirement, t
             }
         }
     });
+    
+    // Ensure chart resizes to fit container after all content is rendered
+    setTimeout(() => {
+        const chart = Chart.getChart('commanderWinRateChart');
+        if (chart) {
+            chart.resize();
+        }
+    }, 100);
 }
 
 // Create map popularity chart
@@ -4278,11 +4286,19 @@ function updateCommanderFilterInfo(totalGames, minGames, minGameRequirement, tea
             <span><strong>Minimum games:</strong> ${minGamesText}</span>
         </div>
     `;
+    
+    // Force chart resize after filter info is updated and DOM is rendered
+    setTimeout(() => {
+        const winRateChart = Chart.getChart('commanderWinRateChart');
+        if (winRateChart) {
+            winRateChart.resize();
+        }
+    }, 50);
 }
 
 // Function to align commander chart heights dynamically
 function alignCommanderChartHeights() {
-    // Wait a bit for charts to fully render
+    // Wait longer for all content (including filter info) to fully render
     setTimeout(() => {
         const gamesCard = document.getElementById('commanderGamesCard');
         const winRateCard = document.getElementById('commanderWinRateCard');
@@ -4293,24 +4309,32 @@ function alignCommanderChartHeights() {
         gamesCard.style.height = '';
         winRateCard.style.height = '';
         
-        // Let the browser recalculate natural heights
+        // Wait for the browser to recalculate natural heights after reset
         requestAnimationFrame(() => {
-            const gamesHeight = gamesCard.offsetHeight;
-            const winRateHeight = winRateCard.offsetHeight;
-            const maxHeight = Math.max(gamesHeight, winRateHeight);
-            
-            // Set both cards to the maximum height
-            gamesCard.style.height = maxHeight + 'px';
-            winRateCard.style.height = maxHeight + 'px';
-            
-            // Force chart resize to fill the new container heights
-            const gamesChart = Chart.getChart('commanderGamesChart');
-            const winRateChart = Chart.getChart('commanderWinRateChart');
-            
-            if (gamesChart) gamesChart.resize();
-            if (winRateChart) winRateChart.resize();
+            requestAnimationFrame(() => {
+                const gamesHeight = gamesCard.offsetHeight;
+                const winRateHeight = winRateCard.offsetHeight;
+                const maxHeight = Math.max(gamesHeight, winRateHeight);
+                
+                // Set both cards to the maximum height
+                gamesCard.style.height = maxHeight + 'px';
+                winRateCard.style.height = maxHeight + 'px';
+                
+                // Force chart resize to fill the new container heights after a brief delay
+                setTimeout(() => {
+                    const gamesChart = Chart.getChart('commanderGamesChart');
+                    const winRateChart = Chart.getChart('commanderWinRateChart');
+                    
+                    if (gamesChart) {
+                        gamesChart.resize();
+                    }
+                    if (winRateChart) {
+                        winRateChart.resize();
+                    }
+                }, 100);
+            });
         });
-    }, 100);
+    }, 200); // Increased timeout to ensure filter info is fully rendered
 }
 
 // Wait for DOM to be ready, then load data
