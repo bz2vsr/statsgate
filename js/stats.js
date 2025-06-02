@@ -84,6 +84,134 @@ const chartAnimations = {
     }
 };
 
+// ==================== UTILITY FUNCTIONS ====================
+// Extract common game duration parsing logic
+function parseGameDuration(timeString) {
+    if (!timeString || timeString.trim() === '') return null;
+    
+    try {
+        const timeParts = timeString.split(':');
+        let totalMinutes = 0;
+        
+        if (timeParts.length === 2) {
+            // Format: mm:ss (minutes:seconds)
+            const minutes = parseInt(timeParts[0]) || 0;
+            const seconds = parseInt(timeParts[1]) || 0;
+            totalMinutes = minutes + (seconds / 60);
+        } else if (timeParts.length === 3) {
+            // Format: h:mm:ss (hours:minutes:seconds)
+            const hours = parseInt(timeParts[0]) || 0;
+            const minutes = parseInt(timeParts[1]) || 0;
+            const seconds = parseInt(timeParts[2]) || 0;
+            totalMinutes = (hours * 60) + minutes + (seconds / 60);
+        } else {
+            console.warn('Unexpected time format:', timeString);
+            return null;
+        }
+        
+        return totalMinutes;
+    } catch (e) {
+        console.warn('Error parsing time:', timeString, e);
+        return null;
+    }
+}
+
+// Extract common duration bucket categorization
+function categorizeGameDuration(totalMinutes) {
+    if (totalMinutes === null) return null;
+    
+    if (totalMinutes <= 10) {
+        return '≤10 min';
+    } else if (totalMinutes <= 30) {
+        return '10-30 min';
+    } else if (totalMinutes <= 60) {
+        return '30-60 min';
+    } else {
+        return '>60 min';
+    }
+}
+
+// Calculate duration buckets for games array
+function calculateDurationBuckets(games) {
+    const buckets = {
+        '≤10 min': 0,
+        '10-30 min': 0,
+        '30-60 min': 0,
+        '>60 min': 0
+    };
+    
+    games.forEach(game => {
+        const totalMinutes = parseGameDuration(game.time);
+        const bucket = categorizeGameDuration(totalMinutes);
+        if (bucket) {
+            buckets[bucket]++;
+        }
+    });
+    
+    return buckets;
+}
+
+// Calculate average game time for an array of games
+function calculateAverageGameTime(games) {
+    const gamesWithTime = games.filter(g => g.time && g.time.trim() !== '');
+    if (gamesWithTime.length === 0) return '--';
+    
+    const totalMinutes = gamesWithTime.reduce((sum, game) => {
+        const totalMinutesForGame = parseGameDuration(game.time);
+        return totalMinutesForGame ? sum + totalMinutesForGame : sum;
+    }, 0);
+    
+    if (totalMinutes > 0) {
+        const avgMinutes = totalMinutes / gamesWithTime.length;
+        const hours = Math.floor(avgMinutes / 60);
+        const mins = Math.floor(avgMinutes % 60);
+        return `${hours}:${mins.toString().padStart(2, '0')}`;
+    }
+    
+    return '--';
+}
+
+// Extract faction statistics calculation
+function calculateFactionStats(games, includeWins = true) {
+    const factionStats = {};
+    
+    games.forEach(game => {
+        [game.faction1, game.faction2].forEach((faction, index) => {
+            if (!faction) return;
+            
+            if (!factionStats[faction]) {
+                factionStats[faction] = { games: 0, wins: 0 };
+            }
+            factionStats[faction].games++;
+            
+            if (includeWins) {
+                const commander = index === 0 ? game.commander1 : game.commander2;
+                if (game.winner === commander) {
+                    factionStats[faction].wins++;
+                }
+            }
+        });
+    });
+    
+    return factionStats;
+}
+
+// Calculate Wilson Score (extracted to utility function)
+function calculateWilsonScore(wins, games) {
+    if (games === 0) return 0;
+    
+    const p = wins / games;
+    const n = games;
+    const z = 1.96; // 95% confidence interval
+    
+    const numerator = p + (z * z) / (2 * n) - z * Math.sqrt((p * (1 - p) + (z * z) / (4 * n)) / n);
+    const denominator = 1 + (z * z) / n;
+    
+    return numerator / denominator;
+}
+
+// ==================== END UTILITY FUNCTIONS ====================
+
 // Add glow effect to charts - OPTIMIZED VERSION
 function addChartGlowEffect(chart) {
     const canvas = chart.canvas;
@@ -416,20 +544,6 @@ function enhanceScales(scales) {
     });
     
     return enhancedScales;
-}
-
-// Helper function to calculate Wilson Score
-function calculateWilsonScore(wins, games) {
-    if (games === 0) return 0;
-    
-    const p = wins / games;
-    const n = games;
-    const z = 1.96; // 95% confidence interval
-    
-    const numerator = p + (z * z) / (2 * n) - z * Math.sqrt((p * (1 - p) + (z * z) / (4 * n)) / n);
-    const denominator = 1 + (z * z) / n;
-    
-    return numerator / denominator;
 }
 
 // Load game data with comprehensive error handling and progress feedback
@@ -896,32 +1010,7 @@ function updateSummaryStats(games) {
         
         // Calculate average game time for this player's games
         const gamesWithTime = games.filter(g => g.time && g.time.trim() !== '');
-        let avgTime = '--';
-        if (gamesWithTime.length > 0) {
-            const totalMinutes = gamesWithTime.reduce((sum, game) => {
-                try {
-                    const timeParts = game.time.split(':');
-                    if (timeParts.length >= 2) {
-                        const hours = parseInt(timeParts[0]) || 0;
-                        const minutes = parseInt(timeParts[1]) || 0;
-                        const seconds = timeParts.length > 2 ? (parseInt(timeParts[2]) || 0) : 0;
-                        const totalMinutesForGame = hours * 60 + minutes + seconds / 60;
-                        return sum + totalMinutesForGame;
-                    }
-                    return sum;
-                } catch (e) {
-                    console.warn('Error parsing time:', game.time, e);
-                    return sum;
-                }
-            }, 0);
-            
-            if (totalMinutes > 0) {
-                const avgMinutes = totalMinutes / gamesWithTime.length;
-                const hours = Math.floor(avgMinutes / 60);
-                const mins = Math.floor(avgMinutes % 60);
-                avgTime = `${hours}:${mins.toString().padStart(2, '0')}`;
-            }
-        }
+        let avgTime = calculateAverageGameTime(gamesWithTime);
         
         totalGamesElement.textContent = totalGames;
         totalCommandersElement.textContent = maps.length;
@@ -945,33 +1034,7 @@ function updateSummaryStats(games) {
         const maps = [...new Set(games.map(g => g.map))];
         
         // Calculate average game time
-        const gamesWithTime = games.filter(g => g.time && g.time.trim() !== '');
-        let avgTime = '--';
-        if (gamesWithTime.length > 0) {
-            const totalMinutes = gamesWithTime.reduce((sum, game) => {
-                try {
-                    const timeParts = game.time.split(':');
-                    if (timeParts.length >= 2) {
-                        const hours = parseInt(timeParts[0]) || 0;
-                        const minutes = parseInt(timeParts[1]) || 0;
-                        const seconds = timeParts.length > 2 ? (parseInt(timeParts[2]) || 0) : 0;
-                        const totalMinutesForGame = hours * 60 + minutes + seconds / 60;
-                        return sum + totalMinutesForGame;
-                    }
-                    return sum;
-                } catch (e) {
-                    console.warn('Error parsing time:', game.time, e);
-                    return sum;
-                }
-            }, 0);
-            
-            if (totalMinutes > 0) {
-                const avgMinutes = totalMinutes / gamesWithTime.length;
-                const hours = Math.floor(avgMinutes / 60);
-                const mins = Math.floor(avgMinutes % 60);
-                avgTime = `${hours}:${mins.toString().padStart(2, '0')}`;
-            }
-        }
+        const avgTime = calculateAverageGameTime(games);
         
         totalGamesElement.textContent = totalGames;
         totalCommandersElement.textContent = commanders.length;
@@ -1516,10 +1579,7 @@ function createCommanderWinRateChart(games, rankingMethod, minGameRequirement, t
         switch (rankingMethod) {
             case 'wilson':
                 // Wilson Score Interval
-                const n = stats.games;
-                const p = winRate;
-                const z = 1.96; // 95% confidence
-                score = (p + z*z/(2*n) - z * Math.sqrt((p*(1-p)+z*z/(4*n))/n)) / (1+z*z/n);
+                score = calculateWilsonScore(stats.wins, stats.games);
                 break;
             case 'winRate':
                 score = winRate;
@@ -1767,22 +1827,14 @@ function createCommanderFactionChart(games) {
 
 // Create faction distribution chart
 function createFactionDistributionChart(games) {
-    const factionStats = {};
-    
-    // Count each faction selection (both faction1 and faction2 from each game)
-    games.forEach(game => {
-        [game.faction1, game.faction2].forEach(faction => {
-            if (faction) {
-                factionStats[faction] = (factionStats[faction] || 0) + 1;
-            }
-        });
-    });
+    const factionStats = calculateFactionStats(games, false);
     
     // Sort factions by count and get totals
     const sortedFactions = Object.entries(factionStats)
+        .map(([faction, stats]) => [faction, stats.games])
         .sort(([,a], [,b]) => b - a);
     
-    const totalSelections = Object.values(factionStats).reduce((sum, count) => sum + count, 0);
+    const totalSelections = Object.values(factionStats).reduce((sum, stats) => sum + stats.games, 0);
     
     // Update the card header with total count
     const cardHeader = document.querySelector('#mainAnalysis .bg-danger h5');
@@ -1842,21 +1894,7 @@ function createFactionDistributionChart(games) {
 
 // Create faction performance chart
 function createFactionPerformanceChart(games) {
-    const factionStats = {};
-    
-    games.forEach(game => {
-        [game.faction1, game.faction2].forEach(faction => {
-            if (!factionStats[faction]) {
-                factionStats[faction] = { games: 0, wins: 0 };
-            }
-            factionStats[faction].games++;
-            
-            if ((game.winner === game.commander1 && faction === game.faction1) ||
-                (game.winner === game.commander2 && faction === game.faction2)) {
-                factionStats[faction].wins++;
-            }
-        });
-    });
+    const factionStats = calculateFactionStats(games, true);
     
     const factionPerformance = Object.entries(factionStats)
         .map(([faction, stats]) => ({
@@ -1866,7 +1904,7 @@ function createFactionPerformanceChart(games) {
             wins: stats.wins,
             losses: stats.games - stats.wins
         }))
-        .sort((a, b) => b.wins - a.wins); // Sort by wins instead of win rate
+        .sort((a, b) => b.wins - a.wins);
     
     safeCreateChart('factionPerformanceChart', {
         type: 'bar',
@@ -1955,51 +1993,7 @@ function createFactionPerformanceChart(games) {
 
 // Create game duration chart
 function createGameDurationChart(games) {
-    const durationBuckets = {
-        '≤10 min': 0,
-        '10-30 min': 0,
-        '30-60 min': 0,
-        '>60 min': 0
-    };
-    
-    games.forEach(game => {
-        if (!game.time || game.time.trim() === '') return;
-        
-        try {
-            const timeParts = game.time.split(':');
-            let totalMinutes = 0;
-            
-            if (timeParts.length === 2) {
-                // Format: mm:ss (minutes:seconds)
-                const minutes = parseInt(timeParts[0]) || 0;
-                const seconds = parseInt(timeParts[1]) || 0;
-                totalMinutes = minutes + (seconds / 60);
-            } else if (timeParts.length === 3) {
-                // Format: h:mm:ss (hours:minutes:seconds)
-                const hours = parseInt(timeParts[0]) || 0;
-                const minutes = parseInt(timeParts[1]) || 0;
-                const seconds = parseInt(timeParts[2]) || 0;
-                totalMinutes = (hours * 60) + minutes + (seconds / 60);
-            } else {
-                console.warn('Unexpected time format:', game.time);
-                return;
-            }
-            
-            // Categorize into buckets
-            if (totalMinutes <= 10) {
-                durationBuckets['≤10 min']++;
-            } else if (totalMinutes <= 30) {
-                durationBuckets['10-30 min']++;
-            } else if (totalMinutes <= 60) {
-                durationBuckets['30-60 min']++;
-            } else {
-                durationBuckets['>60 min']++;
-            }
-        } catch (e) {
-            console.warn('Error parsing game time:', game.time, e);
-        }
-    });
-    
+    const durationBuckets = calculateDurationBuckets(games);
     const bucketData = Object.entries(durationBuckets);
     
     safeCreateChart('gameDurationChart', {
@@ -2542,31 +2536,16 @@ function createModalCommanderFactionChart(games, canvas) {
 }
 
 function createModalFactionPerformanceChart(games, canvas) {
-    const factionStats = {};
-    
-    games.forEach(game => {
-        [game.faction1, game.faction2].forEach(faction => {
-            if (!factionStats[faction]) {
-                factionStats[faction] = { games: 0, wins: 0 };
-            }
-            factionStats[faction].games++;
-            
-            if ((game.winner === game.commander1 && faction === game.faction1) ||
-                (game.winner === game.commander2 && faction === game.faction2)) {
-                factionStats[faction].wins++;
-            }
-        });
-    });
+    const factionStats = calculateFactionStats(games, true);
     
     const factionPerformance = Object.entries(factionStats)
         .map(([faction, stats]) => ({
             faction,
             winRate: (stats.wins / stats.games * 100).toFixed(1),
             games: stats.games,
-            wins: stats.wins,
-            losses: stats.games - stats.wins
+            wins: stats.wins
         }))
-        .sort((a, b) => b.wins - a.wins); // Sort by wins instead of win rate
+        .sort((a, b) => b.winRate - a.winRate);
     
     // Enforce minimum readable dimensions - vertical layout for better readability
     const MIN_BAR_HEIGHT = 80; // Extra height for dual-axis chart
@@ -2713,51 +2692,7 @@ function createModalFactionPerformanceChart(games, canvas) {
 }
 
 function createModalGameDurationChart(games, canvas) {
-    const durationBuckets = {
-        '≤10 min': 0,
-        '10-30 min': 0,
-        '30-60 min': 0,
-        '>60 min': 0
-    };
-    
-    games.forEach(game => {
-        if (!game.time || game.time.trim() === '') return;
-        
-        try {
-            const timeParts = game.time.split(':');
-            let totalMinutes = 0;
-            
-            if (timeParts.length === 2) {
-                // Format: mm:ss (minutes:seconds)
-                const minutes = parseInt(timeParts[0]) || 0;
-                const seconds = parseInt(timeParts[1]) || 0;
-                totalMinutes = minutes + (seconds / 60);
-            } else if (timeParts.length === 3) {
-                // Format: h:mm:ss (hours:minutes:seconds)
-                const hours = parseInt(timeParts[0]) || 0;
-                const minutes = parseInt(timeParts[1]) || 0;
-                const seconds = parseInt(timeParts[2]) || 0;
-                totalMinutes = (hours * 60) + minutes + (seconds / 60);
-            } else {
-                console.warn('Unexpected time format:', game.time);
-                return;
-            }
-            
-            // Categorize into buckets
-            if (totalMinutes <= 10) {
-                durationBuckets['≤10 min']++;
-            } else if (totalMinutes <= 30) {
-                durationBuckets['10-30 min']++;
-            } else if (totalMinutes <= 60) {
-                durationBuckets['30-60 min']++;
-            } else {
-                durationBuckets['>60 min']++;
-            }
-        } catch (e) {
-            console.warn('Error parsing game time:', game.time, e);
-        }
-    });
-    
+    const durationBuckets = calculateDurationBuckets(games);
     const bucketData = Object.entries(durationBuckets);
     
     // Make the chart responsive to the container
@@ -3313,51 +3248,7 @@ function createPlayerFactionWinRateChart(games, player) {
 
 // Create player game duration chart
 function createPlayerGameDurationChart(games, player) {
-    const durationBuckets = {
-        '≤10 min': 0,
-        '10-30 min': 0,
-        '30-60 min': 0,
-        '>60 min': 0
-    };
-    
-    games.forEach(game => {
-        if (!game.time || game.time.trim() === '') return;
-        
-        try {
-            const timeParts = game.time.split(':');
-            let totalMinutes = 0;
-            
-            if (timeParts.length === 2) {
-                // Format: mm:ss (minutes:seconds)
-                const minutes = parseInt(timeParts[0]) || 0;
-                const seconds = parseInt(timeParts[1]) || 0;
-                totalMinutes = minutes + (seconds / 60);
-            } else if (timeParts.length === 3) {
-                // Format: h:mm:ss (hours:minutes:seconds)
-                const hours = parseInt(timeParts[0]) || 0;
-                const minutes = parseInt(timeParts[1]) || 0;
-                const seconds = parseInt(timeParts[2]) || 0;
-                totalMinutes = (hours * 60) + minutes + (seconds / 60);
-            } else {
-                console.warn('Unexpected time format:', game.time);
-                return;
-            }
-            
-            // Categorize into buckets
-            if (totalMinutes <= 10) {
-                durationBuckets['≤10 min']++;
-            } else if (totalMinutes <= 30) {
-                durationBuckets['10-30 min']++;
-            } else if (totalMinutes <= 60) {
-                durationBuckets['30-60 min']++;
-            } else {
-                durationBuckets['>60 min']++;
-            }
-        } catch (e) {
-            console.warn('Error parsing game time:', game.time, e);
-        }
-    });
-    
+    const durationBuckets = calculateDurationBuckets(games);
     const bucketData = Object.entries(durationBuckets);
     
     safeCreateChart('playerGameDurationChart', {
@@ -3875,51 +3766,7 @@ function createMapFactionPerformanceChart(games, map) {
 
 // Create map game duration chart
 function createMapGameDurationChart(games, map) {
-    const durationBuckets = {
-        '≤10 min': 0,
-        '10-30 min': 0,
-        '30-60 min': 0,
-        '>60 min': 0
-    };
-    
-    games.forEach(game => {
-        if (!game.time || game.time.trim() === '') return;
-        
-        try {
-            const timeParts = game.time.split(':');
-            let totalMinutes = 0;
-            
-            if (timeParts.length === 2) {
-                // Format: mm:ss (minutes:seconds)
-                const minutes = parseInt(timeParts[0]) || 0;
-                const seconds = parseInt(timeParts[1]) || 0;
-                totalMinutes = minutes + (seconds / 60);
-            } else if (timeParts.length === 3) {
-                // Format: h:mm:ss (hours:minutes:seconds)
-                const hours = parseInt(timeParts[0]) || 0;
-                const minutes = parseInt(timeParts[1]) || 0;
-                const seconds = parseInt(timeParts[2]) || 0;
-                totalMinutes = (hours * 60) + minutes + (seconds / 60);
-            } else {
-                console.warn('Unexpected time format:', game.time);
-                return;
-            }
-            
-            // Categorize into buckets
-            if (totalMinutes <= 10) {
-                durationBuckets['≤10 min']++;
-            } else if (totalMinutes <= 30) {
-                durationBuckets['10-30 min']++;
-            } else if (totalMinutes <= 60) {
-                durationBuckets['30-60 min']++;
-            } else {
-                durationBuckets['>60 min']++;
-            }
-        } catch (e) {
-            console.warn('Error parsing game time:', game.time, e);
-        }
-    });
-    
+    const durationBuckets = calculateDurationBuckets(games);
     const bucketData = Object.entries(durationBuckets);
     
     safeCreateChart('mapGameDurationChart', {
@@ -4092,51 +3939,7 @@ function createFactionMapPerformanceChart(games, faction) {
 
 // Create faction game duration chart
 function createFactionGameDurationChart(games, faction) {
-    const durationBuckets = {
-        '≤10 min': 0,
-        '10-30 min': 0,
-        '30-60 min': 0,
-        '>60 min': 0
-    };
-    
-    games.forEach(game => {
-        if (!game.time || game.time.trim() === '') return;
-        
-        try {
-            const timeParts = game.time.split(':');
-            let totalMinutes = 0;
-            
-            if (timeParts.length === 2) {
-                // Format: mm:ss (minutes:seconds)
-                const minutes = parseInt(timeParts[0]) || 0;
-                const seconds = parseInt(timeParts[1]) || 0;
-                totalMinutes = minutes + (seconds / 60);
-            } else if (timeParts.length === 3) {
-                // Format: h:mm:ss (hours:minutes:seconds)
-                const hours = parseInt(timeParts[0]) || 0;
-                const minutes = parseInt(timeParts[1]) || 0;
-                const seconds = parseInt(timeParts[2]) || 0;
-                totalMinutes = (hours * 60) + minutes + (seconds / 60);
-            } else {
-                console.warn('Unexpected time format:', game.time);
-                return;
-            }
-            
-            // Categorize into buckets
-            if (totalMinutes <= 10) {
-                durationBuckets['≤10 min']++;
-            } else if (totalMinutes <= 30) {
-                durationBuckets['10-30 min']++;
-            } else if (totalMinutes <= 60) {
-                durationBuckets['30-60 min']++;
-            } else {
-                durationBuckets['>60 min']++;
-            }
-        } catch (e) {
-            console.warn('Error parsing game time:', game.time, e);
-        }
-    });
-    
+    const durationBuckets = calculateDurationBuckets(games);
     const bucketData = Object.entries(durationBuckets);
     
     safeCreateChart('factionGameDurationChart', {
@@ -4200,22 +4003,14 @@ function createFactionGameDurationChart(games, faction) {
 }
 
 function createModalFactionDistributionChart(games, canvas) {
-    const factionStats = {};
-    
-    // Count each faction selection (both faction1 and faction2 from each game)
-    games.forEach(game => {
-        [game.faction1, game.faction2].forEach(faction => {
-            if (faction) {
-                factionStats[faction] = (factionStats[faction] || 0) + 1;
-            }
-        });
-    });
+    const factionStats = calculateFactionStats(games, false);
     
     // Sort factions by count and get totals
     const sortedFactions = Object.entries(factionStats)
+        .map(([faction, stats]) => [faction, stats.games])
         .sort(([,a], [,b]) => b - a);
     
-    const totalSelections = Object.values(factionStats).reduce((sum, count) => sum + count, 0);
+    const totalSelections = Object.values(factionStats).reduce((sum, stats) => sum + stats.games, 0);
     
     // Define faction colors to match gaming theme
     const factionColors = {
@@ -4689,10 +4484,7 @@ function createModalCommanderWinRateChart(games, canvas, rankingMethod, minGameR
         switch (rankingMethod) {
             case 'wilson':
                 // Wilson Score Interval
-                const n = stats.games;
-                const p = winRate;
-                const z = 1.96; // 95% confidence
-                score = (p + z*z/(2*n) - z * Math.sqrt((p*(1-p)+z*z/(4*n))/n)) / (1+z*z/n);
+                score = calculateWilsonScore(stats.wins, stats.games);
                 break;
             case 'winRate':
                 score = winRate;
@@ -4913,9 +4705,6 @@ function createModalMapPopularityChart(games, canvas) {
     });
 }
 
-$(document).ready(function() {
-    loadGameData();
-});
 
 // Debug function to verify time parsing - run this in browser console
 window.debugGameDurations = function() {
