@@ -1955,47 +1955,60 @@ function createFactionPerformanceChart(games) {
 
 // Create game duration chart
 function createGameDurationChart(games) {
-    const durationBuckets = {};
+    const durationBuckets = {
+        '≤10 min': 0,
+        '10-30 min': 0,
+        '30-60 min': 0,
+        '>60 min': 0
+    };
     
     games.forEach(game => {
         if (!game.time || game.time.trim() === '') return;
         
         try {
             const timeParts = game.time.split(':');
-            if (timeParts.length >= 2) {
+            let totalMinutes = 0;
+            
+            if (timeParts.length === 2) {
+                // Format: mm:ss (minutes:seconds)
+                const minutes = parseInt(timeParts[0]) || 0;
+                const seconds = parseInt(timeParts[1]) || 0;
+                totalMinutes = minutes + (seconds / 60);
+            } else if (timeParts.length === 3) {
+                // Format: h:mm:ss (hours:minutes:seconds)
                 const hours = parseInt(timeParts[0]) || 0;
                 const minutes = parseInt(timeParts[1]) || 0;
-                const totalMinutes = hours * 60 + minutes;
-                
-                // Create buckets in 10-minute intervals
-                const bucket = Math.floor(totalMinutes / 10) * 10;
-                const bucketLabel = `${Math.floor(bucket / 60)}:${(bucket % 60).toString().padStart(2, '0')} - ${Math.floor((bucket + 9) / 60)}:${((bucket + 9) % 60).toString().padStart(2, '0')}`;
-                
-                durationBuckets[bucketLabel] = (durationBuckets[bucketLabel] || 0) + 1;
+                const seconds = parseInt(timeParts[2]) || 0;
+                totalMinutes = (hours * 60) + minutes + (seconds / 60);
+            } else {
+                console.warn('Unexpected time format:', game.time);
+                return;
+            }
+            
+            // Categorize into buckets
+            if (totalMinutes <= 10) {
+                durationBuckets['≤10 min']++;
+            } else if (totalMinutes <= 30) {
+                durationBuckets['10-30 min']++;
+            } else if (totalMinutes <= 60) {
+                durationBuckets['30-60 min']++;
+            } else {
+                durationBuckets['>60 min']++;
             }
         } catch (e) {
             console.warn('Error parsing game time:', game.time, e);
         }
     });
     
-    const sortedBuckets = Object.entries(durationBuckets)
-        .sort(([a], [b]) => {
-            const getMinutes = (label) => {
-                const start = label.split(' - ')[0];
-                const [hours, mins] = start.split(':').map(Number);
-                return hours * 60 + mins;
-            };
-            return getMinutes(a) - getMinutes(b);
-        })
-        .slice(0, 10);
+    const bucketData = Object.entries(durationBuckets);
     
     safeCreateChart('gameDurationChart', {
         type: 'bar',
         data: {
-            labels: sortedBuckets.map(([label]) => label),
+            labels: bucketData.map(([label]) => label),
             datasets: [{
                 label: 'Number of Games',
-                data: sortedBuckets.map(([,count]) => count),
+                data: bucketData.map(([,count]) => count),
                 backgroundColor: 'rgba(108, 117, 125, 0.8)',
                 borderColor: 'rgba(108, 117, 125, 1)',
                 borderWidth: 1
@@ -2008,13 +2021,22 @@ function createGameDurationChart(games) {
             plugins: {
                 legend: {
                     display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const count = context.parsed.y;
+                            const total = bucketData.reduce((sum, [,bucketCount]) => sum + bucketCount, 0);
+                            const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
+                            return `Games: ${count} (${percentage}%)`;
+                        }
+                    }
                 }
             },
             scales: {
                 x: {
                     ticks: { 
-                        color: 'white',
-                        maxRotation: 45
+                        color: 'white'
                     },
                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                 },
@@ -2574,56 +2596,59 @@ function createModalFactionPerformanceChart(games, canvas) {
             labels: factionPerformance.map(f => f.faction),
             datasets: [
                 {
-                    label: 'Wins',
-                    data: factionPerformance.map(f => f.wins),
-                    backgroundColor: 'rgba(40, 167, 69, 0.8)', // Green for wins
-                    borderColor: 'rgba(40, 167, 69, 1)',
-                    borderWidth: 1
+                    label: 'Win Rate (%)',
+                    data: factionPerformance.map(f => f.winRate),
+                    backgroundColor: 'rgba(220, 53, 69, 0.8)',
+                    borderColor: 'rgba(220, 53, 69, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y'
                 },
                 {
-                    label: 'Losses', 
-                    data: factionPerformance.map(f => f.losses),
-                    backgroundColor: 'rgba(220, 53, 69, 0.8)', // Red for losses
-                    borderColor: 'rgba(220, 53, 69, 1)',
-                    borderWidth: 1
+                    label: 'Total Games',
+                    data: factionPerformance.map(f => f.games),
+                    backgroundColor: 'rgba(108, 117, 125, 0.8)',
+                    borderColor: 'rgba(108, 117, 125, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y1'
                 }
             ]
         },
         options: {
-            responsive: true,
+            responsive: false,
             maintainAspectRatio: false,
-            // Make bars closer together
-            categoryPercentage: 0.8, // Controls space between different factions
-            barPercentage: 0.9,      // Controls space between wins/losses bars within each faction
+            resizeDelay: 0,
+            animation: false,
             interaction: {
                 intersect: false
             },
             plugins: {
                 legend: {
-                    display: true, // Show legend to distinguish wins vs losses
-                    labels: {
+                    display: false,
+                    labels: { 
                         color: 'white',
                         font: { size: 16 }
                     }
                 },
                 tooltip: {
                     callbacks: {
+                        title: function(context) {
+                            return context[0].dataset.label;
+                        },
                         label: function(context) {
-                            const performance = factionPerformance[context.dataIndex];
-                            if (context.dataset.label === 'Wins') {
-                                return `Wins: ${performance.wins} (${performance.winRate}% win rate)`;
-                            } else {
-                                return `Losses: ${performance.losses} (${performance.games} total games)`;
-                            }
+                            const count = context.parsed.x;
+                            return `Selections: ${count}`;
                         }
                     }
                 }
             },
             scales: {
                 x: {
+                    type: 'category',
                     ticks: { 
                         color: 'white',
-                        font: { size: 12 }
+                        font: { size: 13 },
+                        maxTicksLimit: false,
+                        autoSkip: false
                     },
                     grid: { 
                         color: 'rgba(255, 255, 255, 0.1)',
@@ -2633,10 +2658,11 @@ function createModalFactionPerformanceChart(games, canvas) {
                 y: {
                     type: 'linear',
                     display: true,
+                    position: 'left',
                     beginAtZero: true,
                     ticks: { 
                         color: 'white',
-                        font: { size: 12 }
+                        font: { size: 13 }
                     },
                     grid: { 
                         color: 'rgba(255, 255, 255, 0.1)',
@@ -2644,18 +2670,37 @@ function createModalFactionPerformanceChart(games, canvas) {
                     },
                     title: {
                         display: true,
-                        text: 'Games Won/Lost',
+                        text: 'Win Rate (%)',
                         color: 'white',
-                        font: { size: 14 }
+                        font: { size: 16 }
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    beginAtZero: true,
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 13 }
+                    },
+                    grid: { 
+                        drawOnChartArea: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Total Games',
+                        color: 'white',
+                        font: { size: 16 }
                     }
                 }
             },
             layout: {
                 padding: {
-                    top: 20,
-                    bottom: 20,
-                    left: 20,
-                    right: 20
+                    top: 30,
+                    bottom: 30,
+                    left: 80,
+                    right: 80
                 }
             },
             elements: {
@@ -2668,38 +2713,52 @@ function createModalFactionPerformanceChart(games, canvas) {
 }
 
 function createModalGameDurationChart(games, canvas) {
-    const durationBuckets = {};
-    
-    const getMinutes = (label) => {
-        const match = label.match(/(\d+):(\d+):(\d+)/);
-        if (match) {
-            const hours = parseInt(match[1]);
-            const minutes = parseInt(match[2]);
-            return hours * 60 + minutes;
-        }
-        return 0;
+    const durationBuckets = {
+        '≤10 min': 0,
+        '10-30 min': 0,
+        '30-60 min': 0,
+        '>60 min': 0
     };
     
     games.forEach(game => {
-        if (!game.duration) return; // Skip games without duration data
+        if (!game.time || game.time.trim() === '') return;
         
-        const minutes = getMinutes(game.duration);
-        let bucket;
-        
-        if (minutes < 5) bucket = '0-5 min';
-        else if (minutes < 10) bucket = '5-10 min';
-        else if (minutes < 15) bucket = '10-15 min';
-        else if (minutes < 20) bucket = '15-20 min';
-        else if (minutes < 30) bucket = '20-30 min';
-        else if (minutes < 45) bucket = '30-45 min';
-        else if (minutes < 60) bucket = '45-60 min';
-        else bucket = '60+ min';
-        
-        durationBuckets[bucket] = (durationBuckets[bucket] || 0) + 1;
+        try {
+            const timeParts = game.time.split(':');
+            let totalMinutes = 0;
+            
+            if (timeParts.length === 2) {
+                // Format: mm:ss (minutes:seconds)
+                const minutes = parseInt(timeParts[0]) || 0;
+                const seconds = parseInt(timeParts[1]) || 0;
+                totalMinutes = minutes + (seconds / 60);
+            } else if (timeParts.length === 3) {
+                // Format: h:mm:ss (hours:minutes:seconds)
+                const hours = parseInt(timeParts[0]) || 0;
+                const minutes = parseInt(timeParts[1]) || 0;
+                const seconds = parseInt(timeParts[2]) || 0;
+                totalMinutes = (hours * 60) + minutes + (seconds / 60);
+            } else {
+                console.warn('Unexpected time format:', game.time);
+                return;
+            }
+            
+            // Categorize into buckets
+            if (totalMinutes <= 10) {
+                durationBuckets['≤10 min']++;
+            } else if (totalMinutes <= 30) {
+                durationBuckets['10-30 min']++;
+            } else if (totalMinutes <= 60) {
+                durationBuckets['30-60 min']++;
+            } else {
+                durationBuckets['>60 min']++;
+            }
+        } catch (e) {
+            console.warn('Error parsing game time:', game.time, e);
+        }
     });
     
-    const bucketOrder = ['0-5 min', '5-10 min', '10-15 min', '15-20 min', '20-30 min', '30-45 min', '45-60 min', '60+ min'];
-    const sortedBuckets = bucketOrder.map(bucket => [bucket, durationBuckets[bucket] || 0]);
+    const bucketData = Object.entries(durationBuckets);
     
     // Make the chart responsive to the container
     const container = canvas.parentElement;
@@ -2718,10 +2777,10 @@ function createModalGameDurationChart(games, canvas) {
     new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: {
-            labels: sortedBuckets.map(([label]) => label),
+            labels: bucketData.map(([label]) => label),
             datasets: [{
                 label: 'Number of Games',
-                data: sortedBuckets.map(([,count]) => count),
+                data: bucketData.map(([,count]) => count),
                 backgroundColor: 'rgba(108, 117, 125, 0.8)',
                 borderColor: 'rgba(108, 117, 125, 1)',
                 borderWidth: 1
@@ -2736,6 +2795,16 @@ function createModalGameDurationChart(games, canvas) {
             plugins: {
                 legend: {
                     display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const count = context.parsed.y;
+                            const total = bucketData.reduce((sum, [,bucketCount]) => sum + bucketCount, 0);
+                            const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
+                            return `Games: ${count} (${percentage}%)`;
+                        }
+                    }
                 }
             },
             scales: {
@@ -2743,10 +2812,7 @@ function createModalGameDurationChart(games, canvas) {
                     type: 'category',
                     ticks: { 
                         color: 'white',
-                        maxRotation: 45,
-                        font: { size: 12 },
-                        maxTicksLimit: false,
-                        autoSkip: false
+                        font: { size: 12 }
                     },
                     grid: { 
                         color: 'rgba(255, 255, 255, 0.1)',
@@ -3247,46 +3313,60 @@ function createPlayerFactionWinRateChart(games, player) {
 
 // Create player game duration chart
 function createPlayerGameDurationChart(games, player) {
-    const durationBuckets = {};
+    const durationBuckets = {
+        '≤10 min': 0,
+        '10-30 min': 0,
+        '30-60 min': 0,
+        '>60 min': 0
+    };
     
     games.forEach(game => {
         if (!game.time || game.time.trim() === '') return;
         
         try {
             const timeParts = game.time.split(':');
-            if (timeParts.length >= 2) {
+            let totalMinutes = 0;
+            
+            if (timeParts.length === 2) {
+                // Format: mm:ss (minutes:seconds)
+                const minutes = parseInt(timeParts[0]) || 0;
+                const seconds = parseInt(timeParts[1]) || 0;
+                totalMinutes = minutes + (seconds / 60);
+            } else if (timeParts.length === 3) {
+                // Format: h:mm:ss (hours:minutes:seconds)
                 const hours = parseInt(timeParts[0]) || 0;
                 const minutes = parseInt(timeParts[1]) || 0;
-                const totalMinutes = hours * 60 + minutes;
-                
-                // Create buckets in 10-minute intervals
-                const bucket = Math.floor(totalMinutes / 10) * 10;
-                const bucketLabel = `${Math.floor(bucket / 60)}:${(bucket % 60).toString().padStart(2, '0')} - ${Math.floor((bucket + 9) / 60)}:${((bucket + 9) % 60).toString().padStart(2, '0')}`;
-                
-                durationBuckets[bucketLabel] = (durationBuckets[bucketLabel] || 0) + 1;
+                const seconds = parseInt(timeParts[2]) || 0;
+                totalMinutes = (hours * 60) + minutes + (seconds / 60);
+            } else {
+                console.warn('Unexpected time format:', game.time);
+                return;
+            }
+            
+            // Categorize into buckets
+            if (totalMinutes <= 10) {
+                durationBuckets['≤10 min']++;
+            } else if (totalMinutes <= 30) {
+                durationBuckets['10-30 min']++;
+            } else if (totalMinutes <= 60) {
+                durationBuckets['30-60 min']++;
+            } else {
+                durationBuckets['>60 min']++;
             }
         } catch (e) {
             console.warn('Error parsing game time:', game.time, e);
         }
     });
     
-    const sortedBuckets = Object.entries(durationBuckets)
-        .sort(([a], [b]) => {
-            const getMinutes = (label) => {
-                const start = label.split(' - ')[0];
-                const [hours, mins] = start.split(':').map(Number);
-                return hours * 60 + mins;
-            };
-            return getMinutes(a) - getMinutes(b);
-        });
+    const bucketData = Object.entries(durationBuckets);
     
     safeCreateChart('playerGameDurationChart', {
         type: 'bar',
         data: {
-            labels: sortedBuckets.map(([label]) => label),
+            labels: bucketData.map(([label]) => label),
             datasets: [{
                 label: 'Number of Games',
-                data: sortedBuckets.map(([,count]) => count),
+                data: bucketData.map(([,count]) => count),
                 backgroundColor: 'rgba(255, 193, 7, 0.8)',
                 borderColor: 'rgba(255, 193, 7, 1)',
                 borderWidth: 1
@@ -3299,13 +3379,22 @@ function createPlayerGameDurationChart(games, player) {
             plugins: {
                 legend: {
                     display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const count = context.parsed.y;
+                            const total = bucketData.reduce((sum, [,bucketCount]) => sum + bucketCount, 0);
+                            const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
+                            return `Games: ${count} (${percentage}%)`;
+                        }
+                    }
                 }
             },
             scales: {
                 x: {
                     ticks: { 
-                        color: 'white',
-                        maxRotation: 45
+                        color: 'white'
                     },
                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                 },
@@ -3786,35 +3875,60 @@ function createMapFactionPerformanceChart(games, map) {
 
 // Create map game duration chart
 function createMapGameDurationChart(games, map) {
-    const durationStats = {};
+    const durationBuckets = {
+        '≤10 min': 0,
+        '10-30 min': 0,
+        '30-60 min': 0,
+        '>60 min': 0
+    };
     
     games.forEach(game => {
-        if (game.time) {
-            const duration = parseInt(game.time);
-            if (!isNaN(duration)) {
-                const key = Math.floor(duration / 5) * 5;
-                if (!durationStats[key]) {
-                    durationStats[key] = 0;
-                }
-                durationStats[key]++;
+        if (!game.time || game.time.trim() === '') return;
+        
+        try {
+            const timeParts = game.time.split(':');
+            let totalMinutes = 0;
+            
+            if (timeParts.length === 2) {
+                // Format: mm:ss (minutes:seconds)
+                const minutes = parseInt(timeParts[0]) || 0;
+                const seconds = parseInt(timeParts[1]) || 0;
+                totalMinutes = minutes + (seconds / 60);
+            } else if (timeParts.length === 3) {
+                // Format: h:mm:ss (hours:minutes:seconds)
+                const hours = parseInt(timeParts[0]) || 0;
+                const minutes = parseInt(timeParts[1]) || 0;
+                const seconds = parseInt(timeParts[2]) || 0;
+                totalMinutes = (hours * 60) + minutes + (seconds / 60);
+            } else {
+                console.warn('Unexpected time format:', game.time);
+                return;
             }
+            
+            // Categorize into buckets
+            if (totalMinutes <= 10) {
+                durationBuckets['≤10 min']++;
+            } else if (totalMinutes <= 30) {
+                durationBuckets['10-30 min']++;
+            } else if (totalMinutes <= 60) {
+                durationBuckets['30-60 min']++;
+            } else {
+                durationBuckets['>60 min']++;
+            }
+        } catch (e) {
+            console.warn('Error parsing game time:', game.time, e);
         }
     });
     
-    const sortedDurations = Object.entries(durationStats)
-        .map(([duration, count]) => ({
-            duration: parseInt(duration),
-            count
-        }))
-        .sort((a, b) => a.duration - b.duration);
+    const bucketData = Object.entries(durationBuckets);
     
     safeCreateChart('mapGameDurationChart', {
         type: 'bar',
         data: {
-            labels: sortedDurations.map(d => `${d.duration}-${d.duration + 4} min`),
+            labels: bucketData.map(([label]) => label),
             datasets: [{
                 label: 'Number of Games',
-                data: sortedDurations.map(d => d.count),
+                data: bucketData.map(([,count]) => count),
                 backgroundColor: 'rgba(13, 202, 240, 0.8)',
                 borderColor: 'rgba(13, 202, 240, 1)',
                 borderWidth: 1
@@ -3824,6 +3938,21 @@ function createMapGameDurationChart(games, map) {
             responsive: true,
             maintainAspectRatio: false,
             maxBarThickness: 25,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const count = context.parsed.y;
+                            const total = bucketData.reduce((sum, [,bucketCount]) => sum + bucketCount, 0);
+                            const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
+                            return `Games: ${count} (${percentage}%)`;
+                        }
+                    }
+                }
+            },
             scales: {
                 y: {
                     beginAtZero: true,
@@ -3847,11 +3976,6 @@ function createMapGameDurationChart(games, map) {
                     grid: {
                         color: 'rgba(255, 255, 255, 0.1)'
                     }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
                 }
             }
         }
@@ -3968,35 +4092,60 @@ function createFactionMapPerformanceChart(games, faction) {
 
 // Create faction game duration chart
 function createFactionGameDurationChart(games, faction) {
-    const durationStats = {};
+    const durationBuckets = {
+        '≤10 min': 0,
+        '10-30 min': 0,
+        '30-60 min': 0,
+        '>60 min': 0
+    };
     
     games.forEach(game => {
-        if (game.time) {
-            const duration = parseInt(game.time);
-            if (!isNaN(duration)) {
-                const key = Math.floor(duration / 5) * 5;
-                if (!durationStats[key]) {
-                    durationStats[key] = 0;
-                }
-                durationStats[key]++;
+        if (!game.time || game.time.trim() === '') return;
+        
+        try {
+            const timeParts = game.time.split(':');
+            let totalMinutes = 0;
+            
+            if (timeParts.length === 2) {
+                // Format: mm:ss (minutes:seconds)
+                const minutes = parseInt(timeParts[0]) || 0;
+                const seconds = parseInt(timeParts[1]) || 0;
+                totalMinutes = minutes + (seconds / 60);
+            } else if (timeParts.length === 3) {
+                // Format: h:mm:ss (hours:minutes:seconds)
+                const hours = parseInt(timeParts[0]) || 0;
+                const minutes = parseInt(timeParts[1]) || 0;
+                const seconds = parseInt(timeParts[2]) || 0;
+                totalMinutes = (hours * 60) + minutes + (seconds / 60);
+            } else {
+                console.warn('Unexpected time format:', game.time);
+                return;
             }
+            
+            // Categorize into buckets
+            if (totalMinutes <= 10) {
+                durationBuckets['≤10 min']++;
+            } else if (totalMinutes <= 30) {
+                durationBuckets['10-30 min']++;
+            } else if (totalMinutes <= 60) {
+                durationBuckets['30-60 min']++;
+            } else {
+                durationBuckets['>60 min']++;
+            }
+        } catch (e) {
+            console.warn('Error parsing game time:', game.time, e);
         }
     });
     
-    const sortedDurations = Object.entries(durationStats)
-        .map(([duration, count]) => ({
-            duration: parseInt(duration),
-            count
-        }))
-        .sort((a, b) => a.duration - b.duration);
+    const bucketData = Object.entries(durationBuckets);
     
     safeCreateChart('factionGameDurationChart', {
         type: 'bar',
         data: {
-            labels: sortedDurations.map(d => `${d.duration}-${d.duration + 4} min`),
+            labels: bucketData.map(([label]) => label),
             datasets: [{
                 label: 'Number of Games',
-                data: sortedDurations.map(d => d.count),
+                data: bucketData.map(([,count]) => count),
                 backgroundColor: 'rgba(13, 202, 240, 0.8)',
                 borderColor: 'rgba(13, 202, 240, 1)',
                 borderWidth: 1
@@ -4006,6 +4155,21 @@ function createFactionGameDurationChart(games, faction) {
             responsive: true,
             maintainAspectRatio: false,
             maxBarThickness: 25,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const count = context.parsed.y;
+                            const total = bucketData.reduce((sum, [,bucketCount]) => sum + bucketCount, 0);
+                            const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
+                            return `Games: ${count} (${percentage}%)`;
+                        }
+                    }
+                }
+            },
             scales: {
                 y: {
                     beginAtZero: true,
@@ -4029,11 +4193,6 @@ function createFactionGameDurationChart(games, faction) {
                     grid: {
                         color: 'rgba(255, 255, 255, 0.1)'
                     }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
                 }
             }
         }
@@ -4757,5 +4916,108 @@ function createModalMapPopularityChart(games, canvas) {
 $(document).ready(function() {
     loadGameData();
 });
+
+// Debug function to verify time parsing - run this in browser console
+window.debugGameDurations = function() {
+    if (!allGames || allGames.length === 0) {
+        console.log('No game data loaded yet. Wait for data to load first.');
+        return;
+    }
+    
+    console.log('=== GAME DURATION PARSING DEBUG ===');
+    
+    // Show sample of time data and parsing
+    const gamesWithTime = allGames.filter(game => game.time && game.time.trim() !== '').slice(0, 20);
+    
+    console.log(`Found ${allGames.filter(game => game.time && game.time.trim() !== '').length} games with time data out of ${allGames.length} total games`);
+    console.log('\nSample time parsing (first 20 games with time data):');
+    
+    gamesWithTime.forEach(game => {
+        try {
+            const timeParts = game.time.split(':');
+            let totalMinutes = 0;
+            let bucket = '';
+            
+            if (timeParts.length === 2) {
+                // Format: mm:ss (minutes:seconds)
+                const minutes = parseInt(timeParts[0]) || 0;
+                const seconds = parseInt(timeParts[1]) || 0;
+                totalMinutes = minutes + (seconds / 60);
+            } else if (timeParts.length === 3) {
+                // Format: h:mm:ss (hours:minutes:seconds)
+                const hours = parseInt(timeParts[0]) || 0;
+                const minutes = parseInt(timeParts[1]) || 0;
+                const seconds = parseInt(timeParts[2]) || 0;
+                totalMinutes = (hours * 60) + minutes + (seconds / 60);
+            }
+            
+            // Determine bucket
+            if (totalMinutes <= 10) {
+                bucket = '≤10 min';
+            } else if (totalMinutes <= 30) {
+                bucket = '10-30 min';
+            } else if (totalMinutes <= 60) {
+                bucket = '30-60 min';
+            } else {
+                bucket = '>60 min';
+            }
+            
+            console.log(`"${game.time}" → ${totalMinutes.toFixed(1)} minutes → ${bucket} (${game.map} - ${game.commander1} vs ${game.commander2})`);
+        } catch (e) {
+            console.error(`Error parsing "${game.time}":`, e);
+        }
+    });
+    
+    // Show overall distribution
+    const buckets = {
+        '≤10 min': 0,
+        '10-30 min': 0,
+        '30-60 min': 0,
+        '>60 min': 0
+    };
+    
+    allGames.forEach(game => {
+        if (!game.time || game.time.trim() === '') return;
+        
+        try {
+            const timeParts = game.time.split(':');
+            let totalMinutes = 0;
+            
+            if (timeParts.length === 2) {
+                const minutes = parseInt(timeParts[0]) || 0;
+                const seconds = parseInt(timeParts[1]) || 0;
+                totalMinutes = minutes + (seconds / 60);
+            } else if (timeParts.length === 3) {
+                const hours = parseInt(timeParts[0]) || 0;
+                const minutes = parseInt(timeParts[1]) || 0;
+                const seconds = parseInt(timeParts[2]) || 0;
+                totalMinutes = (hours * 60) + minutes + (seconds / 60);
+            }
+            
+            if (totalMinutes <= 10) {
+                buckets['≤10 min']++;
+            } else if (totalMinutes <= 30) {
+                buckets['10-30 min']++;
+            } else if (totalMinutes <= 60) {
+                buckets['30-60 min']++;
+            } else {
+                buckets['>60 min']++;
+            }
+        } catch (e) {
+            // Ignore errors for summary
+        }
+    });
+    
+    console.log('\n=== OVERALL DISTRIBUTION ===');
+    const total = Object.values(buckets).reduce((sum, count) => sum + count, 0);
+    Object.entries(buckets).forEach(([bucket, count]) => {
+        const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
+        console.log(`${bucket}: ${count} games (${percentage}%)`);
+    });
+    
+    console.log(`\nTotal games with time data: ${total}`);
+    console.log('=== END DEBUG ===');
+};
+
 
 
