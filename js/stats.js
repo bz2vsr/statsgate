@@ -3022,6 +3022,81 @@ function alignCommanderChartHeights() {
     }, 200);
 }
 
+/**
+ * HEIGHT ALIGNMENT SYSTEM
+ * 
+ * This system ensures that cards in the same row have matching heights for better visual consistency.
+ * 
+ * Functions:
+ * - alignCommanderChartHeights(): Specific to the two commander charts in general overview
+ * - alignCardHeights(): General-purpose function for all analysis modes
+ * 
+ * Usage:
+ * - Called automatically after charts are created in each analysis mode
+ * - Handles timing with chart rendering using setTimeout and requestAnimationFrame
+ * - Automatically resizes charts after height adjustment
+ * - Skips full-width cards (col-12) and single-card rows
+ * 
+ * Timing considerations:
+ * - Initial 200ms delay for chart rendering
+ * - Double requestAnimationFrame for proper DOM measurement
+ * - Additional 100ms delay before chart resize
+ */
+
+// Generalized function to align card heights within rows
+function alignCardHeights(containerSelector = '#mainAnalysis') {
+    setTimeout(() => {
+        const container = document.querySelector(containerSelector);
+        if (!container) return;
+        
+        // Find all rows within the container
+        const rows = container.querySelectorAll('.row');
+        
+        rows.forEach(row => {
+            // Find all cards within this row that are in columns (col-lg-6, col-md-6, etc.)
+            const cardColumns = row.querySelectorAll('[class*="col-"]:not(.col-12)');
+            
+            if (cardColumns.length <= 1) return; // Skip rows with only one card or full-width cards
+            
+            // Get all cards within these columns
+            const cards = Array.from(cardColumns).map(col => col.querySelector('.card')).filter(Boolean);
+            
+            if (cards.length <= 1) return; // Skip if there's only one card or no cards
+            
+            // Reset heights to allow natural sizing
+            cards.forEach(card => {
+                card.style.height = '';
+            });
+            
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    // Get all card heights
+                    const cardHeights = cards.map(card => card.offsetHeight);
+                    const maxHeight = Math.max(...cardHeights);
+                    
+                    // Set all cards to the maximum height
+                    cards.forEach(card => {
+                        card.style.height = maxHeight + 'px';
+                    });
+                    
+                    // Resize any charts within these cards after height adjustment
+                    setTimeout(() => {
+                        cards.forEach(card => {
+                            const canvas = card.querySelector('canvas');
+                            if (canvas && canvas.id) {
+                                const chart = Chart.getChart(canvas.id);
+                                if (chart) {
+                                    chart.resize();
+                                }
+                            }
+                        });
+                    }, 100);
+                });
+            });
+        });
+    }, 200);
+}
+
 // Wait for DOM to be ready, then load data
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof Chart === 'undefined') {
@@ -3365,6 +3440,9 @@ function createPlayerContent(playerGames, selectedPlayer) {
     createPlayerMapChart(playerGames, selectedPlayer);
     createPlayerHeadToHeadChart(playerGames, selectedPlayer);
     createPlayerTrendChart(playerGames, selectedPlayer);
+    
+    // Align card heights after all charts are created and rendered
+    alignCardHeights();
     
     // Add event listeners for maximize buttons
     document.querySelectorAll('.maximize-chart').forEach(button => {
@@ -3918,6 +3996,9 @@ function createMapContent(mapGames, selectedMap) {
     // Create all map-specific charts
     createMapFactionChart(mapGames, selectedMap);
     
+    // Align card heights after charts are created and rendered
+    alignCardHeights();
+    
     // Add event listeners for maximize buttons
     document.querySelectorAll('.maximize-chart').forEach(button => {
         button.addEventListener('click', (e) => {
@@ -4048,6 +4129,9 @@ function createFactionContent(factionGames, selectedFaction) {
     
     // Create faction chart
     createFactionVsFactionChart(factionGames, selectedFaction);
+    
+    // Align card heights after charts are created and rendered
+    alignCardHeights();
     
     // Add event listeners for maximize buttons
     document.querySelectorAll('.maximize-chart').forEach(button => {
