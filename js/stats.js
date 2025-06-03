@@ -3053,5 +3053,217 @@ document.addEventListener('DOMContentLoaded', function() {
     loadGameData();
 });
 
+function createModalCommanderWinRateChart(games, canvas, rankingMethod, minGameRequirement, teamSize) {
+    const commanderStats = {};
+    
+    // Filter games by team size first (unless "ignore" is selected)
+    let filteredGames = games;
+    if (teamSize !== 'ignore') {
+        const targetTeamSize = parseInt(teamSize) + 1; // thugs + commander = team size
+        filteredGames = games.filter(game => {
+            const commander1TeamSize = (game.teamOne ? game.teamOne.length : 0) + 1;
+            const commander2TeamSize = (game.teamTwo ? game.teamTwo.length : 0) + 1;
+            return commander1TeamSize == targetTeamSize || commander2TeamSize == targetTeamSize;
+        });
+    }
+    
+    // Calculate comprehensive stats for each commander
+    filteredGames.forEach(game => {
+        [game.commander1, game.commander2].forEach(commander => {
+            if (teamSize === 'ignore') {
+                // No team size filtering, include all games for this commander
+                if (!commanderStats[commander]) {
+                    commanderStats[commander] = { games: 0, wins: 0, faction: {} };
+                }
+                commanderStats[commander].games++;
+                
+                if (game.winner === commander) {
+                    commanderStats[commander].wins++;
+                }
+                
+                // Track faction usage
+                const faction = commander === game.commander1 ? game.faction1 : game.faction2;
+                commanderStats[commander].faction[faction] = (commanderStats[commander].faction[faction] || 0) + 1;
+            } else {
+                // Team size filtering: only include if this commander had the specified team size
+                const isCommander1 = commander === game.commander1;
+                const commanderTeamSize = isCommander1 ? 
+                    (game.teamOne ? game.teamOne.length : 0) + 1 : 
+                    (game.teamTwo ? game.teamTwo.length : 0) + 1;
+                
+                const targetTeamSize = parseInt(teamSize) + 1;
+                
+                if (commanderTeamSize == targetTeamSize) {
+                    if (!commanderStats[commander]) {
+                        commanderStats[commander] = { games: 0, wins: 0, faction: {} };
+                    }
+                    commanderStats[commander].games++;
+                    
+                    if (game.winner === commander) {
+                        commanderStats[commander].wins++;
+                    }
+                    
+                    // Track faction usage
+                    const faction = isCommander1 ? game.faction1 : game.faction2;
+                    commanderStats[commander].faction[faction] = (commanderStats[commander].faction[faction] || 0) + 1;
+                }
+            }
+        });
+    });
+    
+    // Apply minimum games filter
+    let minGames;
+    if (minGameRequirement.includes('%')) {
+        const percentage = parseFloat(minGameRequirement.replace('%', ''));
+        minGames = Math.ceil(filteredGames.length * (percentage / 100));
+    } else {
+        minGames = parseInt(minGameRequirement);
+    }
+    
+    const qualifiedCommanders = Object.entries(commanderStats)
+        .filter(([, stats]) => stats.games >= minGames);
+    
+    // Calculate scores based on method
+    const scoredCommanders = qualifiedCommanders.map(([name, stats]) => {
+        const winRate = stats.wins / stats.games;
+        let score = winRate;
+        
+        switch (rankingMethod) {
+            case 'wilson':
+                // Wilson Score Interval
+                score = calculateWilsonScore(stats.wins, stats.games);
+                break;
+            case 'winRate':
+                score = winRate;
+                break;
+            case 'volumeWeighted':
+                score = winRate * Math.log(stats.games + 1);
+                break;
+            case 'bayesian':
+                // Bayesian average
+                const globalWinRate = filteredGames.filter(g => g.winner).length / (filteredGames.length * 2);
+                const confidence = 30;
+                score = (confidence * globalWinRate + stats.games * winRate) / (confidence + stats.games);
+                break;
+            case 'composite':
+                const wilsonScore = (winRate + 1.96*1.96/(2*stats.games) - 1.96 * Math.sqrt((winRate*(1-winRate)+1.96*1.96/(4*stats.games))/stats.games)) / (1+1.96*1.96/stats.games);
+                const volumeScore = Math.log(stats.games + 1) / Math.log(Math.max(...qualifiedCommanders.map(([,s]) => s.games)) + 1);
+                score = wilsonScore * 0.7 + volumeScore * 0.3;
+                break;
+        }
+        
+        return {
+            name,
+            score,
+            winRate: winRate * 100,
+            games: stats.games,
+            wins: stats.wins
+        };
+    });
+    
+    const sortedCommanders = scoredCommanders.sort((a, b) => b.score - a.score);
+    
+    // Calculate fixed dimensions based on data with 15px bar width
+    const BAR_WIDTH = 15;
+    const BAR_SPACING = 8;
+    const PADDING = 200;
+    const MIN_WIDTH = 800;
+    
+    const chartHeight = (sortedCommanders.length * (BAR_WIDTH + BAR_SPACING)) + PADDING;
+    const chartWidth = Math.max(MIN_WIDTH, 1000);
+    
+    // Set container and canvas to fixed dimensions for scrolling
+    const container = canvas.parentElement;
+    container.style.width = `${chartWidth}px`;
+    container.style.height = `${chartHeight}px`;
+    container.style.overflow = 'visible';
+    
+    canvas.width = chartWidth;
+    canvas.height = chartHeight;
+    canvas.style.width = `${chartWidth}px`;
+    canvas.style.height = `${chartHeight}px`;
+    canvas.style.display = 'block';
+    canvas.style.maxWidth = 'none';
+    canvas.style.maxHeight = 'none';
+    
+    new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: sortedCommanders.map(c => c.name),
+            datasets: [{
+                label: `${rankingMethod === 'wilson' ? 'Wilson Score' : 
+                        rankingMethod === 'winRate' ? 'Win Rate (%)' :
+                        rankingMethod === 'volumeWeighted' ? 'Volume-Weighted Score' :
+                        rankingMethod === 'bayesian' ? 'Bayesian Average' : 'Composite Score'}`,
+                data: sortedCommanders.map(c => rankingMethod === 'winRate' ? c.winRate : c.score),
+                backgroundColor: 'rgba(25, 135, 84, 0.8)',
+                borderColor: 'rgba(25, 135, 84, 1)',
+                borderWidth: 1,
+                barThickness: BAR_WIDTH
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: false,
+            maintainAspectRatio: false,
+            animation: false,
+            interaction: {
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const commander = sortedCommanders[context.dataIndex];
+                            return [
+                                `${context.dataset.label}: ${context.parsed.x.toFixed(3)}`,
+                                `Win Rate: ${commander.winRate.toFixed(1)}%`,
+                                `Games: ${commander.games}`,
+                                `Wins: ${commander.wins}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'category',
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 12 }
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
+                },
+                x: {
+                    type: 'linear',
+                    beginAtZero: true,
+                    ticks: { 
+                        color: 'white',
+                        font: { size: 12 }
+                    },
+                    grid: { 
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        display: true
+                    }
+                }
+            },
+            layout: {
+                padding: {
+                    top: 20,
+                    bottom: 20,
+                    left: 20,
+                    right: 20
+                }
+            }
+        }
+    });
+}
+
 
 
