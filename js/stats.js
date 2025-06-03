@@ -3265,5 +3265,880 @@ function createModalCommanderWinRateChart(games, canvas, rankingMethod, minGameR
     });
 }
 
+// Create comprehensive player content and charts
+function createPlayerContent(playerGames, selectedPlayer) {
+    const mainAnalysisElement = document.getElementById('mainAnalysis');
+    
+    // Create the UI for player analysis with multiple chart sections
+    mainAnalysisElement.innerHTML = `
+        <div class="row">
+            <!-- Player Performance by Faction -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">${selectedPlayer} - Faction Performance</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="playerFactionPerformance" data-chart-title="${selectedPlayer} - Faction Performance">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="playerFactionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Player Role Distribution -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">${selectedPlayer} - Role Distribution</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="playerRoleDistribution" data-chart-title="${selectedPlayer} - Role Distribution">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="playerRoleChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Player Map Performance -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">${selectedPlayer} - Top Map Performance</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="playerMapPerformance" data-chart-title="${selectedPlayer} - Map Performance">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="playerMapChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Player Head-to-Head Spider Chart -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-warning text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">${selectedPlayer} - Head-to-Head Performance</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="playerHeadToHead" data-chart-title="${selectedPlayer} - Head-to-Head vs Top Opponents">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="playerHeadToHeadChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Player Monthly Performance Trend -->
+            <div class="col-12 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">${selectedPlayer} - Performance Trend Over Time</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="playerTimeTrend" data-chart-title="${selectedPlayer} - Performance Over Time">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="playerTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Create all player-specific charts
+    createPlayerFactionChart(playerGames, selectedPlayer);
+    createPlayerRoleChart(playerGames, selectedPlayer);
+    createPlayerMapChart(playerGames, selectedPlayer);
+    createPlayerHeadToHeadChart(playerGames, selectedPlayer);
+    createPlayerTrendChart(playerGames, selectedPlayer);
+    
+    // Add event listeners for maximize buttons
+    document.querySelectorAll('.maximize-chart').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const chartType = e.currentTarget.dataset.chartType;
+            const chartTitle = e.currentTarget.dataset.chartTitle;
+            showModalChart(playerGames, chartType, chartTitle, selectedPlayer);
+        });
+    });
+}
+
+// ==================== PLAYER ANALYSIS CHART FUNCTIONS ====================
+
+// Create player faction performance chart
+function createPlayerFactionChart(playerGames, selectedPlayer) {
+    const factionStats = {};
+    
+    playerGames.forEach(game => {
+        let playerFaction = null;
+        let playerWon = false;
+        
+        // Determine which faction the player used and if they won
+        if (game.commander1 === selectedPlayer) {
+            playerFaction = game.faction1;
+            playerWon = game.winner === selectedPlayer;
+        } else if (game.commander2 === selectedPlayer) {
+            playerFaction = game.faction2;
+            playerWon = game.winner === selectedPlayer;
+        } else {
+            // Player was a teammate, determine their team's faction and win status
+            let playerTeam = null;
+            if (game.teamOne && game.teamOne.includes(selectedPlayer)) playerTeam = 1;
+            if (game.teamTwo && game.teamTwo.includes(selectedPlayer)) playerTeam = 2;
+            if (game.teamOneStraggler && game.teamOneStraggler.includes(selectedPlayer)) playerTeam = 1;
+            if (game.teamTwoStraggler && game.teamTwoStraggler.includes(selectedPlayer)) playerTeam = 2;
+            
+            if (playerTeam === 1) {
+                playerFaction = game.faction1;
+                playerWon = game.winner === game.commander1;
+            } else if (playerTeam === 2) {
+                playerFaction = game.faction2;
+                playerWon = game.winner === game.commander2;
+            }
+        }
+        
+        if (playerFaction) {
+            if (!factionStats[playerFaction]) {
+                factionStats[playerFaction] = { games: 0, wins: 0 };
+            }
+            factionStats[playerFaction].games++;
+            if (playerWon) {
+                factionStats[playerFaction].wins++;
+            }
+        }
+    });
+    
+    const factionData = Object.entries(factionStats)
+        .map(([faction, stats]) => ({
+            faction,
+            winRate: (stats.wins / stats.games * 100).toFixed(1),
+            games: stats.games,
+            wins: stats.wins
+        }))
+        .sort((a, b) => b.winRate - a.winRate);
+    
+    const factionColors = {
+        'I.S.D.F': 'rgba(13, 110, 253, 0.8)',
+        'Hadean': 'rgba(220, 53, 69, 0.8)',
+        'Scion': 'rgba(255, 193, 7, 0.8)'
+    };
+    
+    safeCreateChart('playerFactionChart', {
+        type: 'bar',
+        data: {
+            labels: factionData.map(f => f.faction),
+            datasets: [{
+                label: 'Win Rate (%)',
+                data: factionData.map(f => parseFloat(f.winRate)),
+                backgroundColor: factionData.map(f => factionColors[f.faction] || 'rgba(108, 117, 125, 0.8)'),
+                borderColor: factionData.map(f => factionColors[f.faction]?.replace('0.8', '1') || 'rgba(108, 117, 125, 1)'),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const faction = factionData[context.dataIndex];
+                            return [
+                                `Win Rate: ${faction.winRate}%`,
+                                `Games: ${faction.games}`,
+                                `Wins: ${faction.wins}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: 'Win Rate (%)' }
+                }
+            }
+        }
+    });
+}
+
+// Create player role distribution chart
+function createPlayerRoleChart(playerGames, selectedPlayer) {
+    let commanderGames = 0;
+    let teammateGames = 0;
+    let commanderWins = 0;
+    let teammateWins = 0;
+    
+    playerGames.forEach(game => {
+        if (game.commander1 === selectedPlayer || game.commander2 === selectedPlayer) {
+            commanderGames++;
+            if (game.winner === selectedPlayer) {
+                commanderWins++;
+            }
+        } else {
+            teammateGames++;
+            // Determine if player's team won
+            let playerTeam = null;
+            if (game.teamOne && game.teamOne.includes(selectedPlayer)) playerTeam = 1;
+            if (game.teamTwo && game.teamTwo.includes(selectedPlayer)) playerTeam = 2;
+            if (game.teamOneStraggler && game.teamOneStraggler.includes(selectedPlayer)) playerTeam = 1;
+            if (game.teamTwoStraggler && game.teamTwoStraggler.includes(selectedPlayer)) playerTeam = 2;
+            
+            if ((playerTeam === 1 && game.winner === game.commander1) ||
+                (playerTeam === 2 && game.winner === game.commander2)) {
+                teammateWins++;
+            }
+        }
+    });
+    
+    const commanderWinRate = commanderGames > 0 ? (commanderWins / commanderGames * 100).toFixed(1) : '0.0';
+    const teammateWinRate = teammateGames > 0 ? (teammateWins / teammateGames * 100).toFixed(1) : '0.0';
+    
+    safeCreateChart('playerRoleChart', {
+        type: 'doughnut',
+        data: {
+            labels: ['Commander', 'Teammate'],
+            datasets: [{
+                data: [commanderGames, teammateGames],
+                backgroundColor: ['rgba(13, 110, 253, 0.8)', 'rgba(40, 167, 69, 0.8)'],
+                borderColor: ['rgba(13, 110, 253, 1)', 'rgba(40, 167, 69, 1)'],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { padding: 20 }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const role = context.label;
+                            const games = context.parsed;
+                            const winRate = role === 'Commander' ? commanderWinRate : teammateWinRate;
+                            const wins = role === 'Commander' ? commanderWins : teammateWins;
+                            return [
+                                `${role}: ${games} games`,
+                                `Win Rate: ${winRate}%`,
+                                `Wins: ${wins}`
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Create player map performance chart
+function createPlayerMapChart(playerGames, selectedPlayer) {
+    const mapStats = {};
+    
+    playerGames.forEach(game => {
+        let playerWon = false;
+        
+        // Determine if player won
+        if (game.commander1 === selectedPlayer || game.commander2 === selectedPlayer) {
+            playerWon = game.winner === selectedPlayer;
+        } else {
+            // Player was a teammate
+            let playerTeam = null;
+            if (game.teamOne && game.teamOne.includes(selectedPlayer)) playerTeam = 1;
+            if (game.teamTwo && game.teamTwo.includes(selectedPlayer)) playerTeam = 2;
+            if (game.teamOneStraggler && game.teamOneStraggler.includes(selectedPlayer)) playerTeam = 1;
+            if (game.teamTwoStraggler && game.teamTwoStraggler.includes(selectedPlayer)) playerTeam = 2;
+            
+            if ((playerTeam === 1 && game.winner === game.commander1) ||
+                (playerTeam === 2 && game.winner === game.commander2)) {
+                playerWon = true;
+            }
+        }
+        
+        if (!mapStats[game.map]) {
+            mapStats[game.map] = { games: 0, wins: 0 };
+        }
+        mapStats[game.map].games++;
+        if (playerWon) {
+            mapStats[game.map].wins++;
+        }
+    });
+    
+    // Filter maps with at least 3 games and sort by win rate
+    const mapData = Object.entries(mapStats)
+        .filter(([, stats]) => stats.games >= 3)
+        .map(([map, stats]) => ({
+            map,
+            winRate: (stats.wins / stats.games * 100).toFixed(1),
+            games: stats.games,
+            wins: stats.wins
+        }))
+        .sort((a, b) => b.winRate - a.winRate)
+        .slice(0, 8); // Top 8 maps
+    
+    safeCreateChart('playerMapChart', {
+        type: 'bar',
+        data: {
+            labels: mapData.map(m => m.map),
+            datasets: [{
+                label: 'Win Rate (%)',
+                data: mapData.map(m => parseFloat(m.winRate)),
+                backgroundColor: 'rgba(13, 202, 240, 0.8)',
+                borderColor: 'rgba(13, 202, 240, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const map = mapData[context.dataIndex];
+                            return [
+                                `Win Rate: ${map.winRate}%`,
+                                `Games: ${map.games}`,
+                                `Wins: ${map.wins}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { 
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: 'Win Rate (%)' }
+                }
+            }
+        }
+    });
+}
+
+// Create player head-to-head spider chart (with 9 opponents)
+function createPlayerHeadToHeadChart(playerGames, selectedPlayer) {
+    const opponentStats = {};
+    
+    playerGames.forEach(game => {
+        let opponent = null;
+        let playerWon = false;
+        
+        if (game.commander1 === selectedPlayer) {
+            opponent = game.commander2;
+            playerWon = game.winner === selectedPlayer;
+        } else if (game.commander2 === selectedPlayer) {
+            opponent = game.commander1;
+            playerWon = game.winner === selectedPlayer;
+        }
+        // Only count direct commander vs commander games for head-to-head
+        
+        if (opponent) {
+            if (!opponentStats[opponent]) {
+                opponentStats[opponent] = { games: 0, wins: 0 };
+            }
+            opponentStats[opponent].games++;
+            if (playerWon) {
+                opponentStats[opponent].wins++;
+            }
+        }
+    });
+    
+    // Get top 9 opponents with at least 3 games
+    const topOpponents = Object.entries(opponentStats)
+        .filter(([, stats]) => stats.games >= 3)
+        .sort(([,a], [,b]) => b.games - a.games)
+        .slice(0, 9)
+        .map(([opponent, stats]) => ({
+            opponent,
+            winRate: (stats.wins / stats.games * 100).toFixed(1),
+            games: stats.games,
+            wins: stats.wins
+        }));
+    
+    if (topOpponents.length === 0) {
+        // No sufficient head-to-head data, show message
+        const canvas = document.getElementById('playerHeadToHeadChart');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#e8e8ff';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Not enough head-to-head data', canvas.width/2, canvas.height/2);
+        ctx.fillText('(3+ games vs same opponent)', canvas.width/2, canvas.height/2 + 25);
+        return;
+    }
+    
+    safeCreateChart('playerHeadToHeadChart', {
+        type: 'radar',
+        data: {
+            labels: topOpponents.map(o => o.opponent),
+            datasets: [{
+                label: 'Win Rate vs Opponent (%)',
+                data: topOpponents.map(o => parseFloat(o.winRate)),
+                backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                borderColor: 'rgba(255, 193, 7, 1)',
+                borderWidth: 2,
+                pointBackgroundColor: 'rgba(255, 193, 7, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(255, 193, 7, 1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const opponent = topOpponents[context.dataIndex];
+                            return [
+                                `vs ${opponent.opponent}`,
+                                `Win Rate: ${opponent.winRate}%`,
+                                `Games: ${opponent.games}`,
+                                `Wins: ${opponent.wins}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        stepSize: 20,
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                    angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                    pointLabels: { 
+                        color: '#e8e8ff',
+                        font: { size: 11 }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Create player performance trend over time chart
+function createPlayerTrendChart(playerGames, selectedPlayer) {
+    const monthlyStats = {};
+    
+    playerGames.forEach(game => {
+        const monthKey = `${game.year}-${game.month.padStart(2, '0')}`;
+        
+        let playerWon = false;
+        if (game.commander1 === selectedPlayer || game.commander2 === selectedPlayer) {
+            playerWon = game.winner === selectedPlayer;
+        } else {
+            // Player was a teammate
+            let playerTeam = null;
+            if (game.teamOne && game.teamOne.includes(selectedPlayer)) playerTeam = 1;
+            if (game.teamTwo && game.teamTwo.includes(selectedPlayer)) playerTeam = 2;
+            if (game.teamOneStraggler && game.teamOneStraggler.includes(selectedPlayer)) playerTeam = 1;
+            if (game.teamTwoStraggler && game.teamTwoStraggler.includes(selectedPlayer)) playerTeam = 2;
+            
+            if ((playerTeam === 1 && game.winner === game.commander1) ||
+                (playerTeam === 2 && game.winner === game.commander2)) {
+                playerWon = true;
+            }
+        }
+        
+        if (!monthlyStats[monthKey]) {
+            monthlyStats[monthKey] = { games: 0, wins: 0 };
+        }
+        monthlyStats[monthKey].games++;
+        if (playerWon) {
+            monthlyStats[monthKey].wins++;
+        }
+    });
+    
+    const sortedMonths = Object.entries(monthlyStats)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([month, stats]) => ({
+            month,
+            winRate: (stats.wins / stats.games * 100).toFixed(1),
+            games: stats.games,
+            wins: stats.wins
+        }));
+    
+    safeCreateChart('playerTrendChart', {
+        type: 'line',
+        data: {
+            labels: sortedMonths.map(m => m.month),
+            datasets: [
+                {
+                    label: 'Win Rate (%)',
+                    data: sortedMonths.map(m => parseFloat(m.winRate)),
+                    borderColor: 'rgba(108, 117, 125, 1)',
+                    backgroundColor: 'rgba(108, 117, 125, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Games Played',
+                    data: sortedMonths.map(m => m.games),
+                    borderColor: 'rgba(13, 202, 240, 1)',
+                    backgroundColor: 'rgba(13, 202, 240, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { padding: 20 }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const month = sortedMonths[context.dataIndex];
+                            if (context.datasetIndex === 0) {
+                                return `Win Rate: ${month.winRate}% (${month.wins}/${month.games})`;
+                            } else {
+                                return `Games: ${month.games}`;
+                            }
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: 'Win Rate (%)' }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    beginAtZero: true,
+                    title: { display: true, text: 'Games Played' },
+                    grid: { drawOnChartArea: false }
+                }
+            }
+        }
+    });
+}
 
 
+
+// ==================== MAP ANALYSIS FUNCTIONS ====================
+
+// Load map analysis with complete functionality
+function loadMapAnalysis() {
+    const games = getFilteredGames();
+    const filterSelectElement = document.getElementById('filterSelect');
+    const mainAnalysisElement = document.getElementById('mainAnalysis');
+    
+    if (!filterSelectElement || !mainAnalysisElement) {
+        return;
+    }
+    
+    const selectedMap = filterSelectElement.value;
+    updateSummaryStats(games);
+    
+    if (!selectedMap) {
+        mainAnalysisElement.innerHTML = `
+            <div class="alert alert-info">
+                <h5>Map Analysis</h5>
+                <p>Select a map from the filter dropdown to view detailed analysis.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Filter games for selected map
+    const mapGames = games.filter(game => game.map === selectedMap);
+    
+    // Create map charts and show content
+    createMapContent(mapGames, selectedMap);
+}
+
+// Create map content and charts
+function createMapContent(mapGames, selectedMap) {
+    const mainAnalysisElement = document.getElementById('mainAnalysis');
+    
+    // Create the UI for map analysis with multiple chart sections
+    mainAnalysisElement.innerHTML = `
+        <div class="row">
+            <!-- Map Faction Balance -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">${selectedMap} - Faction Balance</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="mapFactionBalance" data-chart-title="${selectedMap} - Faction Balance">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="mapFactionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Create all map-specific charts
+    createMapFactionChart(mapGames, selectedMap);
+    
+    // Add event listeners for maximize buttons
+    document.querySelectorAll('.maximize-chart').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const chartType = e.currentTarget.dataset.chartType;
+            const chartTitle = e.currentTarget.dataset.chartTitle;
+            showModalChart(mapGames, chartType, chartTitle, selectedMap);
+        });
+    });
+}
+
+// Create map faction balance chart
+function createMapFactionChart(mapGames, selectedMap) {
+    const factionStats = calculateFactionStats(mapGames, true);
+    
+    const factionData = Object.entries(factionStats)
+        .map(([faction, stats]) => ({
+            faction,
+            winRate: (stats.wins / stats.games * 100).toFixed(1),
+            games: stats.games,
+            wins: stats.wins
+        }))
+        .sort((a, b) => b.winRate - a.winRate);
+    
+    const factionColors = {
+        'I.S.D.F': 'rgba(13, 110, 253, 0.8)',
+        'Hadean': 'rgba(220, 53, 69, 0.8)',
+        'Scion': 'rgba(255, 193, 7, 0.8)'
+    };
+    
+    safeCreateChart('mapFactionChart', {
+        type: 'bar',
+        data: {
+            labels: factionData.map(f => f.faction),
+            datasets: [{
+                label: 'Win Rate (%)',
+                data: factionData.map(f => parseFloat(f.winRate)),
+                backgroundColor: factionData.map(f => factionColors[f.faction] || 'rgba(108, 117, 125, 0.8)'),
+                borderColor: factionData.map(f => factionColors[f.faction]?.replace('0.8', '1') || 'rgba(108, 117, 125, 1)'),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const faction = factionData[context.dataIndex];
+                            return [
+                                `Win Rate: ${faction.winRate}%`,
+                                `Games: ${faction.games}`,
+                                `Wins: ${faction.wins}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: 'Win Rate (%)' }
+                }
+            }
+        }
+    });
+}
+
+// ==================== FACTION ANALYSIS FUNCTIONS ====================
+
+// Load faction analysis with complete functionality
+function loadFactionAnalysis() {
+    const games = getFilteredGames();
+    const filterSelectElement = document.getElementById('filterSelect');
+    const mainAnalysisElement = document.getElementById('mainAnalysis');
+    
+    if (!filterSelectElement || !mainAnalysisElement) {
+        return;
+    }
+    
+    const selectedFaction = filterSelectElement.value;
+    updateSummaryStats(games);
+    
+    if (!selectedFaction) {
+        mainAnalysisElement.innerHTML = `
+            <div class="alert alert-info">
+                <h5>Faction Analysis</h5>
+                <p>Select a faction from the filter dropdown to view detailed analysis.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Filter games for selected faction
+    const factionGames = games.filter(game => game.faction1 === selectedFaction || game.faction2 === selectedFaction);
+    
+    // Create faction charts and show content
+    createFactionContent(factionGames, selectedFaction);
+}
+
+// Create faction content and charts
+function createFactionContent(factionGames, selectedFaction) {
+    const mainAnalysisElement = document.getElementById('mainAnalysis');
+    
+    // Create the UI for faction analysis with chart section
+    mainAnalysisElement.innerHTML = `
+        <div class="row">
+            <!-- Faction vs Other Factions -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">${selectedFaction} vs Other Factions</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="factionVsFaction" data-chart-title="${selectedFaction} Performance vs Other Factions">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="factionVsFactionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Create faction chart
+    createFactionVsFactionChart(factionGames, selectedFaction);
+    
+    // Add event listeners for maximize buttons
+    document.querySelectorAll('.maximize-chart').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const chartType = e.currentTarget.dataset.chartType;
+            const chartTitle = e.currentTarget.dataset.chartTitle;
+            showModalChart(factionGames, chartType, chartTitle, selectedFaction);
+        });
+    });
+}
+
+// Create faction vs faction performance chart
+function createFactionVsFactionChart(factionGames, selectedFaction) {
+    const matchupStats = {};
+    
+    factionGames.forEach(game => {
+        let myFaction, opponentFaction, won;
+        
+        if (game.faction1 === selectedFaction) {
+            myFaction = game.faction1;
+            opponentFaction = game.faction2;
+            won = game.winner === game.commander1;
+        } else if (game.faction2 === selectedFaction) {
+            myFaction = game.faction2;
+            opponentFaction = game.faction1;
+            won = game.winner === game.commander2;
+        } else {
+            return; // This shouldn't happen since we filtered
+        }
+        
+        if (!matchupStats[opponentFaction]) {
+            matchupStats[opponentFaction] = { games: 0, wins: 0 };
+        }
+        matchupStats[opponentFaction].games++;
+        if (won) {
+            matchupStats[opponentFaction].wins++;
+        }
+    });
+    
+    const matchupData = Object.entries(matchupStats)
+        .map(([opponent, stats]) => ({
+            opponent,
+            winRate: (stats.wins / stats.games * 100).toFixed(1),
+            games: stats.games,
+            wins: stats.wins
+        }))
+        .sort((a, b) => b.winRate - a.winRate);
+    
+    const factionColors = {
+        'I.S.D.F': 'rgba(13, 110, 253, 0.8)',
+        'Hadean': 'rgba(220, 53, 69, 0.8)',
+        'Scion': 'rgba(255, 193, 7, 0.8)'
+    };
+    
+    safeCreateChart('factionVsFactionChart', {
+        type: 'bar',
+        data: {
+            labels: matchupData.map(m => `vs ${m.opponent}`),
+            datasets: [{
+                label: 'Win Rate (%)',
+                data: matchupData.map(m => parseFloat(m.winRate)),
+                backgroundColor: matchupData.map(m => factionColors[m.opponent] || 'rgba(108, 117, 125, 0.8)'),
+                borderColor: matchupData.map(m => factionColors[m.opponent]?.replace('0.8', '1') || 'rgba(108, 117, 125, 1)'),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const matchup = matchupData[context.dataIndex];
+                            return [
+                                `Win Rate: ${matchup.winRate}%`,
+                                `Games: ${matchup.games}`,
+                                `Wins: ${matchup.wins}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: 'Win Rate (%)' }
+                }
+            }
+        }
+    });
+} 
