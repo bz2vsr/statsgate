@@ -696,6 +696,12 @@ function initializeDashboard() {
                                     <option value="">All Data</option>
                                 </select>
                             </div>
+                            <div class="col-md-3" id="secondPlayerSection" style="display: none;">
+                                <label class="form-label text-light">Compare vs Player</label>
+                                <select id="secondPlayerSelect" class="form-select bg-dark text-light border-secondary">
+                                    <option value="">No Comparison</option>
+                                </select>
+                            </div>
                             <div class="col-md-3">
                                 <label class="form-label text-light">Time Period</label>
                                 <select id="timePeriod" class="form-select bg-dark text-light border-secondary">
@@ -796,6 +802,7 @@ function initializeDashboard() {
 function setupEventListeners() {
     const analysisType = document.getElementById('analysisType');
     const filterSelect = document.getElementById('filterSelect');
+    const secondPlayerSelect = document.getElementById('secondPlayerSelect');
     const timePeriod = document.getElementById('timePeriod');
     const resetButton = document.getElementById('resetFilters');
     
@@ -807,6 +814,10 @@ function setupEventListeners() {
         filterSelect.addEventListener('change', handleFilterChange);
     }
     
+    if (secondPlayerSelect) {
+        secondPlayerSelect.addEventListener('change', handleSecondPlayerChange);
+    }
+    
     if (timePeriod) {
         timePeriod.addEventListener('change', handleTimePeriodChange);
     }
@@ -814,6 +825,35 @@ function setupEventListeners() {
     if (resetButton) {
         resetButton.addEventListener('click', resetFilters);
     }
+}
+
+// Helper functions for second player section
+function showSecondPlayerSection() {
+    const secondPlayerSection = document.getElementById('secondPlayerSection');
+    if (secondPlayerSection) {
+        secondPlayerSection.style.display = 'block';
+    }
+}
+
+function hideSecondPlayerSection() {
+    const secondPlayerSection = document.getElementById('secondPlayerSection');
+    if (secondPlayerSection) {
+        secondPlayerSection.style.display = 'none';
+    }
+}
+
+function populateSecondPlayerDropdown(players) {
+    const secondPlayerSelect = document.getElementById('secondPlayerSelect');
+    if (!secondPlayerSelect) return;
+    
+    secondPlayerSelect.innerHTML = '<option value="">No Comparison</option>';
+    players.forEach(player => {
+        secondPlayerSelect.innerHTML += `<option value="${player}">${player}</option>`;
+    });
+}
+
+function handleSecondPlayerChange() {
+    loadContent();
 }
 
 // Handle analysis type change
@@ -831,11 +871,17 @@ function handleAnalysisTypeChange() {
     // Clear and populate filter options
     filterSelect.innerHTML = '<option value="">All Data</option>';
     
-    // Show/hide filter section
+    // Show/hide filter section and second player section
     if (analysisValue === 'general') {
         filterSection.style.display = 'none';
+        hideSecondPlayerSection();
     } else {
         filterSection.style.display = 'block';
+        if (analysisValue === 'player') {
+            showSecondPlayerSection();
+        } else {
+            hideSecondPlayerSection();
+        }
     }
     
     if (analysisValue === 'player') {
@@ -853,6 +899,9 @@ function handleAnalysisTypeChange() {
         players.forEach(player => {
             filterSelect.innerHTML += `<option value="${player}">${player}</option>`;
         });
+        
+        // Populate second player dropdown
+        populateSecondPlayerDropdown(players);
     } else if (analysisValue === 'map') {
         // Get all maps
         const allMaps = [...new Set(allGames.map(game => game.map))].sort();
@@ -890,6 +939,7 @@ function handleTimePeriodChange() {
 function resetFilters() {
     const analysisTypeElement = document.getElementById('analysisType');
     const filterSelectElement = document.getElementById('filterSelect');
+    const secondPlayerSelectElement = document.getElementById('secondPlayerSelect');
     const timePeriodElement = document.getElementById('timePeriod');
     const filterSectionElement = document.getElementById('filterSection');
     
@@ -902,9 +952,16 @@ function resetFilters() {
     filterSelectElement.value = '';
     timePeriodElement.value = 'all';
     
+    if (secondPlayerSelectElement) {
+        secondPlayerSelectElement.innerHTML = '<option value="">No Comparison</option>';
+        secondPlayerSelectElement.value = '';
+    }
+    
     if (filterSectionElement) {
         filterSectionElement.style.display = 'none';
     }
+    
+    hideSecondPlayerSection();
     
     loadContent();
 }
@@ -2045,7 +2102,7 @@ function createGameDurationChart(games) {
 }
 
 // Show modal chart with proper full-scale scrolling
-function showModalChart(games, chartType, chartTitle) {
+function showModalChart(games, chartType, chartTitle, player1 = null, player2 = null) {
     const modal = new bootstrap.Modal(document.getElementById('chartModal'));
     const modalTitle = document.getElementById('chartModalLabel');
     const modalChart = document.getElementById('modalChart');
@@ -2202,6 +2259,21 @@ function showModalChart(games, chartType, chartTitle) {
             break;
         case 'gameDuration':
             createModalGameDurationChart(games, newModalChart);
+            break;
+        case 'headToHeadWinRate':
+            createModalHeadToHeadWinRateChart(games, newModalChart, player1, player2);
+            break;
+        case 'headToHeadFactions':
+            createModalHeadToHeadFactionsChart(games, newModalChart, player1, player2);
+            break;
+        case 'headToHeadFactionMatchups':
+            createModalHeadToHeadFactionMatchupsChart(games, newModalChart, player1, player2);
+            break;
+        case 'headToHeadMaps':
+            createModalHeadToHeadMapsChart(games, newModalChart, player1, player2);
+            break;
+        case 'headToHeadTimeline':
+            createModalHeadToHeadTimelineChart(games, newModalChart, player1, player2);
             break;
     }
     
@@ -2903,6 +2975,7 @@ function createModalGameDurationChart(games, canvas) {
 function loadPlayerAnalysis() {
     const games = getFilteredGames();
     const filterSelectElement = document.getElementById('filterSelect');
+    const secondPlayerSelectElement = document.getElementById('secondPlayerSelect');
     const mainAnalysisElement = document.getElementById('mainAnalysis');
     
     if (!filterSelectElement || !mainAnalysisElement) {
@@ -2910,6 +2983,7 @@ function loadPlayerAnalysis() {
     }
     
     const selectedPlayer = filterSelectElement.value;
+    const secondPlayer = secondPlayerSelectElement ? secondPlayerSelectElement.value : '';
     updateSummaryStats(games);
     
     if (!selectedPlayer) {
@@ -2922,18 +2996,29 @@ function loadPlayerAnalysis() {
         return;
     }
     
-    // Filter games for selected player
-    const playerGames = games.filter(game => {
-        if (game.commander1 === selectedPlayer || game.commander2 === selectedPlayer) return true;
-        if (game.teamOne && game.teamOne.includes(selectedPlayer)) return true;
-        if (game.teamTwo && game.teamTwo.includes(selectedPlayer)) return true;
-        if (game.teamOneStraggler && game.teamOneStraggler.includes(selectedPlayer)) return true;
-        if (game.teamTwoStraggler && game.teamTwoStraggler.includes(selectedPlayer)) return true;
-        return false;
-    });
-    
-    // Create player charts and show content
-    createPlayerContent(playerGames, selectedPlayer);
+    // Check if we're doing head-to-head analysis
+    if (secondPlayer && secondPlayer !== selectedPlayer) {
+        // Head-to-head analysis
+        const headToHeadGames = games.filter(game => {
+            // Both players must be commanders for head-to-head analysis
+            return (game.commander1 === selectedPlayer && game.commander2 === secondPlayer) ||
+                   (game.commander1 === secondPlayer && game.commander2 === selectedPlayer);
+        });
+        
+        createHeadToHeadContent(headToHeadGames, selectedPlayer, secondPlayer);
+    } else {
+        // Single player analysis
+        const playerGames = games.filter(game => {
+            if (game.commander1 === selectedPlayer || game.commander2 === selectedPlayer) return true;
+            if (game.teamOne && game.teamOne.includes(selectedPlayer)) return true;
+            if (game.teamTwo && game.teamTwo.includes(selectedPlayer)) return true;
+            if (game.teamOneStraggler && game.teamOneStraggler.includes(selectedPlayer)) return true;
+            if (game.teamTwoStraggler && game.teamTwoStraggler.includes(selectedPlayer)) return true;
+            return false;
+        });
+        
+        createPlayerContent(playerGames, selectedPlayer);
+    }
 }
 
 // Create player content and charts
@@ -3127,6 +3212,481 @@ document.addEventListener('DOMContentLoaded', function() {
     
     loadGameData();
 });
+
+// Modal chart functions for head-to-head analysis
+function createModalHeadToHeadWinRateChart(games, canvas, player1, player2) {
+    let player1Wins = 0;
+    let player2Wins = 0;
+    
+    games.forEach(game => {
+        if (game.winner === player1) player1Wins++;
+        else if (game.winner === player2) player2Wins++;
+    });
+    
+    const totalGames = games.length;
+    const player1WinRate = totalGames > 0 ? (player1Wins / totalGames * 100) : 0;
+    const player2WinRate = totalGames > 0 ? (player2Wins / totalGames * 100) : 0;
+    
+    const chartHeight = 400;
+    const chartWidth = 800;
+    
+    const container = canvas.parentElement;
+    container.style.width = `${chartWidth}px`;
+    container.style.height = `${chartHeight}px`;
+    container.style.overflow = 'visible';
+    
+    canvas.width = chartWidth;
+    canvas.height = chartHeight;
+    canvas.style.width = `${chartWidth}px`;
+    canvas.style.height = `${chartHeight}px`;
+    canvas.style.display = 'block';
+    canvas.style.maxWidth = 'none';
+    canvas.style.maxHeight = 'none';
+    
+    new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: [player1, player2],
+            datasets: [{
+                label: 'Win Rate (%)',
+                data: [player1WinRate, player2WinRate],
+                backgroundColor: ['rgba(40, 167, 69, 0.8)', 'rgba(220, 53, 69, 0.8)'],
+                borderColor: ['rgba(40, 167, 69, 1)', 'rgba(220, 53, 69, 1)'],
+                borderWidth: 1,
+                barThickness: 60
+            }]
+        },
+        options: {
+            responsive: false,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const player = context.label;
+                            const winRate = context.parsed.y.toFixed(1);
+                            const wins = player === player1 ? player1Wins : player2Wins;
+                            return [
+                                `${player}: ${winRate}%`,
+                                `Wins: ${wins}/${totalGames}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: 'Win Rate (%)' },
+                    ticks: { color: 'white', font: { size: 12 } },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                x: {
+                    ticks: { color: 'white', font: { size: 12 } },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            },
+            layout: { padding: { top: 20, bottom: 20, left: 20, right: 20 } }
+        }
+    });
+}
+
+function createModalHeadToHeadFactionsChart(games, canvas, player1, player2) {
+    const player1Factions = { 'I.S.D.F': 0, 'Hadean': 0, 'Scion': 0 };
+    const player2Factions = { 'I.S.D.F': 0, 'Hadean': 0, 'Scion': 0 };
+    
+    games.forEach(game => {
+        if (game.commander1 === player1) {
+            if (game.faction1) player1Factions[game.faction1]++;
+            if (game.faction2) player2Factions[game.faction2]++;
+        } else {
+            if (game.faction2) player1Factions[game.faction2]++;
+            if (game.faction1) player2Factions[game.faction1]++;
+        }
+    });
+    
+    const factionColors = {
+        'I.S.D.F': 'rgba(13, 110, 253, 0.8)',
+        'Hadean': 'rgba(220, 53, 69, 0.8)',
+        'Scion': 'rgba(255, 193, 7, 0.8)'
+    };
+    
+    const chartHeight = 500;
+    const chartWidth = 800;
+    
+    const container = canvas.parentElement;
+    container.style.width = `${chartWidth}px`;
+    container.style.height = `${chartHeight}px`;
+    container.style.overflow = 'visible';
+    
+    canvas.width = chartWidth;
+    canvas.height = chartHeight;
+    canvas.style.width = `${chartWidth}px`;
+    canvas.style.height = `${chartHeight}px`;
+    canvas.style.display = 'block';
+    canvas.style.maxWidth = 'none';
+    canvas.style.maxHeight = 'none';
+    
+    new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: [player1, player2],
+            datasets: Object.keys(factionColors).map(faction => ({
+                label: faction,
+                data: [player1Factions[faction], player2Factions[faction]],
+                backgroundColor: factionColors[faction],
+                borderColor: factionColors[faction].replace('0.8', '1'),
+                borderWidth: 1,
+                barThickness: 40
+            }))
+        },
+        options: {
+            responsive: false,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+                legend: { display: true, position: 'top', labels: { color: 'white', font: { size: 14 } } },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const faction = context.dataset.label;
+                            const games = context.parsed.y;
+                            const player = context.label;
+                            const totalGames = Object.values(player === player1 ? player1Factions : player2Factions).reduce((a, b) => a + b, 0);
+                            const percentage = totalGames > 0 ? ((games / totalGames) * 100).toFixed(1) : '0.0';
+                            return `${faction}: ${games} games (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { stacked: true, ticks: { color: 'white', font: { size: 12 } }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                y: { 
+                    stacked: true,
+                    beginAtZero: true,
+                    title: { display: true, text: 'Games Played', color: 'white', font: { size: 14 } },
+                    ticks: { color: 'white', font: { size: 12 } },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            },
+            layout: { padding: { top: 20, bottom: 20, left: 20, right: 20 } }
+        }
+    });
+}
+
+function createModalHeadToHeadFactionMatchupsChart(games, canvas, player1, player2) {
+    const matchupStats = {};
+    
+    games.forEach(game => {
+        let player1Faction, player2Faction, player1Won;
+        
+        if (game.commander1 === player1) {
+            player1Faction = game.faction1;
+            player2Faction = game.faction2;
+            player1Won = game.winner === player1;
+        } else {
+            player1Faction = game.faction2;
+            player2Faction = game.faction1;
+            player1Won = game.winner === player1;
+        }
+        
+        const matchupKey = `${player1Faction} vs ${player2Faction}`;
+        if (!matchupStats[matchupKey]) {
+            matchupStats[matchupKey] = { games: 0, player1Wins: 0 };
+        }
+        matchupStats[matchupKey].games++;
+        if (player1Won) {
+            matchupStats[matchupKey].player1Wins++;
+        }
+    });
+    
+    const matchupData = Object.entries(matchupStats)
+        .filter(([, stats]) => stats.games >= 1) // Show all matchups in modal
+        .map(([matchup, stats]) => ({
+            matchup,
+            player1WinRate: (stats.player1Wins / stats.games * 100).toFixed(1),
+            games: stats.games,
+            player1Wins: stats.player1Wins
+        }))
+        .sort((a, b) => b.games - a.games);
+    
+    const chartHeight = 400;
+    const chartWidth = Math.max(800, matchupData.length * 100);
+    
+    const container = canvas.parentElement;
+    container.style.width = `${chartWidth}px`;
+    container.style.height = `${chartHeight}px`;
+    container.style.overflow = 'visible';
+    
+    canvas.width = chartWidth;
+    canvas.height = chartHeight;
+    canvas.style.width = `${chartWidth}px`;
+    canvas.style.height = `${chartHeight}px`;
+    canvas.style.display = 'block';
+    canvas.style.maxWidth = 'none';
+    canvas.style.maxHeight = 'none';
+    
+    new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: matchupData.map(m => m.matchup),
+            datasets: [{
+                label: `${player1} Win Rate (%)`,
+                data: matchupData.map(m => parseFloat(m.player1WinRate)),
+                backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                borderColor: 'rgba(40, 167, 69, 1)',
+                borderWidth: 1,
+                barThickness: 30
+            }]
+        },
+        options: {
+            responsive: false,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const matchup = matchupData[context.dataIndex];
+                            return [
+                                `${player1}: ${matchup.player1WinRate}%`,
+                                `Games: ${matchup.games}`,
+                                `${player1} Wins: ${matchup.player1Wins}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: `${player1} Win Rate (%)`, color: 'white', font: { size: 14 } },
+                    ticks: { color: 'white', font: { size: 12 } },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                x: {
+                    ticks: { color: 'white', font: { size: 12 } },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            },
+            layout: { padding: { top: 20, bottom: 20, left: 20, right: 20 } }
+        }
+    });
+}
+
+function createModalHeadToHeadMapsChart(games, canvas, player1, player2) {
+    const mapStats = {};
+    
+    games.forEach(game => {
+        const player1Won = game.winner === player1;
+        
+        if (!mapStats[game.map]) {
+            mapStats[game.map] = { games: 0, player1Wins: 0 };
+        }
+        mapStats[game.map].games++;
+        if (player1Won) {
+            mapStats[game.map].player1Wins++;
+        }
+    });
+    
+    const mapData = Object.entries(mapStats)
+        .map(([map, stats]) => ({
+            map,
+            player1WinRate: (stats.player1Wins / stats.games * 100).toFixed(1),
+            games: stats.games,
+            player1Wins: stats.player1Wins
+        }))
+        .sort((a, b) => b.games - a.games);
+    
+    const BAR_WIDTH = 15;
+    const BAR_SPACING = 8;
+    const PADDING = 200;
+    const MIN_WIDTH = 800;
+    
+    const chartHeight = (mapData.length * (BAR_WIDTH + BAR_SPACING)) + PADDING;
+    const chartWidth = Math.max(MIN_WIDTH, 1000);
+    
+    const container = canvas.parentElement;
+    container.style.width = `${chartWidth}px`;
+    container.style.height = `${chartHeight}px`;
+    container.style.overflow = 'visible';
+    
+    canvas.width = chartWidth;
+    canvas.height = chartHeight;
+    canvas.style.width = `${chartWidth}px`;
+    canvas.style.height = `${chartHeight}px`;
+    canvas.style.display = 'block';
+    canvas.style.maxWidth = 'none';
+    canvas.style.maxHeight = 'none';
+    
+    new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: mapData.map(m => m.map),
+            datasets: [{
+                label: `${player1} Win Rate (%)`,
+                data: mapData.map(m => parseFloat(m.player1WinRate)),
+                backgroundColor: 'rgba(108, 117, 125, 0.8)',
+                borderColor: 'rgba(108, 117, 125, 1)',
+                borderWidth: 1,
+                barThickness: BAR_WIDTH
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: false,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const map = mapData[context.dataIndex];
+                            return [
+                                `${player1}: ${map.player1WinRate}%`,
+                                `Games: ${map.games}`,
+                                `${player1} Wins: ${map.player1Wins}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { 
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: `${player1} Win Rate (%)`, color: 'white', font: { size: 14 } },
+                    ticks: { color: 'white', font: { size: 12 } },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                y: {
+                    ticks: { color: 'white', font: { size: 12 } },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            },
+            layout: { padding: { top: 20, bottom: 20, left: 20, right: 20 } }
+        }
+    });
+}
+
+function createModalHeadToHeadTimelineChart(games, canvas, player1, player2) {
+    const sortedGames = games.sort((a, b) => {
+        const dateA = new Date(a.year, parseInt(a.month) - 1, parseInt(a.day));
+        const dateB = new Date(b.year, parseInt(b.month) - 1, parseInt(b.day));
+        return dateA - dateB;
+    });
+    
+    let player1CumulativeWins = 0;
+    let player2CumulativeWins = 0;
+    
+    const timelineData = sortedGames.map((game, index) => {
+        if (game.winner === player1) player1CumulativeWins++;
+        else if (game.winner === player2) player2CumulativeWins++;
+        
+        const totalGames = index + 1;
+        return {
+            game: `Game ${totalGames}`,
+            date: `${game.year}-${game.month.padStart(2, '0')}-${game.day.padStart(2, '0')}`,
+            player1WinRate: (player1CumulativeWins / totalGames * 100).toFixed(1),
+            player2WinRate: (player2CumulativeWins / totalGames * 100).toFixed(1),
+            player1Wins: player1CumulativeWins,
+            player2Wins: player2CumulativeWins
+        };
+    });
+    
+    const chartHeight = 500;
+    const chartWidth = Math.max(1000, timelineData.length * 60);
+    
+    const container = canvas.parentElement;
+    container.style.width = `${chartWidth}px`;
+    container.style.height = `${chartHeight}px`;
+    container.style.overflow = 'visible';
+    
+    canvas.width = chartWidth;
+    canvas.height = chartHeight;
+    canvas.style.width = `${chartWidth}px`;
+    canvas.style.height = `${chartHeight}px`;
+    canvas.style.display = 'block';
+    canvas.style.maxWidth = 'none';
+    canvas.style.maxHeight = 'none';
+    
+    new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: timelineData.map(d => d.game),
+            datasets: [
+                {
+                    label: `${player1} Win Rate`,
+                    data: timelineData.map(d => parseFloat(d.player1WinRate)),
+                    borderColor: 'rgba(40, 167, 69, 1)',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: false
+                },
+                {
+                    label: `${player2} Win Rate`,
+                    data: timelineData.map(d => parseFloat(d.player2WinRate)),
+                    borderColor: 'rgba(220, 53, 69, 1)',
+                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: false,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+                legend: { 
+                    position: 'top', 
+                    labels: { color: 'white', font: { size: 14 }, padding: 20 } 
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            const dataIndex = context[0].dataIndex;
+                            const data = timelineData[dataIndex];
+                            return `${data.game} (${data.date})`;
+                        },
+                        label: function(context) {
+                            const dataIndex = context.dataIndex;
+                            const data = timelineData[dataIndex];
+                            if (context.datasetIndex === 0) {
+                                return `${player1}: ${data.player1WinRate}% (${data.player1Wins} wins)`;
+                            } else {
+                                return `${player2}: ${data.player2WinRate}% (${data.player2Wins} wins)`;
+                            }
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: 'Win Rate (%)', color: 'white', font: { size: 14 } },
+                    ticks: { color: 'white', font: { size: 12 } },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                x: {
+                    title: { display: true, text: 'Games Played', color: 'white', font: { size: 14 } },
+                    ticks: { color: 'white', font: { size: 12 } },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            },
+            layout: { padding: { top: 20, bottom: 20, left: 20, right: 20 } }
+        }
+    });
+}
 
 function createModalCommanderWinRateChart(games, canvas, rankingMethod, minGameRequirement, teamSize) {
     const commanderStats = {};
@@ -3451,6 +4011,565 @@ function createPlayerContent(playerGames, selectedPlayer) {
             const chartTitle = e.currentTarget.dataset.chartTitle;
             showModalChart(playerGames, chartType, chartTitle, selectedPlayer);
         });
+    });
+}
+
+// ==================== HEAD-TO-HEAD ANALYSIS FUNCTIONS ====================
+
+// Create head-to-head content and charts
+function createHeadToHeadContent(headToHeadGames, player1, player2) {
+    const mainAnalysisElement = document.getElementById('mainAnalysis');
+    
+    if (headToHeadGames.length === 0) {
+        mainAnalysisElement.innerHTML = `
+            <div class="alert alert-warning">
+                <h5>Head-to-Head Analysis: ${player1} vs ${player2}</h5>
+                <p>No direct commander vs commander games found between these players.</p>
+                <p>Head-to-head analysis requires both players to be commanders in the same game.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Calculate overall head-to-head record
+    let player1Wins = 0;
+    let player2Wins = 0;
+    
+    headToHeadGames.forEach(game => {
+        if (game.winner === player1) player1Wins++;
+        else if (game.winner === player2) player2Wins++;
+    });
+    
+    const totalGames = headToHeadGames.length;
+    const player1WinRate = totalGames > 0 ? ((player1Wins / totalGames) * 100).toFixed(1) : '0.0';
+    const player2WinRate = totalGames > 0 ? ((player2Wins / totalGames) * 100).toFixed(1) : '0.0';
+    
+    // Create the UI for head-to-head analysis
+    mainAnalysisElement.innerHTML = `
+        <!-- Head-to-Head Summary -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Head-to-Head: ${player1} vs ${player2}</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <h3 class="text-info">${totalGames}</h3>
+                                <p class="mb-0">Total Games</p>
+                            </div>
+                            <div class="col-md-3">
+                                <h3 class="text-success">${player1Wins}</h3>
+                                <p class="mb-0">${player1} Wins (${player1WinRate}%)</p>
+                            </div>
+                            <div class="col-md-3">
+                                <h3 class="text-danger">${player2Wins}</h3>
+                                <p class="mb-0">${player2} Wins (${player2WinRate}%)</p>
+                            </div>
+                            <div class="col-md-3">
+                                <h3 class="text-warning">${calculateAverageGameTime(headToHeadGames)}</h3>
+                                <p class="mb-0">Avg Game Time</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- Head-to-Head Win Rate Breakdown -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Win Rate Comparison</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="headToHeadWinRate" data-chart-title="Head-to-Head Win Rate: ${player1} vs ${player2}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="headToHeadWinRateChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Faction Choices -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-warning text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Faction Preferences</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="headToHeadFactions" data-chart-title="Faction Choices: ${player1} vs ${player2}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="headToHeadFactionsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Faction Matchup Performance -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Faction Matchup Performance</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="headToHeadFactionMatchups" data-chart-title="Faction Matchup Win Rates: ${player1} vs ${player2}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="headToHeadFactionMatchupsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Map Performance -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Map Performance</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="headToHeadMaps" data-chart-title="Map Performance: ${player1} vs ${player2}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="headToHeadMapsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Performance Over Time - Full Width -->
+        <div class="row">
+            <div class="col-12 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-purple text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Head-to-Head Performance Over Time</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="headToHeadTimeline" data-chart-title="Performance Timeline: ${player1} vs ${player2}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="headToHeadTimelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Create all head-to-head charts
+    createHeadToHeadWinRateChart(headToHeadGames, player1, player2);
+    createHeadToHeadFactionsChart(headToHeadGames, player1, player2);
+    createHeadToHeadFactionMatchupsChart(headToHeadGames, player1, player2);
+    createHeadToHeadMapsChart(headToHeadGames, player1, player2);
+    createHeadToHeadTimelineChart(headToHeadGames, player1, player2);
+    
+    // Align card heights after all charts are created and rendered
+    alignCardHeights();
+    
+    // Add event listeners for maximize buttons
+    document.querySelectorAll('.maximize-chart').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const chartType = e.currentTarget.dataset.chartType;
+            const chartTitle = e.currentTarget.dataset.chartTitle;
+            showModalChart(headToHeadGames, chartType, chartTitle, player1, player2);
+        });
+    });
+}
+
+// Create head-to-head win rate chart
+function createHeadToHeadWinRateChart(headToHeadGames, player1, player2) {
+    let player1Wins = 0;
+    let player2Wins = 0;
+    
+    headToHeadGames.forEach(game => {
+        if (game.winner === player1) player1Wins++;
+        else if (game.winner === player2) player2Wins++;
+    });
+    
+    const totalGames = headToHeadGames.length;
+    const player1WinRate = totalGames > 0 ? (player1Wins / totalGames * 100) : 0;
+    const player2WinRate = totalGames > 0 ? (player2Wins / totalGames * 100) : 0;
+    
+    safeCreateChart('headToHeadWinRateChart', {
+        type: 'bar',
+        data: {
+            labels: [player1, player2],
+            datasets: [{
+                label: 'Win Rate (%)',
+                data: [player1WinRate, player2WinRate],
+                backgroundColor: ['rgba(40, 167, 69, 0.8)', 'rgba(220, 53, 69, 0.8)'],
+                borderColor: ['rgba(40, 167, 69, 1)', 'rgba(220, 53, 69, 1)'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const player = context.label;
+                            const winRate = context.parsed.y.toFixed(1);
+                            const wins = player === player1 ? player1Wins : player2Wins;
+                            return [
+                                `${player}: ${winRate}%`,
+                                `Wins: ${wins}/${totalGames}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: 'Win Rate (%)' }
+                }
+            }
+        }
+    });
+}
+
+// Create head-to-head faction choices chart
+function createHeadToHeadFactionsChart(headToHeadGames, player1, player2) {
+    const player1Factions = { 'I.S.D.F': 0, 'Hadean': 0, 'Scion': 0 };
+    const player2Factions = { 'I.S.D.F': 0, 'Hadean': 0, 'Scion': 0 };
+    
+    headToHeadGames.forEach(game => {
+        if (game.commander1 === player1) {
+            if (game.faction1) player1Factions[game.faction1]++;
+            if (game.faction2) player2Factions[game.faction2]++;
+        } else {
+            if (game.faction2) player1Factions[game.faction2]++;
+            if (game.faction1) player2Factions[game.faction1]++;
+        }
+    });
+    
+    const factionColors = {
+        'I.S.D.F': 'rgba(13, 110, 253, 0.8)',
+        'Hadean': 'rgba(220, 53, 69, 0.8)',
+        'Scion': 'rgba(255, 193, 7, 0.8)'
+    };
+    
+    safeCreateChart('headToHeadFactionsChart', {
+        type: 'bar',
+        data: {
+            labels: [player1, player2],
+            datasets: Object.keys(factionColors).map(faction => ({
+                label: faction,
+                data: [player1Factions[faction], player2Factions[faction]],
+                backgroundColor: factionColors[faction],
+                borderColor: factionColors[faction].replace('0.8', '1'),
+                borderWidth: 1
+            }))
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const faction = context.dataset.label;
+                            const games = context.parsed.y;
+                            const player = context.label;
+                            const totalGames = Object.values(player === player1 ? player1Factions : player2Factions).reduce((a, b) => a + b, 0);
+                            const percentage = totalGames > 0 ? ((games / totalGames) * 100).toFixed(1) : '0.0';
+                            return `${faction}: ${games} games (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { stacked: true },
+                y: { 
+                    stacked: true,
+                    beginAtZero: true,
+                    title: { display: true, text: 'Games Played' }
+                }
+            }
+        }
+    });
+}
+
+// Create head-to-head faction matchup performance chart
+function createHeadToHeadFactionMatchupsChart(headToHeadGames, player1, player2) {
+    const matchupStats = {};
+    
+    headToHeadGames.forEach(game => {
+        let player1Faction, player2Faction, player1Won;
+        
+        if (game.commander1 === player1) {
+            player1Faction = game.faction1;
+            player2Faction = game.faction2;
+            player1Won = game.winner === player1;
+        } else {
+            player1Faction = game.faction2;
+            player2Faction = game.faction1;
+            player1Won = game.winner === player1;
+        }
+        
+        const matchupKey = `${player1Faction} vs ${player2Faction}`;
+        if (!matchupStats[matchupKey]) {
+            matchupStats[matchupKey] = { games: 0, player1Wins: 0 };
+        }
+        matchupStats[matchupKey].games++;
+        if (player1Won) {
+            matchupStats[matchupKey].player1Wins++;
+        }
+    });
+    
+    const matchupData = Object.entries(matchupStats)
+        .filter(([, stats]) => stats.games >= 2) // Only show matchups with 2+ games
+        .map(([matchup, stats]) => ({
+            matchup,
+            player1WinRate: (stats.player1Wins / stats.games * 100).toFixed(1),
+            games: stats.games,
+            player1Wins: stats.player1Wins
+        }))
+        .sort((a, b) => b.games - a.games);
+    
+    if (matchupData.length === 0) {
+        const canvas = document.getElementById('headToHeadFactionMatchupsChart');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#e8e8ff';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Not enough data for', canvas.width/2, canvas.height/2 - 10);
+        ctx.fillText('faction matchup analysis', canvas.width/2, canvas.height/2 + 15);
+        return;
+    }
+    
+    safeCreateChart('headToHeadFactionMatchupsChart', {
+        type: 'bar',
+        data: {
+            labels: matchupData.map(m => m.matchup),
+            datasets: [{
+                label: `${player1} Win Rate (%)`,
+                data: matchupData.map(m => parseFloat(m.player1WinRate)),
+                backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                borderColor: 'rgba(40, 167, 69, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const matchup = matchupData[context.dataIndex];
+                            return [
+                                `${player1}: ${matchup.player1WinRate}%`,
+                                `Games: ${matchup.games}`,
+                                `${player1} Wins: ${matchup.player1Wins}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: `${player1} Win Rate (%)` }
+                }
+            }
+        }
+    });
+}
+
+// Create head-to-head map performance chart
+function createHeadToHeadMapsChart(headToHeadGames, player1, player2) {
+    const mapStats = {};
+    
+    headToHeadGames.forEach(game => {
+        const player1Won = game.winner === player1;
+        
+        if (!mapStats[game.map]) {
+            mapStats[game.map] = { games: 0, player1Wins: 0 };
+        }
+        mapStats[game.map].games++;
+        if (player1Won) {
+            mapStats[game.map].player1Wins++;
+        }
+    });
+    
+    const mapData = Object.entries(mapStats)
+        .filter(([, stats]) => stats.games >= 1) // Show all maps with any games
+        .map(([map, stats]) => ({
+            map,
+            player1WinRate: (stats.player1Wins / stats.games * 100).toFixed(1),
+            games: stats.games,
+            player1Wins: stats.player1Wins
+        }))
+        .sort((a, b) => b.games - a.games)
+        .slice(0, 8); // Top 8 maps
+    
+    if (mapData.length === 0) {
+        const canvas = document.getElementById('headToHeadMapsChart');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#e8e8ff';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('No map data available', canvas.width/2, canvas.height/2);
+        return;
+    }
+    
+    safeCreateChart('headToHeadMapsChart', {
+        type: 'bar',
+        data: {
+            labels: mapData.map(m => m.map),
+            datasets: [{
+                label: `${player1} Win Rate (%)`,
+                data: mapData.map(m => parseFloat(m.player1WinRate)),
+                backgroundColor: 'rgba(108, 117, 125, 0.8)',
+                borderColor: 'rgba(108, 117, 125, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const map = mapData[context.dataIndex];
+                            return [
+                                `${player1}: ${map.player1WinRate}%`,
+                                `Games: ${map.games}`,
+                                `${player1} Wins: ${map.player1Wins}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { 
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: `${player1} Win Rate (%)` }
+                }
+            }
+        }
+    });
+}
+
+// Create head-to-head timeline chart
+function createHeadToHeadTimelineChart(headToHeadGames, player1, player2) {
+    // Sort games by date
+    const sortedGames = headToHeadGames.sort((a, b) => {
+        const dateA = new Date(a.year, parseInt(a.month) - 1, parseInt(a.day));
+        const dateB = new Date(b.year, parseInt(b.month) - 1, parseInt(b.day));
+        return dateA - dateB;
+    });
+    
+    // Calculate cumulative wins
+    let player1CumulativeWins = 0;
+    let player2CumulativeWins = 0;
+    
+    const timelineData = sortedGames.map((game, index) => {
+        if (game.winner === player1) player1CumulativeWins++;
+        else if (game.winner === player2) player2CumulativeWins++;
+        
+        const totalGames = index + 1;
+        return {
+            game: `Game ${totalGames}`,
+            date: `${game.year}-${game.month.padStart(2, '0')}-${game.day.padStart(2, '0')}`,
+            player1WinRate: (player1CumulativeWins / totalGames * 100).toFixed(1),
+            player2WinRate: (player2CumulativeWins / totalGames * 100).toFixed(1),
+            player1Wins: player1CumulativeWins,
+            player2Wins: player2CumulativeWins
+        };
+    });
+    
+    safeCreateChart('headToHeadTimelineChart', {
+        type: 'line',
+        data: {
+            labels: timelineData.map(d => d.game),
+            datasets: [
+                {
+                    label: `${player1} Win Rate`,
+                    data: timelineData.map(d => parseFloat(d.player1WinRate)),
+                    borderColor: 'rgba(40, 167, 69, 1)',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: false
+                },
+                {
+                    label: `${player2} Win Rate`,
+                    data: timelineData.map(d => parseFloat(d.player2WinRate)),
+                    borderColor: 'rgba(220, 53, 69, 1)',
+                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { padding: 20 }
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            const dataIndex = context[0].dataIndex;
+                            const data = timelineData[dataIndex];
+                            return `${data.game} (${data.date})`;
+                        },
+                        label: function(context) {
+                            const dataIndex = context.dataIndex;
+                            const data = timelineData[dataIndex];
+                            if (context.datasetIndex === 0) {
+                                return `${player1}: ${data.player1WinRate}% (${data.player1Wins} wins)`;
+                            } else {
+                                return `${player2}: ${data.player2WinRate}% (${data.player2Wins} wins)`;
+                            }
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: 'Win Rate (%)' }
+                },
+                x: {
+                    title: { display: true, text: 'Games Played' }
+                }
+            }
+        }
     });
 }
 
