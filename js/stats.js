@@ -575,6 +575,11 @@ async function loadGameData() {
         // Apply URL parameters after dashboard is ready
         setTimeout(() => {
             applyURLParameters();
+            
+            // Initialize previousURLParams to track initial state
+            const initialParams = generateShareableURL();
+            previousURLParams = { ...initialParams };
+            console.log('Initial URL state tracked:', previousURLParams);
         }, 200);
         
         // Update the timestamp in the navbar
@@ -862,7 +867,7 @@ function populateSecondPlayerDropdown(players) {
 
 function handleSecondPlayerChange() {
     loadContent();
-    scheduleURLUpdate();
+    scheduleURLUpdate(true); // Force new history entry for player changes
 }
 
 // Handle analysis type change
@@ -932,19 +937,19 @@ function handleAnalysisTypeChange() {
     
     filterSelect.value = '';
     loadContent();
-    scheduleURLUpdate();
+    scheduleURLUpdate(true); // Force new history entry for analysis type changes
 }
 
 // Handle filter change
 function handleFilterChange() {
     loadContent();
-    scheduleURLUpdate();
+    scheduleURLUpdate(true); // Force new history entry for filter changes
 }
 
 // Handle time period change  
 function handleTimePeriodChange() {
     loadContent();
-    scheduleURLUpdate();
+    scheduleURLUpdate(true); // Force new history entry for time period changes
 }
 
 // Reset filters
@@ -977,8 +982,9 @@ function resetFilters() {
     
     loadContent();
     
-    // Clear URL parameters
-    updateURLParameters({}, true);
+    // Clear URL parameters and create new history entry
+    updateURLParameters({}, false); // Use pushState to create history entry
+    previousURLParams = {};
 }
 
 // Load content based on current filters
@@ -3414,13 +3420,29 @@ function addShareButton() {
     toolbarActions.appendChild(shareButton);
 }
 
-// Update URL when filters change (with debouncing)
+// Track previous URL state for history management
+let previousURLParams = {};
 let urlUpdateTimeout;
-function scheduleURLUpdate() {
+
+// Update URL when filters change (with debouncing)
+function scheduleURLUpdate(forceNewEntry = false) {
     clearTimeout(urlUpdateTimeout);
     urlUpdateTimeout = setTimeout(() => {
         const params = generateShareableURL();
-        updateURLParameters(params, true); // Use replaceState to avoid cluttering history
+        const currentParamsString = JSON.stringify(params);
+        const previousParamsString = JSON.stringify(previousURLParams);
+        
+        // Determine if this should create a new history entry
+        const shouldCreateNewEntry = forceNewEntry || 
+            currentParamsString !== previousParamsString && 
+            Object.keys(previousURLParams).length > 0; // Don't create entry for initial state
+        
+        if (shouldCreateNewEntry) {
+            console.log('Creating new history entry for URL change:', params);
+        }
+        
+        updateURLParameters(params, !shouldCreateNewEntry); // false = pushState, true = replaceState
+        previousURLParams = { ...params };
     }, 500); // 500ms debounce
 }
 
@@ -3455,8 +3477,17 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ URL state synchronization');
     
     // Handle browser back/forward navigation
-    window.addEventListener('popstate', () => {
+    window.addEventListener('popstate', (event) => {
+        console.log('Browser navigation detected, applying URL parameters');
+        
+        // Prevent URL updates during popstate handling to avoid loops
+        clearTimeout(urlUpdateTimeout);
+        
         setTimeout(() => {
+            // Update previousURLParams to match current URL state to prevent duplicate entries
+            const currentParams = parseURLParameters();
+            previousURLParams = { ...currentParams };
+            
             applyURLParameters();
         }, 100);
     });
