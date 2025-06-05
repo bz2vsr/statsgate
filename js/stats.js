@@ -1304,6 +1304,74 @@ function loadGeneralOverview() {
                     </div>
                 </div>
             </div>
+
+            <!-- Team Size Distribution -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Team Size Distribution</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="teamSize" data-chart-title="Team Size Distribution">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="teamSizeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Straggler Frequency -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Straggler Frequency</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="stragglers" data-chart-title="Straggler Frequency">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="stragglerChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Avg Duration Over Time -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-purple text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Game Duration Over Time</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="durationOverTime" data-chart-title="Average Game Duration Over Time">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="durationOverTimeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Faction Popularity Over Time -->
+            <div class="col-12 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Faction Popularity Over Time</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="factionPopularity" data-chart-title="Faction Popularity Over Time">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="factionPopularityChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <!-- Chart Maximize Modal -->
@@ -1340,6 +1408,10 @@ function loadGeneralOverview() {
     createFactionDistributionChart(games);
     createFactionPerformanceChart(games);
     createGameDurationChart(games);
+    createTeamSizeDistributionChart(games);
+    createStragglerFrequencyChart(games);
+    createDurationOverTimeChart(games);
+    createFactionPopularityChart(games);
     
     // Align commander chart heights after they're created
     alignCommanderChartHeights();
@@ -2122,6 +2194,133 @@ function createGameDurationChart(games) {
     });
 }
 
+// Create team size distribution chart
+function createTeamSizeDistributionChart(games) {
+    const sizeCounts = {};
+    games.forEach(g => {
+        const size = g.totalPlayers || 0;
+        sizeCounts[size] = (sizeCounts[size] || 0) + 1;
+    });
+    const sizes = Object.keys(sizeCounts).sort((a,b) => a-b);
+    safeCreateChart('teamSizeChart', {
+        type: 'bar',
+        data: {
+            labels: sizes.map(s => `${s} players`),
+            datasets: [{
+                label: 'Games',
+                data: sizes.map(s => sizeCounts[s]),
+                backgroundColor: 'rgba(0,212,255,0.7)',
+                borderColor: 'rgba(0,212,255,1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: { legend: { display:false } }
+        }
+    });
+}
+
+// Create straggler frequency chart
+function createStragglerFrequencyChart(games) {
+    const stragglerCounts = { 'None':0 };
+    games.forEach(g => {
+        const cnt = g.stragglerCount || 0;
+        if (cnt===0) { stragglerCounts['None']++; } else { stragglerCounts[cnt] = (stragglerCounts[cnt] || 0)+1; }
+    });
+    const labels = Object.keys(stragglerCounts);
+    safeCreateChart('stragglerChart', {
+        type:'bar',
+        data:{
+            labels: labels,
+            datasets:[{
+                label:'Games',
+                data: labels.map(l=>stragglerCounts[l]),
+                backgroundColor:'rgba(255,107,53,0.7)',
+                borderColor:'rgba(255,107,53,1)',
+                borderWidth:1
+            }]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:true,
+            plugins:{legend:{display:false}}
+        }
+    });
+}
+
+// Create average duration over time chart
+function createDurationOverTimeChart(games) {
+    const monthly = {};
+    games.forEach(g => {
+        if(!g.time) return;
+        const m = `${g.year}-${g.month}`;
+        const mins = parseGameDuration(g.time);
+        if(mins===null) return;
+        if(!monthly[m]) monthly[m]={sum:0,count:0};
+        monthly[m].sum += mins;
+        monthly[m].count++;
+    });
+    const months = Object.keys(monthly).sort();
+    const averages = months.map(m => (monthly[m].sum/monthly[m].count).toFixed(1));
+    safeCreateChart('durationOverTimeChart', {
+        type:'line',
+        data:{
+            labels:months,
+            datasets:[{
+                label:'Avg Minutes',
+                data:averages,
+                borderColor:'rgba(123,104,238,1)',
+                backgroundColor:'rgba(123,104,238,0.4)',
+                fill:true
+            }]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:true
+        }
+    });
+}
+
+// Create faction popularity over time chart
+function createFactionPopularityChart(games) {
+    const monthly = {};
+    games.forEach(g => {
+        const m = `${g.year}-${g.month}`;
+        if(!monthly[m]) monthly[m]={};
+        [g.faction1,g.faction2].forEach(f=>{ if(!monthly[m][f]) monthly[m][f]=0; monthly[m][f]++; });
+    });
+    const months = Object.keys(monthly).sort();
+    const factions = Array.from(new Set(games.flatMap(g=>[g.faction1,g.faction2])));
+    const datasets = factions.map(f => ({
+        label:f,
+        data:months.map(m=>monthly[m][f]||0),
+        borderColor: gamingColors.accent,
+        backgroundColor: gamingColors.accent,
+        fill:true
+    }));
+    safeCreateChart('factionPopularityChart', {
+        type:'line',
+        data:{ labels:months, datasets },
+        options:{ stacked:true, responsive:true, maintainAspectRatio:true }
+    });
+}
+
+// Create faction mirror match chart
+function createFactionMirrorChart(games) {
+    let mirror=0, nonMirror=0;
+    games.forEach(g=>{ if(g.faction1===g.faction2) mirror++; else nonMirror++; });
+    safeCreateChart('factionMirrorChart', {
+        type:'pie',
+        data:{
+            labels:['Mirror','Mixed'],
+            datasets:[{ data:[mirror,nonMirror], backgroundColor:['rgba(0,255,136,0.7)','rgba(220,53,69,0.7)'] }]
+        },
+        options:{ responsive:true, maintainAspectRatio:true }
+    });
+}
+
 // Show modal chart with proper full-scale scrolling
 function showModalChart(games, chartType, chartTitle, player1 = null, player2 = null) {
     const modal = new bootstrap.Modal(document.getElementById('chartModal'));
@@ -2280,6 +2479,27 @@ function showModalChart(games, chartType, chartTitle, player1 = null, player2 = 
             break;
         case 'gameDuration':
             createModalGameDurationChart(games, newModalChart);
+            break;
+        case 'teamSize':
+            createModalTeamSizeChart(games, newModalChart);
+            break;
+        case 'stragglers':
+            createModalStragglerChart(games, newModalChart);
+            break;
+        case 'durationOverTime':
+            createModalDurationOverTimeChart(games, newModalChart);
+            break;
+        case 'factionPopularity':
+            createModalFactionPopularityChart(games, newModalChart);
+            break;
+        case 'mapHeat':
+            createModalMapHeatChart(games, newModalChart);
+            break;
+        case 'mapFactionTrend':
+            createModalMapFactionTrendChart(games, newModalChart);
+            break;
+        case 'factionMirror':
+            createModalFactionMirrorChart(games, newModalChart);
             break;
         case 'headToHeadWinRate':
             createModalHeadToHeadWinRateChart(games, newModalChart, player1, player2);
@@ -2990,6 +3210,63 @@ function createModalGameDurationChart(games, canvas) {
             }
         }
     });
+}
+
+function createModalTeamSizeChart(games, canvas) {
+    const sizeCounts = {};
+    games.forEach(g => { const s=g.totalPlayers||0; sizeCounts[s]=(sizeCounts[s]||0)+1; });
+    const sizes=Object.keys(sizeCounts).sort((a,b)=>a-b);
+    new Chart(canvas.getContext('2d'), {
+        type:'bar',
+        data:{ labels:sizes.map(s=>`${s} players`), datasets:[{data:sizes.map(s=>sizeCounts[s]), backgroundColor:'rgba(0,212,255,0.7)', borderColor:'rgba(0,212,255,1)', borderWidth:1}] },
+        options:{responsive:true,maintainAspectRatio:false}
+    });
+}
+
+function createModalStragglerChart(games, canvas) {
+    const counts={'None':0};
+    games.forEach(g=>{const c=g.stragglerCount||0;if(c===0)counts['None']++;else counts[c]=(counts[c]||0)+1;});
+    const labels=Object.keys(counts);
+    new Chart(canvas.getContext('2d'),{type:'bar',data:{labels,datasets:[{data:labels.map(l=>counts[l]),backgroundColor:'rgba(255,107,53,0.7)',borderColor:'rgba(255,107,53,1)',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false}});
+}
+
+function createModalDurationOverTimeChart(games, canvas) {
+    const monthly={};
+    games.forEach(g=>{if(!g.time)return;const m=`${g.year}-${g.month}`;const mins=parseGameDuration(g.time);if(mins===null)return;if(!monthly[m])monthly[m]={sum:0,count:0};monthly[m].sum+=mins;monthly[m].count++;});
+    const months=Object.keys(monthly).sort();
+    const data=months.map(m=>(monthly[m].sum/monthly[m].count).toFixed(1));
+    new Chart(canvas.getContext('2d'),{type:'line',data:{labels:months,datasets:[{label:'Avg Minutes',data,borderColor:'rgba(123,104,238,1)',backgroundColor:'rgba(123,104,238,0.4)',fill:true}]},options:{responsive:true,maintainAspectRatio:false}});
+}
+
+function createModalFactionPopularityChart(games, canvas) {
+    const monthly={};
+    games.forEach(g=>{const m=`${g.year}-${g.month}`;if(!monthly[m])monthly[m]={};[g.faction1,g.faction2].forEach(f=>{if(!monthly[m][f])monthly[m][f]=0;monthly[m][f]++;});});
+    const months=Object.keys(monthly).sort();
+    const factions=Array.from(new Set(games.flatMap(g=>[g.faction1,g.faction2])));
+    const datasets=factions.map(f=>({label:f,data:months.map(m=>monthly[m][f]||0),fill:true,borderColor:gamingColors.accent,backgroundColor:gamingColors.accent}));
+    new Chart(canvas.getContext('2d'),{type:'line',data:{labels:months,datasets},options:{responsive:true,maintainAspectRatio:false,stacked:true}});
+}
+
+function createModalMapHeatChart(games, canvas) {
+    const monthCounts={};
+    games.forEach(g=>{const key=`${g.year}-${g.month}`;monthCounts[key]=(monthCounts[key]||0)+1;});
+    const months=Object.keys(monthCounts).sort();
+    const data=months.map((m,i)=>({x:i,y:0,v:monthCounts[m]}));
+    new Chart(canvas.getContext('2d'),{type:'matrix',data:{datasets:[{data,backgroundColor:c=>`rgba(13,202,240,${Math.min(1,c.dataset.data[c.dataIndex].v/5)})`,width:20,height:20}]},options:{responsive:true,scales:{x:{type:'category',labels:months},y:{display:false}}}});
+}
+
+function createModalMapFactionTrendChart(games, canvas) {
+    const monthly={};
+    games.forEach(g=>{const m=`${g.year}-${g.month}`;if(!monthly[m])monthly[m]={I:0,H:0,S:0};const win=g['winning faction']||g.winningFaction; if(win===g.faction1) monthly[m][g.faction1[0]]++; if(win===g.faction2) monthly[m][g.faction2[0]]++;});
+    const months=Object.keys(monthly).sort();
+    const factions=['I.S.D.F','Hadean','Scion'];
+    const datasets=factions.map(f=>({label:f,data:months.map(m=>monthly[m][f[0]]||0),fill:false,borderColor:gamingColors.primary}));
+    new Chart(canvas.getContext('2d'),{type:'line',data:{labels:months,datasets},options:{responsive:true,maintainAspectRatio:false}});
+}
+
+function createModalFactionMirrorChart(games, canvas) {
+    let mirror=0,non=0;games.forEach(g=>{if(g.faction1===g.faction2)mirror++;else non++;});
+    new Chart(canvas.getContext('2d'),{type:'pie',data:{labels:['Mirror','Mixed'],datasets:[{data:[mirror,non],backgroundColor:['rgba(0,255,136,0.7)','rgba(220,53,69,0.7)']}]},options:{responsive:true,maintainAspectRatio:false}});
 }
 
 // Load player analysis with complete functionality
@@ -4916,15 +5193,16 @@ function createPlayerFactionChart(playerGames, selectedPlayer) {
     };
     
     safeCreateChart('playerFactionChart', {
-        type: 'bar',
+        type: 'radar',
         data: {
             labels: factionData.map(f => f.faction),
             datasets: [{
                 label: 'Win Rate (%)',
                 data: factionData.map(f => parseFloat(f.winRate)),
-                backgroundColor: factionData.map(f => factionColors[f.faction] || 'rgba(108, 117, 125, 0.8)'),
-                borderColor: factionData.map(f => factionColors[f.faction]?.replace('0.8', '1') || 'rgba(108, 117, 125, 1)'),
-                borderWidth: 1
+                backgroundColor: 'rgba(13,110,253,0.4)',
+                borderColor: 'rgba(13,110,253,1)',
+                borderWidth: 2,
+                fill: true
             }]
         },
         options: {
@@ -5391,11 +5669,47 @@ function createMapContent(mapGames, selectedMap) {
                     </div>
                 </div>
             </div>
+
+            <!-- Map Popularity Heatmap -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Map Popularity By Month</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="mapHeat" data-chart-title="${selectedMap} Popularity Heatmap">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="mapHeatChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Faction Win Rate Trend -->
+            <div class="col-12 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Faction Win Rate Over Time</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="mapFactionTrend" data-chart-title="${selectedMap} Faction Trend">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="mapFactionTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
     `;
     
     // Create all map-specific charts
     createMapFactionChart(mapGames, selectedMap);
+    createMapHeatChart(mapGames, selectedMap);
+    createMapFactionTrendChart(mapGames, selectedMap);
     
     // Align card heights after charts are created and rendered
     alignCardHeights();
@@ -5470,6 +5784,60 @@ function createMapFactionChart(mapGames, selectedMap) {
     });
 }
 
+// Create map popularity heatmap using matrix chart
+function createMapHeatChart(mapGames, selectedMap) {
+    const monthCounts = {};
+    mapGames.forEach(g => {
+        const key = `${g.year}-${g.month}`;
+        monthCounts[key] = (monthCounts[key] || 0) + 1;
+    });
+    const months = Object.keys(monthCounts).sort();
+    const data = months.map((m,i)=>({x:i,y:0,v:monthCounts[m]}));
+    safeCreateChart('mapHeatChart', {
+        type:'matrix',
+        data:{
+            datasets:[{
+                label:'Games',
+                data:data,
+                backgroundColor(ctx){
+                    const value=ctx.dataset.data[ctx.dataIndex].v;
+                    return `rgba(13,202,240,${Math.min(1,value/5)})`;
+                },
+                width:20,
+                height:20,
+            }]
+        },
+        options:{
+            responsive:true,
+            scales:{
+                x:{type:'category', labels:months},
+                y:{display:false}
+            }
+        }
+    });
+}
+
+// Create faction win rate trend chart for map
+function createMapFactionTrendChart(mapGames, selectedMap) {
+    const monthly={};
+    mapGames.forEach(g=>{
+        const m=`${g.year}-${g.month}`;
+        if(!monthly[m]) monthly[m]={I:0,H:0,S:0,cI:0,cH:0,cS:0};
+        const winFaction=g['winning faction']||g.winningFaction;
+        if(winFaction===g.faction1) monthly[m][g.faction1[0]]++;
+        if(winFaction===g.faction2) monthly[m][g.faction2[0]]++;
+    });
+    const months=Object.keys(monthly).sort();
+    const factions=['I.S.D.F','Hadean','Scion'];
+    const datasets=factions.map(f=>({
+        label:f,
+        data:months.map(m=>monthly[m][f[0]]||0),
+        fill:false,
+        borderColor: gamingColors.primary,
+    }));
+    safeCreateChart('mapFactionTrendChart',{type:'line',data:{labels:months,datasets},options:{responsive:true,maintainAspectRatio:true}});
+}
+
 // ==================== FACTION ANALYSIS FUNCTIONS ====================
 
 // Load faction analysis with complete functionality
@@ -5525,11 +5893,29 @@ function createFactionContent(factionGames, selectedFaction) {
                     </div>
                 </div>
             </div>
+
+            <!-- Faction Mirror Matches -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-warning text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">${selectedFaction} Mirror Matches</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="factionMirror" data-chart-title="${selectedFaction} Mirror Matches">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="factionMirrorChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
     `;
     
-    // Create faction chart
+    // Create faction charts
     createFactionVsFactionChart(factionGames, selectedFaction);
+    createFactionMirrorChart(factionGames);
     
     // Align card heights after charts are created and rendered
     alignCardHeights();
