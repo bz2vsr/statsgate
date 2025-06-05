@@ -569,6 +569,14 @@ async function loadGameData() {
         // Ensure dropdowns are populated after data is loaded
         handleAnalysisTypeChange();
         
+        // Add share button to toolbar
+        addShareButton();
+        
+        // Apply URL parameters after dashboard is ready
+        setTimeout(() => {
+            applyURLParameters();
+        }, 200);
+        
         // Update the timestamp in the navbar
         updateTimestamp();
         
@@ -712,7 +720,7 @@ function initializeDashboard() {
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label text-light">Actions</label>
-                                <div>
+                                <div class="d-flex gap-2">
                                     <button id="resetFilters" class="btn btn-outline-secondary bg-dark text-light border-secondary">Reset Filters</button>
                                 </div>
                             </div>
@@ -854,6 +862,7 @@ function populateSecondPlayerDropdown(players) {
 
 function handleSecondPlayerChange() {
     loadContent();
+    scheduleURLUpdate();
 }
 
 // Handle analysis type change
@@ -923,16 +932,19 @@ function handleAnalysisTypeChange() {
     
     filterSelect.value = '';
     loadContent();
+    scheduleURLUpdate();
 }
 
 // Handle filter change
 function handleFilterChange() {
     loadContent();
+    scheduleURLUpdate();
 }
 
 // Handle time period change  
 function handleTimePeriodChange() {
     loadContent();
+    scheduleURLUpdate();
 }
 
 // Reset filters
@@ -964,6 +976,9 @@ function resetFilters() {
     hideSecondPlayerSection();
     
     loadContent();
+    
+    // Clear URL parameters
+    updateURLParameters({}, true);
 }
 
 // Load content based on current filters
@@ -3182,6 +3197,235 @@ function alignCardHeights(containerSelector = '#mainAnalysis') {
     }, 200);
 }
 
+// ==================== URL PARAMETER HANDLING ====================
+
+// Parse URL parameters into an object
+function parseURLParameters() {
+    const params = new URLSearchParams(window.location.search);
+    const urlParams = {};
+    
+    for (const [key, value] of params.entries()) {
+        urlParams[key] = decodeURIComponent(value);
+    }
+    
+    return urlParams;
+}
+
+// Update URL parameters without page reload
+function updateURLParameters(params, replaceState = false) {
+    const url = new URL(window.location);
+    
+    // Clear existing parameters
+    url.search = '';
+    
+    // Add new parameters
+    Object.keys(params).forEach(key => {
+        if (params[key] && params[key] !== '' && params[key] !== 'all' && params[key] !== 'general') {
+            url.searchParams.set(key, encodeURIComponent(params[key]));
+        }
+    });
+    
+    // Update URL without page reload
+    if (replaceState) {
+        window.history.replaceState({}, '', url);
+    } else {
+        window.history.pushState({}, '', url);
+    }
+}
+
+// Apply URL parameters to dashboard state
+function applyURLParameters() {
+    const urlParams = parseURLParameters();
+    
+    console.log('Applying URL parameters:', urlParams);
+    
+    // Get dropdown elements
+    const analysisTypeEl = document.getElementById('analysisType');
+    const filterSelectEl = document.getElementById('filterSelect');
+    const secondPlayerSelectEl = document.getElementById('secondPlayerSelect');
+    const timePeriodEl = document.getElementById('timePeriod');
+    
+    if (!analysisTypeEl || !timePeriodEl) {
+        console.warn('Required dropdown elements not found');
+        return;
+    }
+    
+    // Set time period first (year parameter)
+    if (urlParams.year) {
+        timePeriodEl.value = urlParams.year;
+    } else if (urlParams.time) {
+        timePeriodEl.value = urlParams.time;
+    }
+    
+    // Determine analysis type and set filters
+    if (urlParams.player && urlParams.vsplayer) {
+        // Head-to-head analysis
+        analysisTypeEl.value = 'player';
+        handleAnalysisTypeChange(); // This will populate the player dropdowns
+        
+        setTimeout(() => {
+            if (filterSelectEl) filterSelectEl.value = urlParams.player;
+            if (secondPlayerSelectEl) secondPlayerSelectEl.value = urlParams.vsplayer;
+            loadContent();
+        }, 100);
+        
+    } else if (urlParams.player) {
+        // Single player analysis
+        analysisTypeEl.value = 'player';
+        handleAnalysisTypeChange();
+        
+        setTimeout(() => {
+            if (filterSelectEl) filterSelectEl.value = urlParams.player;
+            loadContent();
+        }, 100);
+        
+    } else if (urlParams.map) {
+        // Map analysis
+        analysisTypeEl.value = 'map';
+        handleAnalysisTypeChange();
+        
+        setTimeout(() => {
+            if (filterSelectEl) filterSelectEl.value = urlParams.map;
+            loadContent();
+        }, 100);
+        
+    } else if (urlParams.faction) {
+        // Faction analysis
+        analysisTypeEl.value = 'faction';
+        handleAnalysisTypeChange();
+        
+        setTimeout(() => {
+            if (filterSelectEl) filterSelectEl.value = urlParams.faction;
+            loadContent();
+        }, 100);
+        
+    } else if (urlParams.analysis) {
+        // Explicit analysis type
+        analysisTypeEl.value = urlParams.analysis;
+        handleAnalysisTypeChange();
+        
+        setTimeout(() => {
+            loadContent();
+        }, 100);
+    } else {
+        // Default: just load content with any time period changes
+        loadContent();
+    }
+}
+
+// Generate shareable URL for current state
+function generateShareableURL() {
+    const analysisTypeEl = document.getElementById('analysisType');
+    const filterSelectEl = document.getElementById('filterSelect');
+    const secondPlayerSelectEl = document.getElementById('secondPlayerSelect');
+    const timePeriodEl = document.getElementById('timePeriod');
+    
+    const params = {};
+    
+    // Add time period if not default
+    if (timePeriodEl && timePeriodEl.value !== 'all') {
+        params.year = timePeriodEl.value;
+    }
+    
+    // Add analysis-specific parameters
+    if (analysisTypeEl) {
+        const analysisType = analysisTypeEl.value;
+        
+        if (analysisType === 'player') {
+            const player1 = filterSelectEl ? filterSelectEl.value : '';
+            const player2 = secondPlayerSelectEl ? secondPlayerSelectEl.value : '';
+            
+            if (player1 && player2) {
+                // Head-to-head
+                params.player = player1;
+                params.vsplayer = player2;
+            } else if (player1) {
+                // Single player
+                params.player = player1;
+            }
+        } else if (analysisType === 'map') {
+            const map = filterSelectEl ? filterSelectEl.value : '';
+            if (map) params.map = map;
+        } else if (analysisType === 'faction') {
+            const faction = filterSelectEl ? filterSelectEl.value : '';
+            if (faction) params.faction = faction;
+        } else if (analysisType !== 'general') {
+            params.analysis = analysisType;
+        }
+    }
+    
+    return params;
+}
+
+// Add share button functionality
+function addShareButton() {
+    // Add share button to toolbar
+    const toolbarActions = document.querySelector('.toolbar-section .col-md-3:last-child .d-flex');
+    if (!toolbarActions) return;
+    
+    const shareButton = document.createElement('button');
+    shareButton.id = 'shareButton';
+    shareButton.className = 'btn btn-outline-info';
+    shareButton.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-share me-1" viewBox="0 0 16 16">
+            <path d="M13.5 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.499 2.499 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5zm-8.5 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm11 5.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>
+        </svg>
+        Share
+    `;
+    shareButton.title = 'Copy shareable link';
+    
+    shareButton.addEventListener('click', async () => {
+        const params = generateShareableURL();
+        const url = new URL(window.location.origin + window.location.pathname);
+        
+        Object.keys(params).forEach(key => {
+            if (params[key]) {
+                url.searchParams.set(key, encodeURIComponent(params[key]));
+            }
+        });
+        
+        try {
+            await navigator.clipboard.writeText(url.toString());
+            
+            // Show success feedback
+            const originalText = shareButton.innerHTML;
+            shareButton.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-lg me-1" viewBox="0 0 16 16">
+                    <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z"/>
+                </svg>
+                Copied!
+            `;
+            shareButton.classList.remove('btn-outline-info');
+            shareButton.classList.add('btn-success');
+            
+            setTimeout(() => {
+                shareButton.innerHTML = originalText;
+                shareButton.classList.remove('btn-success');
+                shareButton.classList.add('btn-outline-info');
+            }, 2000);
+        } catch (err) {
+            console.error('Failed to copy URL:', err);
+            
+            // Fallback: show URL in a prompt
+            prompt('Copy this shareable link:', url.toString());
+        }
+    });
+    
+    toolbarActions.appendChild(shareButton);
+}
+
+// Update URL when filters change (with debouncing)
+let urlUpdateTimeout;
+function scheduleURLUpdate() {
+    clearTimeout(urlUpdateTimeout);
+    urlUpdateTimeout = setTimeout(() => {
+        const params = generateShareableURL();
+        updateURLParameters(params, true); // Use replaceState to avoid cluttering history
+    }, 500); // 500ms debounce
+}
+
+// ==================== END URL PARAMETER HANDLING ====================
+
 // Wait for DOM to be ready, then load data
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof Chart === 'undefined') {
@@ -3205,10 +3449,17 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     document.head.appendChild(style);
     
-    console.log('🎉 Modal Charts Updated! 🎉');
-    console.log('✅ Fixed 15px bar widths for all modal charts');
-    console.log('✅ Proper scrollable dimensions calculated');
-    console.log('✅ Enhanced modal viewing experience');
+    console.log('🔗 URL Parameters System Active! 🔗');
+    console.log('✅ Shareable dashboard links enabled');
+    console.log('✅ Deep linking to specific views');
+    console.log('✅ URL state synchronization');
+    
+    // Handle browser back/forward navigation
+    window.addEventListener('popstate', () => {
+        setTimeout(() => {
+            applyURLParameters();
+        }, 100);
+    });
     
     loadGameData();
 });
