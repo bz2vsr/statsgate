@@ -2293,17 +2293,22 @@ function createFactionPopularityChart(games) {
     });
     const months = Object.keys(monthly).sort();
     const factions = Array.from(new Set(games.flatMap(g=>[g.faction1,g.faction2])));
-    const datasets = factions.map(f => ({
-        label:f,
-        data:months.map(m=>monthly[m][f]||0),
-        borderColor: gamingColors.accent,
-        backgroundColor: gamingColors.accent,
-        fill:true
+    const factionColors = {
+        'I.S.D.F': 'rgba(13, 110, 253, 0.9)',
+        'Hadean': 'rgba(220, 53, 69, 0.9)',
+        'Scion': 'rgba(255, 193, 7, 0.9)'
+    };
+    const datasets = factions.map((f, idx) => ({
+        label: f,
+        data: months.map(m => monthly[m][f] || 0),
+        borderColor: factionColors[f] || gamingColors.solidColors[idx % gamingColors.solidColors.length],
+        backgroundColor: factionColors[f] || gamingColors.solidColors[idx % gamingColors.solidColors.length],
+        fill: false
     }));
     safeCreateChart('factionPopularityChart', {
-        type:'line',
-        data:{ labels:months, datasets },
-        options:{ stacked:true, responsive:true, maintainAspectRatio:true }
+        type: 'line',
+        data: { labels: months, datasets },
+        options: { stacked: false, responsive: true, maintainAspectRatio: true }
     });
 }
 
@@ -3243,8 +3248,13 @@ function createModalFactionPopularityChart(games, canvas) {
     games.forEach(g=>{const m=`${g.year}-${g.month}`;if(!monthly[m])monthly[m]={};[g.faction1,g.faction2].forEach(f=>{if(!monthly[m][f])monthly[m][f]=0;monthly[m][f]++;});});
     const months=Object.keys(monthly).sort();
     const factions=Array.from(new Set(games.flatMap(g=>[g.faction1,g.faction2])));
-    const datasets=factions.map(f=>({label:f,data:months.map(m=>monthly[m][f]||0),fill:true,borderColor:gamingColors.accent,backgroundColor:gamingColors.accent}));
-    new Chart(canvas.getContext('2d'),{type:'line',data:{labels:months,datasets},options:{responsive:true,maintainAspectRatio:false,stacked:true}});
+    const factionColors = {
+        'I.S.D.F': 'rgba(13, 110, 253, 0.9)',
+        'Hadean': 'rgba(220, 53, 69, 0.9)',
+        'Scion': 'rgba(255, 193, 7, 0.9)'
+    };
+    const datasets=factions.map((f,idx)=>({label:f,data:months.map(m=>monthly[m][f]||0),fill:false,borderColor:factionColors[f]||gamingColors.solidColors[idx%gamingColors.solidColors.length],backgroundColor:factionColors[f]||gamingColors.solidColors[idx%gamingColors.solidColors.length]}));
+    new Chart(canvas.getContext('2d'),{type:'line',data:{labels:months,datasets},options:{responsive:true,maintainAspectRatio:false,stacked:false}});
 }
 
 function createModalMapHeatChart(games, canvas) {
