@@ -1,6 +1,7 @@
 // Global variables
 let gameData = null;
 let allGames = [];
+let factionGamesAll = [];
 
 // PERFORMANCE OPTIMIZATION: Detect device capabilities
 const performanceConfig = {
@@ -60,6 +61,32 @@ const gamingColors = {
         'rgba(240, 147, 251, 0.8)'
     ]
 };
+
+const monthIndexMap = {
+    January: 1, February: 2, March: 3, April: 4, May: 5, June: 6,
+    July: 7, August: 8, September: 9, October: 10, November: 11, December: 12
+};
+function getMonthIndex(name) {
+    if (typeof name === 'number') return name;
+    if (monthIndexMap[name]) return monthIndexMap[name];
+    const num = parseInt(name, 10);
+    return isNaN(num) ? null : num;
+}
+
+function teamSizeText(value) {
+    switch (value) {
+        case '1':
+            return '1 thug (2v2)';
+        case '2':
+            return '2 thugs (3v3)';
+        case '3':
+            return '3 thugs (4v4)';
+        case '4':
+            return '4 thugs (5v5)';
+        default:
+            return 'All team sizes';
+    }
+}
 
 // Enhanced animation configurations - OPTIMIZED
 const chartAnimations = {
@@ -620,6 +647,7 @@ function updateTimestamp() {
 // Process all games into a flat array
 function processAllGames() {
     allGames = [];
+    factionGamesAll = [];
     
     // Process each year
     Object.keys(gameData).forEach(year => {
@@ -638,13 +666,14 @@ function processAllGames() {
             // Process each day
             Object.keys(monthData).forEach(day => {
                 const dayData = monthData[day];
-                
+
                 // Process each game
                 Object.keys(dayData).forEach(mapName => {
                     const game = dayData[mapName];
-                    
+
                     // Parse commanders
                     const commanders = game.commanders.split(' vs ');
+
                     // Parse factions more safely
                     let factions;
                     try {
@@ -654,12 +683,11 @@ function processAllGames() {
                         const factionsStr = game.factions.replace(/[\[\]]/g, '').split(',').map(f => f.trim());
                         factions = factionsStr;
                     }
-                    
-                    // Determine winner index
+
                     const winnerIndex = commanders.indexOf(game.winner);
                     const loserIndex = winnerIndex === 0 ? 1 : 0;
-                    
-                    allGames.push({
+
+                    const baseRecord = {
                         ...game,
                         year: parseInt(year),
                         month,
@@ -670,7 +698,19 @@ function processAllGames() {
                         faction2: factions[1],
                         winnerIndex,
                         loser: commanders[loserIndex],
-                        losingFaction: factions[loserIndex],
+                        losingFaction: factions[loserIndex]
+                    };
+
+                    // Store for faction charts regardless of roster info
+                    factionGamesAll.push(baseRecord);
+
+                    // Exclude early records without team rosters from detailed stats
+                    if (!Array.isArray(game.teamOne) || !Array.isArray(game.teamTwo)) {
+                        return;
+                    }
+
+                    allGames.push({
+                        ...baseRecord,
                         teamOneSize: (game.teamOne || []).length + 1,
                         teamTwoSize: (game.teamTwo || []).length + 1,
                         totalPlayers: (game.teamOne || []).length + (game.teamTwo || []).length + 2,
@@ -721,6 +761,16 @@ function initializeDashboard() {
                                     <option value="all">All Time</option>
                                     <option value="2025">2025 Only</option>
                                     <option value="2024">2024 Only</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-light">Thug Count</label>
+                                <select id="globalTeamSize" class="form-select bg-dark text-light border-secondary">
+                                    <option value="ignore">Ignore</option>
+                                    <option value="1">1 thug</option>
+                                    <option value="2">2 thugs</option>
+                                    <option value="3">3 thugs</option>
+                                    <option value="4">4 thugs</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
@@ -817,6 +867,7 @@ function setupEventListeners() {
     const filterSelect = document.getElementById('filterSelect');
     const secondPlayerSelect = document.getElementById('secondPlayerSelect');
     const timePeriod = document.getElementById('timePeriod');
+    const globalTeamSize = document.getElementById('globalTeamSize');
     const resetButton = document.getElementById('resetFilters');
     
     if (analysisType) {
@@ -833,6 +884,10 @@ function setupEventListeners() {
     
     if (timePeriod) {
         timePeriod.addEventListener('change', handleTimePeriodChange);
+    }
+
+    if (globalTeamSize) {
+        globalTeamSize.addEventListener('change', handleGlobalTeamSizeChange);
     }
     
     if (resetButton) {
@@ -952,12 +1007,19 @@ function handleTimePeriodChange() {
     scheduleURLUpdate(true); // Force new history entry for time period changes
 }
 
+// Handle global team size change
+function handleGlobalTeamSizeChange() {
+    loadContent();
+    scheduleURLUpdate(true); // Force new history entry for team size changes
+}
+
 // Reset filters
 function resetFilters() {
     const analysisTypeElement = document.getElementById('analysisType');
     const filterSelectElement = document.getElementById('filterSelect');
     const secondPlayerSelectElement = document.getElementById('secondPlayerSelect');
     const timePeriodElement = document.getElementById('timePeriod');
+    const globalTeamSizeElement = document.getElementById('globalTeamSize');
     const filterSectionElement = document.getElementById('filterSection');
     
     if (!analysisTypeElement || !filterSelectElement || !timePeriodElement) {
@@ -968,6 +1030,9 @@ function resetFilters() {
     filterSelectElement.innerHTML = '<option value="">All Data</option>';
     filterSelectElement.value = '';
     timePeriodElement.value = 'all';
+    if (globalTeamSizeElement) {
+        globalTeamSizeElement.value = 'ignore';
+    }
     
     if (secondPlayerSelectElement) {
         secondPlayerSelectElement.innerHTML = '<option value="">No Comparison</option>';
@@ -1012,6 +1077,7 @@ function getFilteredGames() {
     let filtered = [...allGames];
     
     const timePeriodElement = document.getElementById('timePeriod');
+    const globalTeamSizeElement = document.getElementById('globalTeamSize');
     const analysisTypeElement = document.getElementById('analysisType');
     const filterSelectElement = document.getElementById('filterSelect');
     
@@ -1022,6 +1088,16 @@ function getFilteredGames() {
     const timePeriod = timePeriodElement.value;
     if (timePeriod !== 'all') {
         filtered = filtered.filter(game => game.year === parseInt(timePeriod));
+    }
+
+    // Global team size filter
+    if (globalTeamSizeElement && globalTeamSizeElement.value !== 'ignore') {
+        const targetSize = parseInt(globalTeamSizeElement.value) + 1;
+        filtered = filtered.filter(game => {
+            const size1 = (game.teamOne ? game.teamOne.length : 0) + 1;
+            const size2 = (game.teamTwo ? game.teamTwo.length : 0) + 1;
+            return size1 === targetSize || size2 === targetSize;
+        });
     }
     
     const analysisType = analysisTypeElement.value;
@@ -1042,6 +1118,41 @@ function getFilteredGames() {
         filtered = filtered.filter(game => game.faction1 === filterValue || game.faction2 === filterValue);
     }
     
+    return filtered;
+}
+
+// Get filtered games including early records (for faction charts)
+function getFilteredFactionGames() {
+    let filtered = [...factionGamesAll];
+
+    const timePeriodElement = document.getElementById('timePeriod');
+    const analysisTypeElement = document.getElementById('analysisType');
+    const filterSelectElement = document.getElementById('filterSelect');
+
+    if (timePeriodElement && timePeriodElement.value !== 'all') {
+        filtered = filtered.filter(g => g.year === parseInt(timePeriodElement.value));
+    }
+
+    if (!analysisTypeElement || !filterSelectElement) return filtered;
+
+    const analysisType = analysisTypeElement.value;
+    const filterValue = filterSelectElement.value;
+
+    if (filterValue && analysisType === 'player') {
+        filtered = filtered.filter(game => {
+            if (game.commander1 === filterValue || game.commander2 === filterValue) return true;
+            if (game.teamOne && game.teamOne.includes(filterValue)) return true;
+            if (game.teamTwo && game.teamTwo.includes(filterValue)) return true;
+            if (game.teamOneStraggler && game.teamOneStraggler.includes(filterValue)) return true;
+            if (game.teamTwoStraggler && game.teamTwoStraggler.includes(filterValue)) return true;
+            return false;
+        });
+    } else if (filterValue && analysisType === 'map') {
+        filtered = filtered.filter(game => game.map === filterValue);
+    } else if (filterValue && analysisType === 'faction') {
+        filtered = filtered.filter(game => game.faction1 === filterValue || game.faction2 === filterValue);
+    }
+
     return filtered;
 }
 
@@ -1304,6 +1415,59 @@ function loadGeneralOverview() {
                     </div>
                 </div>
             </div>
+
+            <!-- Team Size Distribution -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Team Size Distribution</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="teamSize" data-chart-title="Team Size Distribution">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="teamSizeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Straggler Frequency -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Straggler Frequency</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="stragglers" data-chart-title="Straggler Frequency">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="stragglerChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- Faction Popularity Over Time -->
+            <div class="col-12 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Faction Popularity Over Time</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="factionPopularity" data-chart-title="Faction Popularity Over Time">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="factionPopularityChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <!-- Chart Maximize Modal -->
@@ -1340,6 +1504,10 @@ function loadGeneralOverview() {
     createFactionDistributionChart(games);
     createFactionPerformanceChart(games);
     createGameDurationChart(games);
+    createTeamSizeDistributionChart(games);
+    createStragglerFrequencyChart(games);
+    const factionGames = getFilteredFactionGames();
+    createFactionPopularityChart(factionGames);
     
     // Align commander chart heights after they're created
     alignCommanderChartHeights();
@@ -1482,9 +1650,12 @@ function loadGeneralOverview() {
         button.addEventListener('click', (e) => {
             const chartType = e.currentTarget.dataset.chartType;
             const chartTitle = e.currentTarget.dataset.chartTitle;
-            
+
             // Get current filtered games for modal
-            const currentFilteredGames = getFilteredGames();
+            let currentFilteredGames = getFilteredGames();
+            if (chartType === 'factionPopularity') {
+                currentFilteredGames = getFilteredFactionGames();
+            }
             showModalChart(currentFilteredGames, chartType, chartTitle);
         });
     });
@@ -2122,6 +2293,142 @@ function createGameDurationChart(games) {
     });
 }
 
+// Create team size distribution chart
+function createTeamSizeDistributionChart(games) {
+    const sizeCounts = {};
+    games.forEach(g => {
+        const size = g.totalPlayers || 0;
+        sizeCounts[size] = (sizeCounts[size] || 0) + 1;
+    });
+    const sizes = Object.keys(sizeCounts).sort((a,b) => a-b);
+    safeCreateChart('teamSizeChart', {
+        type: 'bar',
+        data: {
+            labels: sizes.map(s => `${s} players`),
+            datasets: [{
+                label: 'Games',
+                data: sizes.map(s => sizeCounts[s]),
+                backgroundColor: 'rgba(0,212,255,0.7)',
+                borderColor: 'rgba(0,212,255,1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: { legend: { display:false } }
+        }
+    });
+}
+
+// Create straggler frequency chart
+function createStragglerFrequencyChart(games) {
+    const stragglerCounts = {};
+    games.forEach(g => {
+        if (!g.hasStraggler) return; // skip games lacking straggler data
+        const cnt = g.stragglerCount || 0;
+        if (cnt > 0) {
+            stragglerCounts[cnt] = (stragglerCounts[cnt] || 0) + 1;
+        }
+    });
+    const labels = Object.keys(stragglerCounts).sort((a,b)=>a-b);
+    safeCreateChart('stragglerChart', {
+        type:'bar',
+        data:{
+            labels: labels,
+            datasets:[{
+                label:'Games',
+                data: labels.map(l=>stragglerCounts[l]),
+                backgroundColor:'rgba(255,107,53,0.7)',
+                borderColor:'rgba(255,107,53,1)',
+                borderWidth:1
+            }]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:true,
+            plugins:{legend:{display:false}}
+        }
+    });
+}
+
+// Create faction popularity over time chart
+function createFactionPopularityChart(games) {
+    if (!games.length) return;
+
+    const sorted = [...games].sort((a,b) => {
+        return a.year === b.year ? getMonthIndex(a.month) - getMonthIndex(b.month) : a.year - b.year;
+    });
+
+    const minYear = sorted[0].year;
+    const minMonth = getMonthIndex(sorted[0].month);
+    const maxYear = sorted[sorted.length-1].year;
+    const maxMonth = getMonthIndex(sorted[sorted.length-1].month);
+
+    const grouped = {};
+    games.forEach(g => {
+        const mi = getMonthIndex(g.month);
+        if(!mi) return;
+        const diff = (g.year - minYear) * 12 + (mi - minMonth);
+        const bucketIndex = Math.floor(diff / 3);
+        const startMonth = minMonth + bucketIndex * 3;
+        const bucketYear = minYear + Math.floor((startMonth - 1) / 12);
+        const bucketMonth = ((startMonth - 1) % 12) + 1;
+        const bucket = `${bucketYear}-${bucketMonth}`;
+        if(!grouped[bucket]) grouped[bucket] = {};
+        [g.faction1,g.faction2].forEach(f => {
+            grouped[bucket][f] = (grouped[bucket][f] || 0) + 1;
+        });
+    });
+
+    const buckets = [];
+    let y = minYear;
+    let m = minMonth;
+    while (y < maxYear || (y === maxYear && m <= maxMonth)) {
+        buckets.push(`${y}-${m}`);
+        m += 3;
+        while (m > 12) { m -= 12; y++; }
+    }
+
+    const labels = buckets.map(b => {
+        const [yr,mo] = b.split('-');
+        return `${String(mo).padStart(2,'0')}/${String(yr).slice(-2)}`;
+    });
+
+    const factions = Array.from(new Set(games.flatMap(g=>[g.faction1,g.faction2])));
+    const factionColors = {
+        'I.S.D.F': 'rgba(13, 110, 253, 0.9)',
+        'Hadean': 'rgba(220, 53, 69, 0.9)',
+        'Scion': 'rgba(255, 193, 7, 0.9)'
+    };
+    const datasets = factions.map((f, idx) => ({
+        label: f,
+        data: buckets.map(b => grouped[b][f] || 0),
+        borderColor: factionColors[f] || gamingColors.solidColors[idx % gamingColors.solidColors.length],
+        backgroundColor: factionColors[f] || gamingColors.solidColors[idx % gamingColors.solidColors.length],
+        fill: false
+    }));
+    safeCreateChart('factionPopularityChart', {
+        type: 'line',
+        data: { labels, datasets },
+        options: { stacked: false, responsive: true, maintainAspectRatio: true }
+    });
+}
+
+// Create faction mirror match chart
+function createFactionMirrorChart(games) {
+    let mirror=0, nonMirror=0;
+    games.forEach(g=>{ if(g.faction1===g.faction2) mirror++; else nonMirror++; });
+    safeCreateChart('factionMirrorChart', {
+        type:'pie',
+        data:{
+            labels:['Mirror','Mixed'],
+            datasets:[{ data:[mirror,nonMirror], backgroundColor:['rgba(0,255,136,0.7)','rgba(220,53,69,0.7)'] }]
+        },
+        options:{ responsive:true, maintainAspectRatio:true }
+    });
+}
+
 // Show modal chart with proper full-scale scrolling
 function showModalChart(games, chartType, chartTitle, player1 = null, player2 = null) {
     const modal = new bootstrap.Modal(document.getElementById('chartModal'));
@@ -2280,6 +2587,24 @@ function showModalChart(games, chartType, chartTitle, player1 = null, player2 = 
             break;
         case 'gameDuration':
             createModalGameDurationChart(games, newModalChart);
+            break;
+        case 'teamSize':
+            createModalTeamSizeChart(games, newModalChart);
+            break;
+        case 'stragglers':
+            createModalStragglerChart(games, newModalChart);
+            break;
+        case 'factionPopularity':
+            createModalFactionPopularityChart(games, newModalChart);
+            break;
+        case 'mapHeat':
+            createModalMapHeatChart(games, newModalChart);
+            break;
+        case 'mapFactionTrend':
+            createModalMapFactionTrendChart(games, newModalChart);
+            break;
+        case 'factionMirror':
+            createModalFactionMirrorChart(games, newModalChart);
             break;
         case 'headToHeadWinRate':
             createModalHeadToHeadWinRateChart(games, newModalChart, player1, player2);
@@ -2992,6 +3317,85 @@ function createModalGameDurationChart(games, canvas) {
     });
 }
 
+function createModalTeamSizeChart(games, canvas) {
+    const sizeCounts = {};
+    games.forEach(g => { const s=g.totalPlayers||0; sizeCounts[s]=(sizeCounts[s]||0)+1; });
+    const sizes=Object.keys(sizeCounts).sort((a,b)=>a-b);
+    new Chart(canvas.getContext('2d'), {
+        type:'bar',
+        data:{ labels:sizes.map(s=>`${s} players`), datasets:[{data:sizes.map(s=>sizeCounts[s]), backgroundColor:'rgba(0,212,255,0.7)', borderColor:'rgba(0,212,255,1)', borderWidth:1}] },
+        options:{responsive:true,maintainAspectRatio:false}
+    });
+}
+
+function createModalStragglerChart(games, canvas) {
+    const counts={};
+    games.forEach(g=>{
+        if(!g.hasStraggler) return;
+        const c=g.stragglerCount||0;
+        if(c>0){counts[c]=(counts[c]||0)+1;}
+    });
+    const labels=Object.keys(counts).sort((a,b)=>a-b);
+    new Chart(canvas.getContext('2d'),{type:'bar',data:{labels,datasets:[{data:labels.map(l=>counts[l]),backgroundColor:'rgba(255,107,53,0.7)',borderColor:'rgba(255,107,53,1)',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false}});
+}
+
+function createModalFactionPopularityChart(games, canvas) {
+    if(!games.length) return;
+    const sorted=[...games].sort((a,b)=>a.year===b.year?getMonthIndex(a.month)-getMonthIndex(b.month):a.year-b.year);
+    const minYear=sorted[0].year;
+    const minMonth=getMonthIndex(sorted[0].month);
+    const maxYear=sorted[sorted.length-1].year;
+    const maxMonth=getMonthIndex(sorted[sorted.length-1].month);
+
+    const grouped={};
+    games.forEach(g=>{
+        const mi=getMonthIndex(g.month); if(!mi) return;
+        const diff=(g.year-minYear)*12+(mi-minMonth);
+        const bucketIndex=Math.floor(diff/3);
+        const startMonth=minMonth+bucketIndex*3;
+        const by=minYear+Math.floor((startMonth-1)/12);
+        const bm=((startMonth-1)%12)+1;
+        const bucket=`${by}-${bm}`;
+        if(!grouped[bucket]) grouped[bucket]={};
+        [g.faction1,g.faction2].forEach(f=>{grouped[bucket][f]=(grouped[bucket][f]||0)+1;});
+    });
+
+    const buckets=[]; let y=minYear; let m=minMonth;
+    while(y<maxYear||(y===maxYear&&m<=maxMonth)){
+        buckets.push(`${y}-${m}`);
+        m+=3;
+        while(m>12){m-=12;y++;}
+    }
+
+    const labels=buckets.map(b=>{const[yr,mo]=b.split('-');return`${String(mo).padStart(2,'0')}/${String(yr).slice(-2)}`;});
+    const factions=Array.from(new Set(games.flatMap(g=>[g.faction1,g.faction2])));
+    const factionColors={'I.S.D.F':'rgba(13, 110, 253, 0.9)','Hadean':'rgba(220, 53, 69, 0.9)','Scion':'rgba(255, 193, 7, 0.9)'};
+    const datasets=factions.map((f,idx)=>({label:f,data:buckets.map(b=>grouped[b]?.[f]||0),fill:false,borderColor:factionColors[f]||gamingColors.solidColors[idx%gamingColors.solidColors.length],backgroundColor:factionColors[f]||gamingColors.solidColors[idx%gamingColors.solidColors.length]}));
+    new Chart(canvas.getContext('2d'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,stacked:false}});
+}
+
+function createModalMapHeatChart(games, canvas) {
+    const monthCounts={};
+    games.forEach(g=>{const key=`${g.year}-${g.month}`;monthCounts[key]=(monthCounts[key]||0)+1;});
+    const months=Object.keys(monthCounts).sort();
+    const data=months.map((m,i)=>({x:i,y:0,v:monthCounts[m]}));
+    new Chart(canvas.getContext('2d'),{type:'matrix',data:{datasets:[{data,backgroundColor:c=>`rgba(13,202,240,${Math.min(1,c.dataset.data[c.dataIndex].v/5)})`,width:20,height:20}]},options:{responsive:true,scales:{x:{type:'category',labels:months},y:{display:false}}}});
+}
+
+function createModalMapFactionTrendChart(games, canvas) {
+    const monthly={};
+    games.forEach(g=>{const m=`${g.year}-${g.month}`;if(!monthly[m])monthly[m]={I:0,H:0,S:0};const win=g['winning faction']||g.winningFaction; if(win===g.faction1) monthly[m][g.faction1[0]]++; if(win===g.faction2) monthly[m][g.faction2[0]]++;});
+    const months=Object.keys(monthly).sort();
+    const factions=['I.S.D.F','Hadean','Scion'];
+    const datasets=factions.map(f=>({label:f,data:months.map(m=>monthly[m][f[0]]||0),fill:false,borderColor:gamingColors.primary}));
+    new Chart(canvas.getContext('2d'),{type:'line',data:{labels:months,datasets},options:{responsive:true,maintainAspectRatio:false}});
+}
+
+function createModalFactionMirrorChart(games, canvas) {
+    let mirror=0,non=0;games.forEach(g=>{if(g.faction1===g.faction2)mirror++;else non++;});
+    new Chart(canvas.getContext('2d'),{type:'pie',data:{labels:['Mirror','Mixed'],datasets:[{data:[mirror,non],backgroundColor:['rgba(0,255,136,0.7)','rgba(220,53,69,0.7)']}]},options:{responsive:true,maintainAspectRatio:false}});
+}
+
 // Load player analysis with complete functionality
 function loadPlayerAnalysis() {
     const games = getFilteredGames();
@@ -3067,18 +3471,12 @@ function createPlayerContent(playerGames, selectedPlayer) {
 function updateCommanderFilterInfo(totalGames, minGames, minGameRequirement, teamSize) {
     const infoElement = document.getElementById('commanderFilterInfo');
     if (!infoElement) return;
-    
-    let teamSizeText = '';
-    if (teamSize === 'ignore') {
-        teamSizeText = 'All team sizes';
-    } else {
-        const teamSizeName = teamSize === '1' ? '1 thug (2v2)' :
-                            teamSize === '2' ? '2 thugs (3v3)' :
-                            teamSize === '3' ? '3 thugs (4v4)' :
-                            teamSize === '4' ? '4 thugs (5v5)' : `${teamSize} thugs`;
-        teamSizeText = teamSizeName;
-    }
-    
+
+    const globalTeamSizeEl = document.getElementById('globalTeamSize');
+    const globalText = teamSizeText(globalTeamSizeEl ? globalTeamSizeEl.value : 'ignore');
+
+    const teamSizeTextLocal = teamSizeText(teamSize);
+
     let minGamesText = '';
     if (minGameRequirement.includes('%')) {
         const percentage = minGameRequirement.replace('%', '');
@@ -3086,11 +3484,12 @@ function updateCommanderFilterInfo(totalGames, minGames, minGameRequirement, tea
     } else {
         minGamesText = `${minGames} games minimum`;
     }
-    
+
     infoElement.innerHTML = `
         <div class="d-flex flex-wrap gap-3">
             <span><strong>Filtered games:</strong> ${totalGames}</span>
-            <span><strong>Team size:</strong> ${teamSizeText}</span>
+            <span><strong>Global filter:</strong> ${globalText}</span>
+            <span><strong>Chart filter:</strong> ${teamSizeTextLocal}</span>
             <span><strong>Minimum games:</strong> ${minGamesText}</span>
         </div>
     `;
@@ -3250,6 +3649,7 @@ function applyURLParameters() {
     const filterSelectEl = document.getElementById('filterSelect');
     const secondPlayerSelectEl = document.getElementById('secondPlayerSelect');
     const timePeriodEl = document.getElementById('timePeriod');
+    const globalTeamSizeEl = document.getElementById('globalTeamSize');
     
     if (!analysisTypeEl || !timePeriodEl) {
         console.warn('Required dropdown elements not found');
@@ -3261,6 +3661,10 @@ function applyURLParameters() {
         timePeriodEl.value = urlParams.year;
     } else if (urlParams.time) {
         timePeriodEl.value = urlParams.time;
+    }
+
+    if (urlParams.team) {
+        globalTeamSizeEl.value = urlParams.team;
     }
     
     // Determine analysis type and set filters
@@ -3331,6 +3735,11 @@ function generateShareableURL() {
     // Add time period if not default
     if (timePeriodEl && timePeriodEl.value !== 'all') {
         params.year = timePeriodEl.value;
+    }
+
+    const globalTeamSizeEl = document.getElementById('globalTeamSize');
+    if (globalTeamSizeEl && globalTeamSizeEl.value !== 'ignore') {
+        params.team = globalTeamSizeEl.value;
     }
     
     // Add analysis-specific parameters
@@ -4253,6 +4662,7 @@ function createPlayerContent(playerGames, selectedPlayer) {
                     </div>
                     <div class="card-body">
                         <canvas id="playerTrendChart"></canvas>
+                        <div id="playerTrendFilter" class="text-muted small mt-2"></div>
                     </div>
                 </div>
             </div>
@@ -4923,7 +5333,7 @@ function createPlayerFactionChart(playerGames, selectedPlayer) {
                 label: 'Win Rate (%)',
                 data: factionData.map(f => parseFloat(f.winRate)),
                 backgroundColor: factionData.map(f => factionColors[f.faction] || 'rgba(108, 117, 125, 0.8)'),
-                borderColor: factionData.map(f => factionColors[f.faction]?.replace('0.8', '1') || 'rgba(108, 117, 125, 1)'),
+                borderColor: factionData.map(f => (factionColors[f.faction] || 'rgba(108, 117, 125, 0.8)').replace('0.8','1')),
                 borderWidth: 1
             }]
         },
@@ -5142,9 +5552,8 @@ function createPlayerHeadToHeadChart(playerGames, selectedPlayer) {
         }
     });
     
-    // Get top 9 opponents with at least 3 games
+    // Get top 9 opponents by games played
     const topOpponents = Object.entries(opponentStats)
-        .filter(([, stats]) => stats.games >= 3)
         .sort(([,a], [,b]) => b.games - a.games)
         .slice(0, 9)
         .map(([opponent, stats]) => ({
@@ -5155,7 +5564,7 @@ function createPlayerHeadToHeadChart(playerGames, selectedPlayer) {
         }));
     
     if (topOpponents.length === 0) {
-        // No sufficient head-to-head data, show message
+        // No head-to-head data
         const canvas = document.getElementById('playerHeadToHeadChart');
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -5163,7 +5572,6 @@ function createPlayerHeadToHeadChart(playerGames, selectedPlayer) {
         ctx.font = '16px Arial';
         ctx.textAlign = 'center';
         ctx.fillText('Not enough head-to-head data', canvas.width/2, canvas.height/2);
-        ctx.fillText('(3+ games vs same opponent)', canvas.width/2, canvas.height/2 + 25);
         return;
     }
     
@@ -5332,6 +5740,13 @@ function createPlayerTrendChart(playerGames, selectedPlayer) {
             }
         }
     });
+
+    const filterLabel = document.getElementById('playerTrendFilter');
+    if (filterLabel) {
+        const globalTeamSizeEl = document.getElementById('globalTeamSize');
+        const text = teamSizeText(globalTeamSizeEl ? globalTeamSizeEl.value : 'ignore');
+        filterLabel.textContent = `Thug filter: ${text}`;
+    }
 }
 
 
@@ -5391,11 +5806,47 @@ function createMapContent(mapGames, selectedMap) {
                     </div>
                 </div>
             </div>
+
+            <!-- Map Popularity Heatmap -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Map Popularity By Month</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="mapHeat" data-chart-title="${selectedMap} Popularity Heatmap">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="mapHeatChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Faction Win Rate Trend -->
+            <div class="col-12 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Faction Win Rate Over Time</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="mapFactionTrend" data-chart-title="${selectedMap} Faction Trend">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="mapFactionTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
     `;
     
     // Create all map-specific charts
     createMapFactionChart(mapGames, selectedMap);
+    createMapHeatChart(mapGames, selectedMap);
+    createMapFactionTrendChart(mapGames, selectedMap);
     
     // Align card heights after charts are created and rendered
     alignCardHeights();
@@ -5470,6 +5921,60 @@ function createMapFactionChart(mapGames, selectedMap) {
     });
 }
 
+// Create map popularity heatmap using matrix chart
+function createMapHeatChart(mapGames, selectedMap) {
+    const monthCounts = {};
+    mapGames.forEach(g => {
+        const key = `${g.year}-${g.month}`;
+        monthCounts[key] = (monthCounts[key] || 0) + 1;
+    });
+    const months = Object.keys(monthCounts).sort();
+    const data = months.map((m,i)=>({x:i,y:0,v:monthCounts[m]}));
+    safeCreateChart('mapHeatChart', {
+        type:'matrix',
+        data:{
+            datasets:[{
+                label:'Games',
+                data:data,
+                backgroundColor(ctx){
+                    const value=ctx.dataset.data[ctx.dataIndex].v;
+                    return `rgba(13,202,240,${Math.min(1,value/5)})`;
+                },
+                width:20,
+                height:20,
+            }]
+        },
+        options:{
+            responsive:true,
+            scales:{
+                x:{type:'category', labels:months},
+                y:{display:false}
+            }
+        }
+    });
+}
+
+// Create faction win rate trend chart for map
+function createMapFactionTrendChart(mapGames, selectedMap) {
+    const monthly={};
+    mapGames.forEach(g=>{
+        const m=`${g.year}-${g.month}`;
+        if(!monthly[m]) monthly[m]={I:0,H:0,S:0,cI:0,cH:0,cS:0};
+        const winFaction=g['winning faction']||g.winningFaction;
+        if(winFaction===g.faction1) monthly[m][g.faction1[0]]++;
+        if(winFaction===g.faction2) monthly[m][g.faction2[0]]++;
+    });
+    const months=Object.keys(monthly).sort();
+    const factions=['I.S.D.F','Hadean','Scion'];
+    const datasets=factions.map(f=>({
+        label:f,
+        data:months.map(m=>monthly[m][f[0]]||0),
+        fill:false,
+        borderColor: gamingColors.primary,
+    }));
+    safeCreateChart('mapFactionTrendChart',{type:'line',data:{labels:months,datasets},options:{responsive:true,maintainAspectRatio:true}});
+}
+
 // ==================== FACTION ANALYSIS FUNCTIONS ====================
 
 // Load faction analysis with complete functionality
@@ -5525,11 +6030,29 @@ function createFactionContent(factionGames, selectedFaction) {
                     </div>
                 </div>
             </div>
+
+            <!-- Faction Mirror Matches -->
+            <div class="col-lg-6 mb-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header bg-warning text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">${selectedFaction} Mirror Matches</h5>
+                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="factionMirror" data-chart-title="${selectedFaction} Mirror Matches">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="factionMirrorChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
     `;
     
-    // Create faction chart
+    // Create faction charts
     createFactionVsFactionChart(factionGames, selectedFaction);
+    createFactionMirrorChart(factionGames);
     
     // Align card heights after charts are created and rendered
     alignCardHeights();
