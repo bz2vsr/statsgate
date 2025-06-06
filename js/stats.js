@@ -1247,6 +1247,10 @@ function updateSummaryStats(games) {
 function loadGeneralOverview() {
     const games = getFilteredGames();
     updateSummaryStats(games);
+
+    // Determine initial team size from global filter
+    const globalEl = document.getElementById('globalTeamSize');
+    const globalTeamSizeValue = globalEl ? globalEl.value : 'ignore';
     
     const mainAnalysis = document.getElementById('mainAnalysis');
     mainAnalysis.innerHTML = `
@@ -1495,10 +1499,20 @@ function loadGeneralOverview() {
             </div>
         </div>
     `;
-    
+
+    // Apply global team size to local dropdowns if set
+    const teamSizeEl = document.getElementById('teamSize');
+    const teamSizeGamesEl = document.getElementById('teamSizeGames');
+    if (globalTeamSizeValue !== 'ignore') {
+        if (teamSizeEl) teamSizeEl.value = globalTeamSizeValue;
+        if (teamSizeGamesEl) teamSizeGamesEl.value = globalTeamSizeValue;
+    }
+
+    const initialTeamSize = teamSizeEl ? teamSizeEl.value : (globalTeamSizeValue !== 'ignore' ? globalTeamSizeValue : 'ignore');
+
     // Create all charts
-    createCommanderGamesChart(games);
-    createCommanderWinRateChart(games, 'wilson', '3%', '4');
+    createCommanderGamesChart(games, initialTeamSize);
+    createCommanderWinRateChart(games, 'wilson', '3%', initialTeamSize);
     createMapPopularityChart(games);
     createCommanderFactionChart(games);
     createFactionDistributionChart(games);
@@ -1662,8 +1676,11 @@ function loadGeneralOverview() {
 }
 
 // Create commander games chart
-function createCommanderGamesChart(games) {
-    const teamSize = document.getElementById('teamSizeGames') ? document.getElementById('teamSizeGames').value : 'ignore';
+function createCommanderGamesChart(games, overrideTeamSize = null) {
+    let teamSize = overrideTeamSize;
+    if (teamSize === null) {
+        teamSize = document.getElementById('teamSizeGames') ? document.getElementById('teamSizeGames').value : 'ignore';
+    }
     
     const commanderStats = {};
     
