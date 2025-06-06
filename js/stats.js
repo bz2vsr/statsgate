@@ -1339,22 +1339,7 @@ function loadGeneralOverview() {
                 </div>
             </div>
 
-            <!-- Avg Duration Over Time -->
-            <div class="col-lg-6 mb-4">
-                <div class="card bg-dark border-secondary">
-                    <div class="card-header bg-purple text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Game Duration Over Time</h5>
-                        <button class="btn btn-sm btn-outline-light maximize-chart" data-chart-type="durationOverTime" data-chart-title="Average Game Duration Over Time">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="durationOverTimeChart"></canvas>
-                    </div>
-                </div>
-            </div>
+
 
             <!-- Faction Popularity Over Time -->
             <div class="col-12 mb-4">
@@ -1410,7 +1395,6 @@ function loadGeneralOverview() {
     createGameDurationChart(games);
     createTeamSizeDistributionChart(games);
     createStragglerFrequencyChart(games);
-    createDurationOverTimeChart(games);
     createFactionPopularityChart(games);
     
     // Align commander chart heights after they're created
@@ -2250,39 +2234,6 @@ function createStragglerFrequencyChart(games) {
     });
 }
 
-// Create average duration over time chart
-function createDurationOverTimeChart(games) {
-    const monthly = {};
-    games.forEach(g => {
-        if(!g.time) return;
-        const m = `${g.year}-${g.month}`;
-        const mins = parseGameDuration(g.time);
-        if(mins===null) return;
-        if(!monthly[m]) monthly[m]={sum:0,count:0};
-        monthly[m].sum += mins;
-        monthly[m].count++;
-    });
-    const months = Object.keys(monthly).sort();
-    const averages = months.map(m => (monthly[m].sum/monthly[m].count).toFixed(1));
-    safeCreateChart('durationOverTimeChart', {
-        type:'line',
-        data:{
-            labels:months,
-            datasets:[{
-                label:'Avg Minutes',
-                data:averages,
-                borderColor:'rgba(123,104,238,1)',
-                backgroundColor:'rgba(123,104,238,0.4)',
-                fill:true
-            }]
-        },
-        options:{
-            responsive:true,
-            maintainAspectRatio:true
-        }
-    });
-}
-
 // Create faction popularity over time chart
 function createFactionPopularityChart(games) {
     const monthly = {};
@@ -2490,9 +2441,6 @@ function showModalChart(games, chartType, chartTitle, player1 = null, player2 = 
             break;
         case 'stragglers':
             createModalStragglerChart(games, newModalChart);
-            break;
-        case 'durationOverTime':
-            createModalDurationOverTimeChart(games, newModalChart);
             break;
         case 'factionPopularity':
             createModalFactionPopularityChart(games, newModalChart);
@@ -3233,14 +3181,6 @@ function createModalStragglerChart(games, canvas) {
     games.forEach(g=>{const c=g.stragglerCount||0;if(c===0)counts['None']++;else counts[c]=(counts[c]||0)+1;});
     const labels=Object.keys(counts);
     new Chart(canvas.getContext('2d'),{type:'bar',data:{labels,datasets:[{data:labels.map(l=>counts[l]),backgroundColor:'rgba(255,107,53,0.7)',borderColor:'rgba(255,107,53,1)',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false}});
-}
-
-function createModalDurationOverTimeChart(games, canvas) {
-    const monthly={};
-    games.forEach(g=>{if(!g.time)return;const m=`${g.year}-${g.month}`;const mins=parseGameDuration(g.time);if(mins===null)return;if(!monthly[m])monthly[m]={sum:0,count:0};monthly[m].sum+=mins;monthly[m].count++;});
-    const months=Object.keys(monthly).sort();
-    const data=months.map(m=>(monthly[m].sum/monthly[m].count).toFixed(1));
-    new Chart(canvas.getContext('2d'),{type:'line',data:{labels:months,datasets:[{label:'Avg Minutes',data,borderColor:'rgba(123,104,238,1)',backgroundColor:'rgba(123,104,238,0.4)',fill:true}]},options:{responsive:true,maintainAspectRatio:false}});
 }
 
 function createModalFactionPopularityChart(games, canvas) {
