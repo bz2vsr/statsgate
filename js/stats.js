@@ -73,6 +73,21 @@ function getMonthIndex(name) {
     return isNaN(num) ? null : num;
 }
 
+function teamSizeText(value) {
+    switch (value) {
+        case '1':
+            return '1 thug (2v2)';
+        case '2':
+            return '2 thugs (3v3)';
+        case '3':
+            return '3 thugs (4v4)';
+        case '4':
+            return '4 thugs (5v5)';
+        default:
+            return 'All team sizes';
+    }
+}
+
 // Enhanced animation configurations - OPTIMIZED
 const chartAnimations = {
     standard: {
@@ -749,6 +764,16 @@ function initializeDashboard() {
                                 </select>
                             </div>
                             <div class="col-md-3">
+                                <label class="form-label text-light">Thug Count</label>
+                                <select id="globalTeamSize" class="form-select bg-dark text-light border-secondary">
+                                    <option value="ignore">Ignore</option>
+                                    <option value="1">1 thug</option>
+                                    <option value="2">2 thugs</option>
+                                    <option value="3">3 thugs</option>
+                                    <option value="4">4 thugs</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
                                 <label class="form-label text-light">Actions</label>
                                 <div class="d-flex gap-2">
                                     <button id="resetFilters" class="btn btn-outline-secondary bg-dark text-light border-secondary">Reset Filters</button>
@@ -842,6 +867,7 @@ function setupEventListeners() {
     const filterSelect = document.getElementById('filterSelect');
     const secondPlayerSelect = document.getElementById('secondPlayerSelect');
     const timePeriod = document.getElementById('timePeriod');
+    const globalTeamSize = document.getElementById('globalTeamSize');
     const resetButton = document.getElementById('resetFilters');
     
     if (analysisType) {
@@ -858,6 +884,10 @@ function setupEventListeners() {
     
     if (timePeriod) {
         timePeriod.addEventListener('change', handleTimePeriodChange);
+    }
+
+    if (globalTeamSize) {
+        globalTeamSize.addEventListener('change', handleGlobalTeamSizeChange);
     }
     
     if (resetButton) {
@@ -977,12 +1007,19 @@ function handleTimePeriodChange() {
     scheduleURLUpdate(true); // Force new history entry for time period changes
 }
 
+// Handle global team size change
+function handleGlobalTeamSizeChange() {
+    loadContent();
+    scheduleURLUpdate(true); // Force new history entry for team size changes
+}
+
 // Reset filters
 function resetFilters() {
     const analysisTypeElement = document.getElementById('analysisType');
     const filterSelectElement = document.getElementById('filterSelect');
     const secondPlayerSelectElement = document.getElementById('secondPlayerSelect');
     const timePeriodElement = document.getElementById('timePeriod');
+    const globalTeamSizeElement = document.getElementById('globalTeamSize');
     const filterSectionElement = document.getElementById('filterSection');
     
     if (!analysisTypeElement || !filterSelectElement || !timePeriodElement) {
@@ -993,6 +1030,9 @@ function resetFilters() {
     filterSelectElement.innerHTML = '<option value="">All Data</option>';
     filterSelectElement.value = '';
     timePeriodElement.value = 'all';
+    if (globalTeamSizeElement) {
+        globalTeamSizeElement.value = 'ignore';
+    }
     
     if (secondPlayerSelectElement) {
         secondPlayerSelectElement.innerHTML = '<option value="">No Comparison</option>';
@@ -1037,6 +1077,7 @@ function getFilteredGames() {
     let filtered = [...allGames];
     
     const timePeriodElement = document.getElementById('timePeriod');
+    const globalTeamSizeElement = document.getElementById('globalTeamSize');
     const analysisTypeElement = document.getElementById('analysisType');
     const filterSelectElement = document.getElementById('filterSelect');
     
@@ -1047,6 +1088,16 @@ function getFilteredGames() {
     const timePeriod = timePeriodElement.value;
     if (timePeriod !== 'all') {
         filtered = filtered.filter(game => game.year === parseInt(timePeriod));
+    }
+
+    // Global team size filter
+    if (globalTeamSizeElement && globalTeamSizeElement.value !== 'ignore') {
+        const targetSize = parseInt(globalTeamSizeElement.value) + 1;
+        filtered = filtered.filter(game => {
+            const size1 = (game.teamOne ? game.teamOne.length : 0) + 1;
+            const size2 = (game.teamTwo ? game.teamTwo.length : 0) + 1;
+            return size1 === targetSize || size2 === targetSize;
+        });
     }
     
     const analysisType = analysisTypeElement.value;
@@ -3420,18 +3471,12 @@ function createPlayerContent(playerGames, selectedPlayer) {
 function updateCommanderFilterInfo(totalGames, minGames, minGameRequirement, teamSize) {
     const infoElement = document.getElementById('commanderFilterInfo');
     if (!infoElement) return;
-    
-    let teamSizeText = '';
-    if (teamSize === 'ignore') {
-        teamSizeText = 'All team sizes';
-    } else {
-        const teamSizeName = teamSize === '1' ? '1 thug (2v2)' :
-                            teamSize === '2' ? '2 thugs (3v3)' :
-                            teamSize === '3' ? '3 thugs (4v4)' :
-                            teamSize === '4' ? '4 thugs (5v5)' : `${teamSize} thugs`;
-        teamSizeText = teamSizeName;
-    }
-    
+
+    const globalTeamSizeEl = document.getElementById('globalTeamSize');
+    const globalText = teamSizeText(globalTeamSizeEl ? globalTeamSizeEl.value : 'ignore');
+
+    const teamSizeTextLocal = teamSizeText(teamSize);
+
     let minGamesText = '';
     if (minGameRequirement.includes('%')) {
         const percentage = minGameRequirement.replace('%', '');
@@ -3439,11 +3484,12 @@ function updateCommanderFilterInfo(totalGames, minGames, minGameRequirement, tea
     } else {
         minGamesText = `${minGames} games minimum`;
     }
-    
+
     infoElement.innerHTML = `
         <div class="d-flex flex-wrap gap-3">
             <span><strong>Filtered games:</strong> ${totalGames}</span>
-            <span><strong>Team size:</strong> ${teamSizeText}</span>
+            <span><strong>Global filter:</strong> ${globalText}</span>
+            <span><strong>Chart filter:</strong> ${teamSizeTextLocal}</span>
             <span><strong>Minimum games:</strong> ${minGamesText}</span>
         </div>
     `;
@@ -3603,6 +3649,7 @@ function applyURLParameters() {
     const filterSelectEl = document.getElementById('filterSelect');
     const secondPlayerSelectEl = document.getElementById('secondPlayerSelect');
     const timePeriodEl = document.getElementById('timePeriod');
+    const globalTeamSizeEl = document.getElementById('globalTeamSize');
     
     if (!analysisTypeEl || !timePeriodEl) {
         console.warn('Required dropdown elements not found');
@@ -3614,6 +3661,10 @@ function applyURLParameters() {
         timePeriodEl.value = urlParams.year;
     } else if (urlParams.time) {
         timePeriodEl.value = urlParams.time;
+    }
+
+    if (urlParams.team) {
+        globalTeamSizeEl.value = urlParams.team;
     }
     
     // Determine analysis type and set filters
@@ -3684,6 +3735,11 @@ function generateShareableURL() {
     // Add time period if not default
     if (timePeriodEl && timePeriodEl.value !== 'all') {
         params.year = timePeriodEl.value;
+    }
+
+    const globalTeamSizeEl = document.getElementById('globalTeamSize');
+    if (globalTeamSizeEl && globalTeamSizeEl.value !== 'ignore') {
+        params.team = globalTeamSizeEl.value;
     }
     
     // Add analysis-specific parameters
@@ -4606,6 +4662,7 @@ function createPlayerContent(playerGames, selectedPlayer) {
                     </div>
                     <div class="card-body">
                         <canvas id="playerTrendChart"></canvas>
+                        <div id="playerTrendFilter" class="text-muted small mt-2"></div>
                     </div>
                 </div>
             </div>
@@ -5269,16 +5326,15 @@ function createPlayerFactionChart(playerGames, selectedPlayer) {
     };
     
     safeCreateChart('playerFactionChart', {
-        type: 'radar',
+        type: 'bar',
         data: {
             labels: factionData.map(f => f.faction),
             datasets: [{
                 label: 'Win Rate (%)',
                 data: factionData.map(f => parseFloat(f.winRate)),
-                backgroundColor: 'rgba(13,110,253,0.4)',
-                borderColor: 'rgba(13,110,253,1)',
-                borderWidth: 2,
-                fill: true
+                backgroundColor: factionData.map(f => factionColors[f.faction] || 'rgba(108, 117, 125, 0.8)'),
+                borderColor: factionData.map(f => (factionColors[f.faction] || 'rgba(108, 117, 125, 0.8)').replace('0.8','1')),
+                borderWidth: 1
             }]
         },
         options: {
@@ -5496,9 +5552,8 @@ function createPlayerHeadToHeadChart(playerGames, selectedPlayer) {
         }
     });
     
-    // Get top 9 opponents with at least 3 games
+    // Get top 9 opponents by games played
     const topOpponents = Object.entries(opponentStats)
-        .filter(([, stats]) => stats.games >= 3)
         .sort(([,a], [,b]) => b.games - a.games)
         .slice(0, 9)
         .map(([opponent, stats]) => ({
@@ -5509,7 +5564,7 @@ function createPlayerHeadToHeadChart(playerGames, selectedPlayer) {
         }));
     
     if (topOpponents.length === 0) {
-        // No sufficient head-to-head data, show message
+        // No head-to-head data
         const canvas = document.getElementById('playerHeadToHeadChart');
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -5517,7 +5572,6 @@ function createPlayerHeadToHeadChart(playerGames, selectedPlayer) {
         ctx.font = '16px Arial';
         ctx.textAlign = 'center';
         ctx.fillText('Not enough head-to-head data', canvas.width/2, canvas.height/2);
-        ctx.fillText('(3+ games vs same opponent)', canvas.width/2, canvas.height/2 + 25);
         return;
     }
     
@@ -5686,6 +5740,13 @@ function createPlayerTrendChart(playerGames, selectedPlayer) {
             }
         }
     });
+
+    const filterLabel = document.getElementById('playerTrendFilter');
+    if (filterLabel) {
+        const globalTeamSizeEl = document.getElementById('globalTeamSize');
+        const text = teamSizeText(globalTeamSizeEl ? globalTeamSizeEl.value : 'ignore');
+        filterLabel.textContent = `Thug filter: ${text}`;
+    }
 }
 
 
