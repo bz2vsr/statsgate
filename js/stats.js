@@ -2213,12 +2213,15 @@ function createTeamSizeDistributionChart(games) {
 
 // Create straggler frequency chart
 function createStragglerFrequencyChart(games) {
-    const stragglerCounts = { 'None':0 };
+    const stragglerCounts = {};
     games.forEach(g => {
+        if (!g.hasStraggler) return; // skip games lacking straggler data
         const cnt = g.stragglerCount || 0;
-        if (cnt===0) { stragglerCounts['None']++; } else { stragglerCounts[cnt] = (stragglerCounts[cnt] || 0)+1; }
+        if (cnt > 0) {
+            stragglerCounts[cnt] = (stragglerCounts[cnt] || 0) + 1;
+        }
     });
-    const labels = Object.keys(stragglerCounts);
+    const labels = Object.keys(stragglerCounts).sort((a,b)=>a-b);
     safeCreateChart('stragglerChart', {
         type:'bar',
         data:{
@@ -3182,9 +3185,13 @@ function createModalTeamSizeChart(games, canvas) {
 }
 
 function createModalStragglerChart(games, canvas) {
-    const counts={'None':0};
-    games.forEach(g=>{const c=g.stragglerCount||0;if(c===0)counts['None']++;else counts[c]=(counts[c]||0)+1;});
-    const labels=Object.keys(counts);
+    const counts={};
+    games.forEach(g=>{
+        if(!g.hasStraggler) return;
+        const c=g.stragglerCount||0;
+        if(c>0){counts[c]=(counts[c]||0)+1;}
+    });
+    const labels=Object.keys(counts).sort((a,b)=>a-b);
     new Chart(canvas.getContext('2d'),{type:'bar',data:{labels,datasets:[{data:labels.map(l=>counts[l]),backgroundColor:'rgba(255,107,53,0.7)',borderColor:'rgba(255,107,53,1)',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false}});
 }
 

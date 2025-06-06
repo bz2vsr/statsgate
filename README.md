@@ -22,3 +22,7 @@ each side as a single-player team. For example, a 2024 entry looked like:
 Without team lists, that game was interpreted as a 1v1 with just the two
 commanders. The updated code now skips such entries entirely so only games
 with explicit team rosters contribute to statistics.
+
+Recent data adds `teamOneStraggler` and `teamTwoStraggler` arrays for
+late-joining players. Straggler charts only use games with these fields
+and omit matches where no stragglers were recorded.
