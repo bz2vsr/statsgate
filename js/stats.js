@@ -2303,43 +2303,47 @@ function createStragglerFrequencyChart(games) {
 
 // Create faction popularity over time chart
 function createFactionPopularityChart(games) {
+    if (!games.length) return;
+
+    const sorted = [...games].sort((a,b) => {
+        return a.year === b.year ? getMonthIndex(a.month) - getMonthIndex(b.month) : a.year - b.year;
+    });
+
+    const minYear = sorted[0].year;
+    const minMonth = getMonthIndex(sorted[0].month);
+    const maxYear = sorted[sorted.length-1].year;
+    const maxMonth = getMonthIndex(sorted[sorted.length-1].month);
+
     const grouped = {};
     games.forEach(g => {
         const mi = getMonthIndex(g.month);
         if(!mi) return;
-        const bucket = `${g.year}-Q${Math.ceil(mi/3)}`;
+        const diff = (g.year - minYear) * 12 + (mi - minMonth);
+        const bucketIndex = Math.floor(diff / 3);
+        const startMonth = minMonth + bucketIndex * 3;
+        const bucketYear = minYear + Math.floor((startMonth - 1) / 12);
+        const bucketMonth = ((startMonth - 1) % 12) + 1;
+        const bucket = `${bucketYear}-${bucketMonth}`;
         if(!grouped[bucket]) grouped[bucket] = {};
         [g.faction1,g.faction2].forEach(f => {
-            if(!grouped[bucket][f]) grouped[bucket][f] = 0;
-            grouped[bucket][f]++;
+            grouped[bucket][f] = (grouped[bucket][f] || 0) + 1;
         });
     });
-    const rawBuckets = Object.keys(grouped).map(b => {
-        const [y,q] = b.split('-Q');
-        return { year: parseInt(y,10), quarter: parseInt(q,10) };
-    }).sort((a,b) => a.year === b.year ? a.quarter - b.quarter : a.year - b.year);
-
-    if (rawBuckets.length === 0) return;
-
-    let minYear = rawBuckets[0].year;
-    let minQuarter = rawBuckets[0].quarter;
-    let maxYear = rawBuckets[rawBuckets.length-1].year;
-    let maxQuarter = rawBuckets[rawBuckets.length-1].quarter;
 
     const buckets = [];
     let y = minYear;
-    let q = minQuarter;
-    while (y < maxYear || (y === maxYear && q <= maxQuarter)) {
-        buckets.push(`${y}-Q${q}`);
-        q++;
-        if (q > 4) { q = 1; y++; }
+    let m = minMonth;
+    while (y < maxYear || (y === maxYear && m <= maxMonth)) {
+        buckets.push(`${y}-${m}`);
+        m += 3;
+        while (m > 12) { m -= 12; y++; }
     }
 
     const labels = buckets.map(b => {
-        const [yr,qStr] = b.split('-Q');
-        const m = String((parseInt(qStr,10)-1)*3 + 1).padStart(2,'0');
-        return `${m}/${String(yr).slice(-2)}`;
+        const [yr,mo] = b.split('-');
+        return `${String(mo).padStart(2,'0')}/${String(yr).slice(-2)}`;
     });
+
     const factions = Array.from(new Set(games.flatMap(g=>[g.faction1,g.faction2])));
     const factionColors = {
         'I.S.D.F': 'rgba(13, 110, 253, 0.9)',
@@ -3285,20 +3289,34 @@ function createModalStragglerChart(games, canvas) {
 }
 
 function createModalFactionPopularityChart(games, canvas) {
+    if(!games.length) return;
+    const sorted=[...games].sort((a,b)=>a.year===b.year?getMonthIndex(a.month)-getMonthIndex(b.month):a.year-b.year);
+    const minYear=sorted[0].year;
+    const minMonth=getMonthIndex(sorted[0].month);
+    const maxYear=sorted[sorted.length-1].year;
+    const maxMonth=getMonthIndex(sorted[sorted.length-1].month);
+
     const grouped={};
     games.forEach(g=>{
         const mi=getMonthIndex(g.month); if(!mi) return;
-        const bucket=`${g.year}-Q${Math.ceil(mi/3)}`;
-        if(!grouped[bucket]) grouped[bucket] = {};
-        [g.faction1,g.faction2].forEach(f=>{ grouped[bucket][f]=(grouped[bucket][f]||0)+1; });
+        const diff=(g.year-minYear)*12+(mi-minMonth);
+        const bucketIndex=Math.floor(diff/3);
+        const startMonth=minMonth+bucketIndex*3;
+        const by=minYear+Math.floor((startMonth-1)/12);
+        const bm=((startMonth-1)%12)+1;
+        const bucket=`${by}-${bm}`;
+        if(!grouped[bucket]) grouped[bucket]={};
+        [g.faction1,g.faction2].forEach(f=>{grouped[bucket][f]=(grouped[bucket][f]||0)+1;});
     });
-    const rawBuckets=Object.keys(grouped).map(b=>{const[y,q]=b.split('-Q');return{year:parseInt(y,10),quarter:parseInt(q,10)}}).sort((a,b)=>a.year===b.year?a.quarter-b.quarter:a.year-b.year);
-    if(rawBuckets.length===0)return;
-    let minYear=rawBuckets[0].year; let minQuarter=rawBuckets[0].quarter;
-    let maxYear=rawBuckets[rawBuckets.length-1].year; let maxQuarter=rawBuckets[rawBuckets.length-1].quarter;
-    const buckets=[]; let y=minYear; let q=minQuarter;
-    while(y<maxYear||(y===maxYear&&q<=maxQuarter)){buckets.push(`${y}-Q${q}`);q++;if(q>4){q=1;y++;}}
-    const labels=buckets.map(b=>{const[yr,qs]=b.split('-Q');const m=String((parseInt(qs,10)-1)*3+1).padStart(2,'0');return`${m}/${String(yr).slice(-2)}`;});
+
+    const buckets=[]; let y=minYear; let m=minMonth;
+    while(y<maxYear||(y===maxYear&&m<=maxMonth)){
+        buckets.push(`${y}-${m}`);
+        m+=3;
+        while(m>12){m-=12;y++;}
+    }
+
+    const labels=buckets.map(b=>{const[yr,mo]=b.split('-');return`${String(mo).padStart(2,'0')}/${String(yr).slice(-2)}`;});
     const factions=Array.from(new Set(games.flatMap(g=>[g.faction1,g.faction2])));
     const factionColors={'I.S.D.F':'rgba(13, 110, 253, 0.9)','Hadean':'rgba(220, 53, 69, 0.9)','Scion':'rgba(255, 193, 7, 0.9)'};
     const datasets=factions.map((f,idx)=>({label:f,data:buckets.map(b=>grouped[b]?.[f]||0),fill:false,borderColor:factionColors[f]||gamingColors.solidColors[idx%gamingColors.solidColors.length],backgroundColor:factionColors[f]||gamingColors.solidColors[idx%gamingColors.solidColors.length]}));
