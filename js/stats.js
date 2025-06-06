@@ -645,6 +645,11 @@ function processAllGames() {
                     
                     // Parse commanders
                     const commanders = game.commanders.split(' vs ');
+
+                    // Exclude early records without team rosters
+                    if (!Array.isArray(game.teamOne) || !Array.isArray(game.teamTwo)) {
+                        return;
+                    }
                     // Parse factions more safely
                     let factions;
                     try {
