@@ -26,3 +26,4 @@ with explicit team rosters contribute to statistics.
 Recent data adds `teamOneStraggler` and `teamTwoStraggler` arrays for
 late-joining players. Straggler charts only use games with these fields
 and omit matches where no stragglers were recorded.
+Faction popularity statistics still include the 2024 games since faction choices were recorded even when rosters were not.

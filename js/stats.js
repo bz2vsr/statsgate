@@ -1,6 +1,7 @@
 // Global variables
 let gameData = null;
 let allGames = [];
+let factionGamesAll = [];
 
 // PERFORMANCE OPTIMIZATION: Detect device capabilities
 const performanceConfig = {
@@ -60,6 +61,17 @@ const gamingColors = {
         'rgba(240, 147, 251, 0.8)'
     ]
 };
+
+const monthIndexMap = {
+    January: 1, February: 2, March: 3, April: 4, May: 5, June: 6,
+    July: 7, August: 8, September: 9, October: 10, November: 11, December: 12
+};
+function getMonthIndex(name) {
+    if (typeof name === 'number') return name;
+    if (monthIndexMap[name]) return monthIndexMap[name];
+    const num = parseInt(name, 10);
+    return isNaN(num) ? null : num;
+}
 
 // Enhanced animation configurations - OPTIMIZED
 const chartAnimations = {
@@ -620,6 +632,7 @@ function updateTimestamp() {
 // Process all games into a flat array
 function processAllGames() {
     allGames = [];
+    factionGamesAll = [];
     
     // Process each year
     Object.keys(gameData).forEach(year => {
@@ -638,18 +651,14 @@ function processAllGames() {
             // Process each day
             Object.keys(monthData).forEach(day => {
                 const dayData = monthData[day];
-                
+
                 // Process each game
                 Object.keys(dayData).forEach(mapName => {
                     const game = dayData[mapName];
-                    
+
                     // Parse commanders
                     const commanders = game.commanders.split(' vs ');
 
-                    // Exclude early records without team rosters
-                    if (!Array.isArray(game.teamOne) || !Array.isArray(game.teamTwo)) {
-                        return;
-                    }
                     // Parse factions more safely
                     let factions;
                     try {
@@ -659,12 +668,11 @@ function processAllGames() {
                         const factionsStr = game.factions.replace(/[\[\]]/g, '').split(',').map(f => f.trim());
                         factions = factionsStr;
                     }
-                    
-                    // Determine winner index
+
                     const winnerIndex = commanders.indexOf(game.winner);
                     const loserIndex = winnerIndex === 0 ? 1 : 0;
-                    
-                    allGames.push({
+
+                    const baseRecord = {
                         ...game,
                         year: parseInt(year),
                         month,
@@ -675,7 +683,19 @@ function processAllGames() {
                         faction2: factions[1],
                         winnerIndex,
                         loser: commanders[loserIndex],
-                        losingFaction: factions[loserIndex],
+                        losingFaction: factions[loserIndex]
+                    };
+
+                    // Store for faction charts regardless of roster info
+                    factionGamesAll.push(baseRecord);
+
+                    // Exclude early records without team rosters from detailed stats
+                    if (!Array.isArray(game.teamOne) || !Array.isArray(game.teamTwo)) {
+                        return;
+                    }
+
+                    allGames.push({
+                        ...baseRecord,
                         teamOneSize: (game.teamOne || []).length + 1,
                         teamTwoSize: (game.teamTwo || []).length + 1,
                         totalPlayers: (game.teamOne || []).length + (game.teamTwo || []).length + 2,
@@ -1050,6 +1070,41 @@ function getFilteredGames() {
     return filtered;
 }
 
+// Get filtered games including early records (for faction charts)
+function getFilteredFactionGames() {
+    let filtered = [...factionGamesAll];
+
+    const timePeriodElement = document.getElementById('timePeriod');
+    const analysisTypeElement = document.getElementById('analysisType');
+    const filterSelectElement = document.getElementById('filterSelect');
+
+    if (timePeriodElement && timePeriodElement.value !== 'all') {
+        filtered = filtered.filter(g => g.year === parseInt(timePeriodElement.value));
+    }
+
+    if (!analysisTypeElement || !filterSelectElement) return filtered;
+
+    const analysisType = analysisTypeElement.value;
+    const filterValue = filterSelectElement.value;
+
+    if (filterValue && analysisType === 'player') {
+        filtered = filtered.filter(game => {
+            if (game.commander1 === filterValue || game.commander2 === filterValue) return true;
+            if (game.teamOne && game.teamOne.includes(filterValue)) return true;
+            if (game.teamTwo && game.teamTwo.includes(filterValue)) return true;
+            if (game.teamOneStraggler && game.teamOneStraggler.includes(filterValue)) return true;
+            if (game.teamTwoStraggler && game.teamTwoStraggler.includes(filterValue)) return true;
+            return false;
+        });
+    } else if (filterValue && analysisType === 'map') {
+        filtered = filtered.filter(game => game.map === filterValue);
+    } else if (filterValue && analysisType === 'faction') {
+        filtered = filtered.filter(game => game.faction1 === filterValue || game.faction2 === filterValue);
+    }
+
+    return filtered;
+}
+
 // Update summary stats with advanced features
 function updateSummaryStats(games) {
     const analysisTypeElement = document.getElementById('analysisType');
@@ -1400,7 +1455,8 @@ function loadGeneralOverview() {
     createGameDurationChart(games);
     createTeamSizeDistributionChart(games);
     createStragglerFrequencyChart(games);
-    createFactionPopularityChart(games);
+    const factionGames = getFilteredFactionGames();
+    createFactionPopularityChart(factionGames);
     
     // Align commander chart heights after they're created
     alignCommanderChartHeights();
@@ -1543,9 +1599,12 @@ function loadGeneralOverview() {
         button.addEventListener('click', (e) => {
             const chartType = e.currentTarget.dataset.chartType;
             const chartTitle = e.currentTarget.dataset.chartTitle;
-            
+
             // Get current filtered games for modal
-            const currentFilteredGames = getFilteredGames();
+            let currentFilteredGames = getFilteredGames();
+            if (chartType === 'factionPopularity') {
+                currentFilteredGames = getFilteredFactionGames();
+            }
             showModalChart(currentFilteredGames, chartType, chartTitle);
         });
     });
@@ -2244,13 +2303,22 @@ function createStragglerFrequencyChart(games) {
 
 // Create faction popularity over time chart
 function createFactionPopularityChart(games) {
-    const monthly = {};
+    const grouped = {};
     games.forEach(g => {
-        const m = `${g.year}-${g.month}`;
-        if(!monthly[m]) monthly[m]={};
-        [g.faction1,g.faction2].forEach(f=>{ if(!monthly[m][f]) monthly[m][f]=0; monthly[m][f]++; });
+        const mi = getMonthIndex(g.month);
+        if(!mi) return;
+        const bucket = `${g.year}-Q${Math.ceil(mi/3)}`;
+        if(!grouped[bucket]) grouped[bucket] = {};
+        [g.faction1,g.faction2].forEach(f => {
+            if(!grouped[bucket][f]) grouped[bucket][f] = 0;
+            grouped[bucket][f]++;
+        });
     });
-    const months = Object.keys(monthly).sort();
+    const buckets = Object.keys(grouped).sort((a,b) => {
+        const [ya,qa] = a.split('-Q');
+        const [yb,qb] = b.split('-Q');
+        return ya === yb ? qa - qb : ya - yb;
+    });
     const factions = Array.from(new Set(games.flatMap(g=>[g.faction1,g.faction2])));
     const factionColors = {
         'I.S.D.F': 'rgba(13, 110, 253, 0.9)',
@@ -2259,14 +2327,14 @@ function createFactionPopularityChart(games) {
     };
     const datasets = factions.map((f, idx) => ({
         label: f,
-        data: months.map(m => monthly[m][f] || 0),
+        data: buckets.map(b => grouped[b][f] || 0),
         borderColor: factionColors[f] || gamingColors.solidColors[idx % gamingColors.solidColors.length],
         backgroundColor: factionColors[f] || gamingColors.solidColors[idx % gamingColors.solidColors.length],
         fill: false
     }));
     safeCreateChart('factionPopularityChart', {
         type: 'line',
-        data: { labels: months, datasets },
+        data: { labels: buckets, datasets },
         options: { stacked: false, responsive: true, maintainAspectRatio: true }
     });
 }
@@ -3196,16 +3264,21 @@ function createModalStragglerChart(games, canvas) {
 }
 
 function createModalFactionPopularityChart(games, canvas) {
-    const monthly={};
-    games.forEach(g=>{const m=`${g.year}-${g.month}`;if(!monthly[m])monthly[m]={};[g.faction1,g.faction2].forEach(f=>{if(!monthly[m][f])monthly[m][f]=0;monthly[m][f]++;});});
-    const months=Object.keys(monthly).sort();
+    const grouped={};
+    games.forEach(g=>{
+        const mi=getMonthIndex(g.month); if(!mi) return;
+        const bucket=`${g.year}-Q${Math.ceil(mi/3)}`;
+        if(!grouped[bucket]) grouped[bucket] = {};
+        [g.faction1,g.faction2].forEach(f=>{ grouped[bucket][f]=(grouped[bucket][f]||0)+1; });
+    });
+    const months=Object.keys(grouped).sort((a,b)=>{const[ya,qa]=a.split('-Q');const[yb,qb]=b.split('-Q');return ya===yb?qa-qb:ya-yb;});
     const factions=Array.from(new Set(games.flatMap(g=>[g.faction1,g.faction2])));
     const factionColors = {
         'I.S.D.F': 'rgba(13, 110, 253, 0.9)',
         'Hadean': 'rgba(220, 53, 69, 0.9)',
         'Scion': 'rgba(255, 193, 7, 0.9)'
     };
-    const datasets=factions.map((f,idx)=>({label:f,data:months.map(m=>monthly[m][f]||0),fill:false,borderColor:factionColors[f]||gamingColors.solidColors[idx%gamingColors.solidColors.length],backgroundColor:factionColors[f]||gamingColors.solidColors[idx%gamingColors.solidColors.length]}));
+    const datasets=factions.map((f,idx)=>({label:f,data:months.map(m=>grouped[m][f]||0),fill:false,borderColor:factionColors[f]||gamingColors.solidColors[idx%gamingColors.solidColors.length],backgroundColor:factionColors[f]||gamingColors.solidColors[idx%gamingColors.solidColors.length]}));
     new Chart(canvas.getContext('2d'),{type:'line',data:{labels:months,datasets},options:{responsive:true,maintainAspectRatio:false,stacked:false}});
 }
 
