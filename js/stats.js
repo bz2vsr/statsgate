@@ -2314,10 +2314,31 @@ function createFactionPopularityChart(games) {
             grouped[bucket][f]++;
         });
     });
-    const buckets = Object.keys(grouped).sort((a,b) => {
-        const [ya,qa] = a.split('-Q');
-        const [yb,qb] = b.split('-Q');
-        return ya === yb ? qa - qb : ya - yb;
+    const rawBuckets = Object.keys(grouped).map(b => {
+        const [y,q] = b.split('-Q');
+        return { year: parseInt(y,10), quarter: parseInt(q,10) };
+    }).sort((a,b) => a.year === b.year ? a.quarter - b.quarter : a.year - b.year);
+
+    if (rawBuckets.length === 0) return;
+
+    let minYear = rawBuckets[0].year;
+    let minQuarter = rawBuckets[0].quarter;
+    let maxYear = rawBuckets[rawBuckets.length-1].year;
+    let maxQuarter = rawBuckets[rawBuckets.length-1].quarter;
+
+    const buckets = [];
+    let y = minYear;
+    let q = minQuarter;
+    while (y < maxYear || (y === maxYear && q <= maxQuarter)) {
+        buckets.push(`${y}-Q${q}`);
+        q++;
+        if (q > 4) { q = 1; y++; }
+    }
+
+    const labels = buckets.map(b => {
+        const [yr,qStr] = b.split('-Q');
+        const m = String((parseInt(qStr,10)-1)*3 + 1).padStart(2,'0');
+        return `${m}/${String(yr).slice(-2)}`;
     });
     const factions = Array.from(new Set(games.flatMap(g=>[g.faction1,g.faction2])));
     const factionColors = {
@@ -2334,7 +2355,7 @@ function createFactionPopularityChart(games) {
     }));
     safeCreateChart('factionPopularityChart', {
         type: 'line',
-        data: { labels: buckets, datasets },
+        data: { labels, datasets },
         options: { stacked: false, responsive: true, maintainAspectRatio: true }
     });
 }
@@ -3271,15 +3292,17 @@ function createModalFactionPopularityChart(games, canvas) {
         if(!grouped[bucket]) grouped[bucket] = {};
         [g.faction1,g.faction2].forEach(f=>{ grouped[bucket][f]=(grouped[bucket][f]||0)+1; });
     });
-    const months=Object.keys(grouped).sort((a,b)=>{const[ya,qa]=a.split('-Q');const[yb,qb]=b.split('-Q');return ya===yb?qa-qb:ya-yb;});
+    const rawBuckets=Object.keys(grouped).map(b=>{const[y,q]=b.split('-Q');return{year:parseInt(y,10),quarter:parseInt(q,10)}}).sort((a,b)=>a.year===b.year?a.quarter-b.quarter:a.year-b.year);
+    if(rawBuckets.length===0)return;
+    let minYear=rawBuckets[0].year; let minQuarter=rawBuckets[0].quarter;
+    let maxYear=rawBuckets[rawBuckets.length-1].year; let maxQuarter=rawBuckets[rawBuckets.length-1].quarter;
+    const buckets=[]; let y=minYear; let q=minQuarter;
+    while(y<maxYear||(y===maxYear&&q<=maxQuarter)){buckets.push(`${y}-Q${q}`);q++;if(q>4){q=1;y++;}}
+    const labels=buckets.map(b=>{const[yr,qs]=b.split('-Q');const m=String((parseInt(qs,10)-1)*3+1).padStart(2,'0');return`${m}/${String(yr).slice(-2)}`;});
     const factions=Array.from(new Set(games.flatMap(g=>[g.faction1,g.faction2])));
-    const factionColors = {
-        'I.S.D.F': 'rgba(13, 110, 253, 0.9)',
-        'Hadean': 'rgba(220, 53, 69, 0.9)',
-        'Scion': 'rgba(255, 193, 7, 0.9)'
-    };
-    const datasets=factions.map((f,idx)=>({label:f,data:months.map(m=>grouped[m][f]||0),fill:false,borderColor:factionColors[f]||gamingColors.solidColors[idx%gamingColors.solidColors.length],backgroundColor:factionColors[f]||gamingColors.solidColors[idx%gamingColors.solidColors.length]}));
-    new Chart(canvas.getContext('2d'),{type:'line',data:{labels:months,datasets},options:{responsive:true,maintainAspectRatio:false,stacked:false}});
+    const factionColors={'I.S.D.F':'rgba(13, 110, 253, 0.9)','Hadean':'rgba(220, 53, 69, 0.9)','Scion':'rgba(255, 193, 7, 0.9)'};
+    const datasets=factions.map((f,idx)=>({label:f,data:buckets.map(b=>grouped[b]?.[f]||0),fill:false,borderColor:factionColors[f]||gamingColors.solidColors[idx%gamingColors.solidColors.length],backgroundColor:factionColors[f]||gamingColors.solidColors[idx%gamingColors.solidColors.length]}));
+    new Chart(canvas.getContext('2d'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,stacked:false}});
 }
 
 function createModalMapHeatChart(games, canvas) {
